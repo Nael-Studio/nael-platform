@@ -19,4 +19,7 @@ export {
 export {
   HttpApplication,
   createHttpApplication,
+  createHttpApplicationFromContext,
+  type HttpApplicationOptions,
+  type HttpServerOptions,
 } from './http-application';

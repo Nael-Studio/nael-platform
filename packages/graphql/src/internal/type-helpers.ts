@@ -15,6 +15,13 @@ const resolveScalarName = (value: ScalarResolvable | ScalarToken): string => {
     return value.name;
   }
 
+  if (typeof value === 'object' && value !== null && 'name' in value) {
+    const name = (value as { name?: unknown }).name;
+    if (typeof name === 'string') {
+      return name;
+    }
+  }
+
   switch (value) {
     case String:
       return 'String';

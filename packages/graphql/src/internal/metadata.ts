@@ -105,12 +105,27 @@ export interface ResolverClassDefinition {
 const resolverMethodKey = (target: ClassType, methodName: string | symbol): string =>
   `${target.name}:${String(methodName)}`;
 
+const GLOBAL_GRAPHQL_METADATA_KEY = '__NL_FRAMEWORK_GRAPHQL_METADATA__';
+
+type GraphqlMetadataGlobal = typeof globalThis & {
+  [GLOBAL_GRAPHQL_METADATA_KEY]?: GraphqlMetadataStorage;
+};
+
+const getMetadataGlobal = (): GraphqlMetadataGlobal => globalThis as GraphqlMetadataGlobal;
+
 export class GraphqlMetadataStorage {
   private static instance: GraphqlMetadataStorage | undefined;
 
   static get(): GraphqlMetadataStorage {
     if (!this.instance) {
-      this.instance = new GraphqlMetadataStorage();
+      const globalObject = getMetadataGlobal();
+      const existing = globalObject[GLOBAL_GRAPHQL_METADATA_KEY];
+      if (existing) {
+        this.instance = existing;
+      } else {
+        this.instance = new GraphqlMetadataStorage();
+        globalObject[GLOBAL_GRAPHQL_METADATA_KEY] = this.instance;
+      }
     }
     return this.instance;
   }
@@ -238,5 +253,7 @@ export class GraphqlMetadataStorage {
     this.fieldDefinitions.clear();
     this.resolverClasses.clear();
     this.resolverParams.clear();
+    const globalObject = getMetadataGlobal();
+    globalObject[GLOBAL_GRAPHQL_METADATA_KEY] = this;
   }
 }

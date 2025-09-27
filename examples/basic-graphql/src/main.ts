@@ -1,16 +1,20 @@
-import { createGraphqlApplication } from '@nl-framework/graphql';
+import { NaelFactory } from '@nl-framework/platform';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
 import { AppModule } from './app.module';
 
 const bootstrap = async () => {
-  const app = await createGraphqlApplication(AppModule, {
-    federation: { enabled: false },
+  const app = await NaelFactory.create(AppModule, {
+    http: false,
+    graphql: {
+      federation: { enabled: false },
+    },
   });
 
   const loggerFactory = await app.get<LoggerFactory>(LoggerFactory);
   const appLogger = loggerFactory.create({ context: 'BasicGraphqlExample' });
 
-  const { url } = await app.listen(4001);
+  const { graphql } = await app.listen();
+  const url = graphql?.url ?? 'unknown';
   appLogger.info('GraphQL server is running', { url });
 
   const shutdown = async (signal: string) => {

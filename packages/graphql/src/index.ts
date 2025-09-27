@@ -3,7 +3,9 @@ import 'reflect-metadata';
 export {
   GraphqlApplication,
   createGraphqlApplication,
+  createGraphqlApplicationFromContext,
   type GraphqlApplicationOptions,
+  type GraphqlServerOptions,
   type GraphqlListenResult,
   type GraphqlContext,
   type GraphqlContextBase,

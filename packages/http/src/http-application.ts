@@ -6,11 +6,13 @@ import { Router } from './router/router';
 import type { MiddlewareHandler } from './interfaces/http';
 import { getRouteDefinitions } from './decorators/routes';
 
-export interface HttpApplicationOptions extends ApplicationOptions {
+export interface HttpServerOptions {
   host?: string;
   port?: number;
   middleware?: MiddlewareHandler[];
 }
+
+export interface HttpApplicationOptions extends ApplicationOptions, HttpServerOptions {}
 
 export class HttpApplication {
   private readonly router = new Router();
@@ -18,9 +20,9 @@ export class HttpApplication {
   private logger: Logger;
 
   constructor(
-    private readonly app: Application,
     private readonly context: ApplicationContext,
-    private readonly options: HttpApplicationOptions,
+    private readonly options: HttpServerOptions,
+    private readonly ownsContext: boolean,
   ) {
     const baseLogger = this.context.getLogger().child('HttpApplication');
     this.logger = baseLogger;
@@ -102,7 +104,9 @@ export class HttpApplication {
   async close(): Promise<void> {
     this.server?.stop();
     this.logger.info('HTTP server stopped');
-    await this.context.close();
+    if (this.ownsContext) {
+      await this.context.close();
+    }
   }
 }
 
@@ -111,6 +115,12 @@ export const createHttpApplication = async (
   options: HttpApplicationOptions = {},
 ): Promise<HttpApplication> => {
   const app = new Application();
-  const context = await app.bootstrap(rootModule, options);
-  return new HttpApplication(app, context, options);
+  const { config, logger, ...serverOptions } = options;
+  const context = await app.bootstrap(rootModule, { config, logger });
+  return new HttpApplication(context, serverOptions, true);
 };
+
+export const createHttpApplicationFromContext = (
+  context: ApplicationContext,
+  options: HttpServerOptions = {},
+): HttpApplication => new HttpApplication(context, options, false);

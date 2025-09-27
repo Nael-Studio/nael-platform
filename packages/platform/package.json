@@ -1,0 +1,37 @@
+{
+  "name": "@nl-framework/platform",
+  "version": "0.1.0",
+  "description": "Unified application factory for nl-framework combining HTTP and GraphQL servers with shared dependency injection context.",
+  "keywords": [
+    "bun",
+    "framework",
+    "platform",
+    "graphql",
+    "http"
+  ],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "bunx tsc --build tsconfig.build.json",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@nl-framework/core": "workspace:*",
+    "@nl-framework/graphql": "workspace:*",
+    "@nl-framework/http": "workspace:*",
+    "@nl-framework/logger": "workspace:*"
+  }
+}

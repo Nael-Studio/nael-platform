@@ -7,12 +7,14 @@ import { buildSubgraphSchema } from '@apollo/subgraph';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { GraphqlSchemaBuilder, type GraphqlBuildOptions } from './schema-builder';
 
-export interface GraphqlApplicationOptions extends ApplicationOptions {
+export interface GraphqlServerOptions {
   host?: string;
   port?: number;
   federation?: GraphqlBuildOptions['federation'];
   context?: GraphqlContextFactory;
 }
+
+export interface GraphqlApplicationOptions extends ApplicationOptions, GraphqlServerOptions {}
 
 export interface GraphqlListenResult {
   url: string;
@@ -31,13 +33,12 @@ export type GraphqlContextFactory = (
 
 export class GraphqlApplication {
   private apolloServer?: ApolloServer<GraphqlContext>;
-  private serverUrl?: string;
   private logger: Logger;
 
   constructor(
-    private readonly app: Application,
     private readonly context: ApplicationContext,
-    private readonly options: GraphqlApplicationOptions,
+    private readonly options: GraphqlServerOptions,
+    private readonly ownsContext: boolean,
   ) {
     const baseLogger = this.context.getLogger().child('GraphqlApplication');
     this.logger = baseLogger;
@@ -47,7 +48,7 @@ export class GraphqlApplication {
         this.logger = factory.create({ context: 'GraphqlApplication' });
       })
       .catch(() => {
-        this.logger = baseLogger;
+        /* noop */
       });
 
     const resolverCount = this.context.getResolvers().length;
@@ -91,8 +92,6 @@ export class GraphqlApplication {
     });
 
     const { url } = serverInfo as GraphqlListenResult;
-    this.serverUrl = url;
-
     this.logger.info(`NL Framework GraphQL started at ${url}`);
 
     return { url };
@@ -112,7 +111,10 @@ export class GraphqlApplication {
     }
 
     this.logger.info('GraphQL server stopped');
-    await this.context.close();
+
+    if (this.ownsContext) {
+      await this.context.close();
+    }
   }
 }
 
@@ -120,7 +122,13 @@ export const createGraphqlApplication = async (
   rootModule: ClassType,
   options: GraphqlApplicationOptions = {},
 ): Promise<GraphqlApplication> => {
+  const { config, logger, ...serverOptions } = options;
   const app = new Application();
-  const context = await app.bootstrap(rootModule, options);
-  return new GraphqlApplication(app, context, options);
+  const context = await app.bootstrap(rootModule, { config, logger });
+  return new GraphqlApplication(context, serverOptions, true);
 };
+
+export const createGraphqlApplicationFromContext = (
+  context: ApplicationContext,
+  options: GraphqlServerOptions = {},
+): GraphqlApplication => new GraphqlApplication(context, options, false);
