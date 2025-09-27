@@ -35,8 +35,8 @@ scripts/             # Build/test/publish helpers
    - Use Bun workspaces for every new package and keep TypeScript configs aligned with `tsconfig.base.json`.
    - Expose ESM builds with declaration files and mark publishable packages with `"publishConfig"`.
 3. **Configuration & secrets**
-   - Store defaults in YAML under `config/` with environment overrides like `development.yaml`, `production.yaml`.
-   - Keep secrets in `.env` files (never commit) and surface required keys in documentation.
+   - Store defaults in YAML under `config/` with environment overrides like `development.yaml`, `production.yaml` or `env.yaml` per service.
+   - Use `config/env.example.yaml` as the template for environment-specific values and never commit real secrets.
 4. **Microservices & messaging**
    - Default pub/sub is Redis via Dapr components; additional brokers must be pluggable through Dapr configuration files placed in `dapr/components/`.
    - Document any new bindings or subscriptions in the service README.

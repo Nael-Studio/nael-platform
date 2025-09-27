@@ -17,6 +17,7 @@
     "experimentalDecorators": true,
     "outDir": "dist",
     "baseUrl": ".",
+    "types": ["bun-types"],
     "paths": {
       "@nl-framework/*": ["packages/*/src"]
     }
