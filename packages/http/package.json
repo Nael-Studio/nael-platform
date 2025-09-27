@@ -1,12 +1,12 @@
 {
-  "name": "@nl-framework/core",
+  "name": "@nl-framework/http",
   "version": "0.1.0",
-  "description": "Core runtime for the nl-framework Bun ecosystem: dependency injection, module system, configuration, lifecycle.",
+  "description": "HTTP server adapter for nl-framework built on Bun, with routing, middleware, and controller integration.",
   "keywords": [
     "bun",
+    "http",
     "framework",
-    "dependency-injection",
-    "microservices"
+    "routing"
   ],
   "author": "",
   "license": "MIT",
@@ -29,7 +29,7 @@
     "test": "bun test"
   },
   "dependencies": {
-    "reflect-metadata": "^0.1.13",
-    "yaml": "^2.8.1"
+    "@nl-framework/core": "workspace:*",
+    "reflect-metadata": "^0.1.13"
   }
 }

@@ -1,7 +1,7 @@
-import { METADATA_KEYS } from '../constants.js';
-import { setMetadata, getMetadata } from '../utils/metadata.js';
-import type { ModuleMetadata } from '../interfaces/module.js';
-import type { ClassType } from '../interfaces/provider.js';
+import { METADATA_KEYS } from '../constants';
+import { setMetadata, getMetadata } from '../utils/metadata';
+import type { ModuleMetadata } from '../interfaces/module';
+import type { ClassType } from '../interfaces/provider';
 
 const defaultMetadata: Required<ModuleMetadata> = {
   imports: [],

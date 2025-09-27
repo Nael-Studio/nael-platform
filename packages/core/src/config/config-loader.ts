@@ -2,7 +2,7 @@ import { access, readFile } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import { resolve as resolvePath } from 'node:path';
 import { parse } from 'yaml';
-import { deepMerge, type PlainObject } from '../utils/deep-merge.js';
+import { deepMerge, type PlainObject } from '../utils/deep-merge';
 
 export interface ConfigLoadOptions {
   dir?: string;

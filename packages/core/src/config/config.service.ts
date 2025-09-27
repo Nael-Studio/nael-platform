@@ -1,4 +1,4 @@
-import type { PlainObject } from '../utils/deep-merge.js';
+import type { PlainObject } from '../utils/deep-merge';
 
 const resolvePath = (object: PlainObject, path: string): unknown => {
   const segments = path.split('.');

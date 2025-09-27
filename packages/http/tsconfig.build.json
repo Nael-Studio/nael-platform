@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "emitDeclarationOnly": true,
+    "declaration": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "noEmit": false,
+    "paths": {
+      "@nl-framework/core": ["packages/core/dist/index.d.ts"],
+      "@nl-framework/core/*": ["packages/core/dist/*"],
+      "@nl-framework/*": ["packages/*/src"]
+    }
+  },
+  "include": ["src/**/*"],
+  "references": [
+    {
+      "path": "../core/tsconfig.build.json"
+    }
+  ]
+}

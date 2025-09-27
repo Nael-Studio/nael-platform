@@ -1,6 +1,6 @@
-import { METADATA_KEYS } from '../constants.js';
-import { setMetadata, getMetadata } from '../utils/metadata.js';
-import type { ClassType } from '../interfaces/provider.js';
+import { METADATA_KEYS } from '../constants';
+import { setMetadata, getMetadata } from '../utils/metadata';
+import type { ClassType } from '../interfaces/provider';
 
 export const Controller = (prefix = ''): ClassDecorator => (target) => {
   setMetadata(METADATA_KEYS.controller, prefix, target);

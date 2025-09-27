@@ -1,4 +1,4 @@
-import type { Provider, Token, ClassType } from './provider.js';
+import type { Provider, Token, ClassType } from './provider';
 
 export interface ModuleMetadata {
   imports?: ClassType[];

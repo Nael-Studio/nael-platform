@@ -1,6 +1,6 @@
-import { METADATA_KEYS } from '../constants.js';
-import { setMetadata, getMetadata } from '../utils/metadata.js';
-import type { Token } from '../interfaces/provider.js';
+import { METADATA_KEYS } from '../constants';
+import { setMetadata, getMetadata } from '../utils/metadata';
+import type { Token } from '../interfaces/provider';
 
 export type ParameterInjectionMap = Map<number, Token>;
 

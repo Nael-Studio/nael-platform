@@ -6,7 +6,7 @@ import {
   Controller,
   Inject,
   ConfigService,
-} from '../src/index.js';
+} from '../src/index';
 
 @Injectable()
 class GreetingService {

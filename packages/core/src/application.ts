@@ -1,8 +1,8 @@
-import type { ClassType, Token } from './interfaces/provider.js';
-import { Container } from './container/container.js';
-import { ConfigLoader, type ConfigLoadOptions } from './config/config-loader.js';
-import { ConfigService } from './config/config.service.js';
-import { GLOBAL_PROVIDERS } from './constants.js';
+import type { ClassType, Token } from './interfaces/provider';
+import { Container } from './container/container';
+import { ConfigLoader, type ConfigLoadOptions } from './config/config-loader';
+import { ConfigService } from './config/config.service';
+import { GLOBAL_PROVIDERS } from './constants';
 
 export interface ApplicationOptions {
   config?: ConfigLoadOptions;

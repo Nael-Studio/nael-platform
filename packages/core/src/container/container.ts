@@ -5,13 +5,13 @@ import type {
   ClassProvider,
   ValueProvider,
   FactoryProvider,
-} from '../interfaces/provider.js';
-import { isInjectable } from '../decorators/injectable.js';
-import { getModuleMetadata } from '../decorators/module.js';
-import { getParamInjectionTokens, ParameterInjectionMap } from '../decorators/inject.js';
-import type { ModuleMetadata } from '../interfaces/module.js';
-import type { Lifecycle } from '../lifecycle/hooks.js';
-import { getMetadata } from '../utils/metadata.js';
+} from '../interfaces/provider';
+import { isInjectable } from '../decorators/injectable';
+import { getModuleMetadata } from '../decorators/module';
+import { getParamInjectionTokens, ParameterInjectionMap } from '../decorators/inject';
+import type { ModuleMetadata } from '../interfaces/module';
+import type { Lifecycle } from '../lifecycle/hooks';
+import { getMetadata } from '../utils/metadata';
 
 interface NormalizedClassProvider<T = any> {
   type: 'class';
