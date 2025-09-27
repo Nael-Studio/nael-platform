@@ -3,9 +3,13 @@ import { Container } from './container/container';
 import { ConfigLoader, type ConfigLoadOptions } from './config/config-loader';
 import { ConfigService } from './config/config.service';
 import { GLOBAL_PROVIDERS } from './constants';
+import { LoggerFactory } from '@nl-framework/logger';
+import type { LoggerOptions } from '@nl-framework/logger';
+import { Logger } from '@nl-framework/logger';
 
 export interface ApplicationOptions {
   config?: ConfigLoadOptions;
+  logger?: LoggerOptions;
 }
 
 export class ApplicationContext {
@@ -15,6 +19,7 @@ export class ApplicationContext {
     private readonly container: Container,
     controllers: Map<ClassType, unknown[]>,
     private readonly configService: ConfigService,
+    private readonly logger: Logger,
   ) {
     controllers.forEach((instances, moduleClass) => {
       this.controllers.set(moduleClass, instances);
@@ -35,6 +40,10 @@ export class ApplicationContext {
 
   getConfig<TConfig extends Record<string, unknown> = Record<string, unknown>>(): ConfigService<TConfig> {
     return this.configService as ConfigService<TConfig>;
+  }
+
+  getLogger(): Logger {
+    return this.logger;
   }
 
   async close(): Promise<void> {
@@ -63,6 +72,24 @@ export class Application {
       useValue: options,
     });
 
+    const loggerFactory = new LoggerFactory(options.logger);
+    const rootLogger = loggerFactory.create({ context: rootModule.name });
+
+    this.container.registerProvider({
+      provide: LoggerFactory,
+      useValue: loggerFactory,
+    });
+
+    this.container.registerProvider({
+      provide: Logger,
+      useValue: rootLogger,
+    });
+
+    this.container.registerProvider({
+      provide: GLOBAL_PROVIDERS.logger,
+      useValue: rootLogger,
+    });
+
     await this.container.registerModule(rootModule);
 
     const controllersMap = new Map<ClassType, unknown[]>();
@@ -77,7 +104,20 @@ export class Application {
       controllersMap.set(moduleClass, controllerInstances);
     }
 
-    return new ApplicationContext(this.container, controllersMap, configService);
+    const moduleSummaries = Array.from(this.container.getModules()).map((moduleClass) => {
+      const definition = this.container.getModuleDefinition(moduleClass);
+      return {
+        name: moduleClass.name ?? 'AnonymousModule',
+        controllers: controllersMap.get(moduleClass)?.length ?? 0,
+        providers: definition?.metadata.providers?.length ?? 0,
+      };
+    });
+
+    rootLogger.info('Core application context initialized', {
+      modules: moduleSummaries,
+    });
+
+    return new ApplicationContext(this.container, controllersMap, configService, rootLogger);
   }
 
   async close(): Promise<void> {

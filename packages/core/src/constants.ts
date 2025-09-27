@@ -8,4 +8,5 @@ export const METADATA_KEYS = {
 export const GLOBAL_PROVIDERS = {
   config: Symbol.for('nl:config-service'),
   appOptions: Symbol.for('nl:application-options'),
+  logger: Symbol.for('nl:logger'),
 };

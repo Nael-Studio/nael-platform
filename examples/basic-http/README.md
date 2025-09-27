@@ -7,7 +7,7 @@ This example demonstrates how to build a tiny HTTP API on top of `@nl-framework/
 - Module + provider structure powered by the framework's DI container
 - YAML-based configuration resolved via `ConfigService`
 - Route decorators (`@Controller`, `@Get`) with automatic parameter parsing
-- Global middleware for logging incoming requests
+- Context-aware logging via `@nl-framework/logger` for request tracing and lifecycle events
 
 ## Project structure
 
@@ -29,6 +29,7 @@ examples/basic-http
 1. Build the framework packages so typings are ready:
 
    ```bash
+   bun run build --filter @nl-framework/logger
    bun run build --filter @nl-framework/core
    bun run build --filter @nl-framework/http
    ```
@@ -39,7 +40,7 @@ examples/basic-http
    bun run --filter @nl-framework/example-basic-http start
    ```
 
-   The server listens on `http://localhost:4000` by default. Edit `config/default.yaml` to change host/port or the greeting message.
+   The server listens on `http://localhost:4000` by default. Edit `config/default.yaml` to change host/port or the greeting message. All startup and shutdown events are logged through the shared logger.
 
 ## Try it out
 
@@ -62,3 +63,4 @@ Each response is JSON with the message, the app name, and an ISO timestamp.
 - Add additional controllers/services to explore DI scopes
 - Layer on more middleware (auth, validation, etc.) via the options passed to `createHttpApplication`
 - Experiment with configuration overrides by adding `config/env.yaml` or runtime overrides in `main.ts`
+- Swap in alternative logger transports (file, telemetry, etc.) by extending `@nl-framework/logger` and adjusting the bootstrap

@@ -5,6 +5,7 @@ These guidelines keep our work consistent across issues, pull requests, and auto
 ## Project vision
 - Build a NestJS-inspired framework optimized for Bun.
 - Provide first-class support for microservices via Dapr with Redis defaults, Apollo Federation, Better Auth, and a MongoDB-based ORM.
+- Deliver a structured logging package (`@nl-framework/logger`) patterned after `@nestjs/logger` and wire it into every runtime surface.
 - Ship each package as an npm-ready workspace within a single monorepo.
 
 ## Repository layout
@@ -12,6 +13,7 @@ These guidelines keep our work consistent across issues, pull requests, and auto
 packages/
   core/              # Dependency injection, modules, lifecycle
   config/            # YAML loader, env overrides, validation
+  logger/            # Structured logger + adapters (console, Bun, external sinks)
   http/              # Bun server adapter, routing, middleware
   graphql/           # Apollo Federation subgraph utilities
   microservices/     # Dapr integrations, pub/sub abstractions
@@ -31,9 +33,13 @@ scripts/             # Build/test/publish helpers
 1. **Plan first**
    - Capture requirements in the shared TODO tracker (GitHub issues, project board, or automation).
    - Each task should include acceptance criteria and cross-reference the relevant packages.
+   - The logger package is the first deliverable for any new milestone—confirm `@nl-framework/logger` capabilities up front before expanding other surfaces.
 2. **Scaffold consistently**
    - Use Bun workspaces for every new package and keep TypeScript configs aligned with `tsconfig.base.json`.
    - Expose ESM builds with declaration files and mark publishable packages with `"publishConfig"`.
+   - Route all console or telemetry output through the shared logger; never instantiate ad-hoc loggers inside feature packages.
+   - Resolve the logger from the DI container (`LoggerFactory` → `.create()`) inside runtime surfaces and examples; avoid importing `console` in framework-managed code paths.
+   - When bootstrapping samples, register request logging middleware using the shared logger and log lifecycle events (`listen`, `close`, error handlers) through it.
 3. **Configuration & secrets**
    - Store defaults in YAML under `config/` with environment overrides like `development.yaml`, `production.yaml` or `env.yaml` per service.
    - Use `config/env.example.yaml` as the template for environment-specific values and never commit real secrets.

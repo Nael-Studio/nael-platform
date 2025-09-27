@@ -19,7 +19,9 @@
     "baseUrl": ".",
     "types": ["bun-types"],
     "paths": {
-      "@nl-framework/*": ["packages/*/src"]
+      "@nl-framework/*": ["packages/*/src"],
+      "@nl-framework/logger": ["packages/logger/src"],
+      "@nl-framework/logger/*": ["packages/logger/src/*"]
     }
   },
   "exclude": ["node_modules", "dist", "coverage"],

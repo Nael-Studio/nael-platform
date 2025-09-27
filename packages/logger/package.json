@@ -1,0 +1,33 @@
+{
+  "name": "@nl-framework/logger",
+  "version": "0.1.0",
+  "description": "Structured logger for nl-framework with pluggable transports and context-aware logging.",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "bunx tsc --build tsconfig.build.json",
+    "test": "bun test"
+  },
+  "keywords": [
+    "logger",
+    "bun",
+    "structured-logging"
+  ],
+  "dependencies": {
+    "colorette": "^2.0.20"
+  },
+  "peerDependencies": {
+    "@nl-framework/core": "workspace:*"
+  }
+}

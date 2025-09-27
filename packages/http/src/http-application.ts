@@ -1,5 +1,7 @@
 import type { ClassType, ApplicationOptions, Token, ApplicationContext } from '@nl-framework/core';
 import { Application, getControllerPrefix } from '@nl-framework/core';
+import { Logger, LoggerFactory } from '@nl-framework/logger';
+import { GLOBAL_PROVIDERS } from '@nl-framework/core';
 import type { Server } from 'bun';
 import { Router } from './router/router';
 import type { MiddlewareHandler } from './interfaces/http';
@@ -14,16 +16,32 @@ export interface HttpApplicationOptions extends ApplicationOptions {
 export class HttpApplication {
   private readonly router = new Router();
   private server?: Server;
+  private logger: Logger;
 
   constructor(
     private readonly app: Application,
     private readonly context: ApplicationContext,
     private readonly options: HttpApplicationOptions,
   ) {
+    const baseLogger = this.context.getLogger().child('HttpApplication');
+    this.logger = baseLogger;
+    void this.context
+      .get<LoggerFactory>(LoggerFactory)
+      .then((loggerFactory) => {
+        this.logger = loggerFactory.create({ context: 'HttpApplication' });
+      })
+      .catch(() => {
+        this.logger = baseLogger;
+      });
     this.registerControllers();
     for (const middleware of options.middleware ?? []) {
       this.router.use(middleware);
     }
+
+    this.logger.info('HTTP module loaded', {
+      controllers: this.context.getControllers().length,
+      middleware: options.middleware?.length ?? 0,
+    });
   }
 
   private registerControllers(): void {
@@ -63,6 +81,16 @@ export class HttpApplication {
         }),
     });
 
+    const actualHost = this.server.hostname ?? hostname;
+    const accessibleHost = actualHost === '0.0.0.0' ? 'localhost' : actualHost;
+    const boundPort = this.server.port ?? listenPort;
+    const url = `http://${accessibleHost}:${boundPort}`;
+
+    this.logger.info(`HTTP server listening on ${url}`, {
+      host: actualHost,
+      port: boundPort,
+    });
+
     return this.server;
   }
 
@@ -76,6 +104,7 @@ export class HttpApplication {
 
   async close(): Promise<void> {
     this.server?.stop();
+    this.logger.info('HTTP server stopped');
     await this.context.close();
   }
 }

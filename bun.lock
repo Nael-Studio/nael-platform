@@ -16,6 +16,15 @@
         "yaml": "^2.4.2",
       },
     },
+    "examples/basic-http": {
+      "name": "@nl-framework/example-basic-http",
+      "version": "0.1.0",
+      "dependencies": {
+        "@nl-framework/core": "workspace:*",
+        "@nl-framework/http": "workspace:*",
+        "@nl-framework/logger": "workspace:*",
+      },
+    },
     "packages/core": {
       "name": "@nl-framework/core",
       "version": "0.1.0",
@@ -30,6 +39,16 @@
       "dependencies": {
         "@nl-framework/core": "workspace:*",
         "reflect-metadata": "^0.1.13",
+      },
+    },
+    "packages/logger": {
+      "name": "@nl-framework/logger",
+      "version": "0.1.0",
+      "dependencies": {
+        "colorette": "^2.0.20",
+      },
+      "peerDependencies": {
+        "@nl-framework/core": "workspace:*",
       },
     },
   },
@@ -62,7 +81,11 @@
 
     "@nl-framework/core": ["@nl-framework/core@workspace:packages/core"],
 
+    "@nl-framework/example-basic-http": ["@nl-framework/example-basic-http@workspace:examples/basic-http"],
+
     "@nl-framework/http": ["@nl-framework/http@workspace:packages/http"],
+
+    "@nl-framework/logger": ["@nl-framework/logger@workspace:packages/logger"],
 
     "@nodelib/fs.scandir": ["@nodelib/fs.scandir@2.1.5", "", { "dependencies": { "@nodelib/fs.stat": "2.0.5", "run-parallel": "^1.1.9" } }, "sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g=="],
 
@@ -121,6 +144,8 @@
     "color-convert": ["color-convert@2.0.1", "", { "dependencies": { "color-name": "~1.1.4" } }, "sha512-RRECPsj7iu/xb5oKYcsFHSppFNnsj/52OVTRKb4zP5onXwVF3zVmmToNcOfGC+CRDpfK/U584fMg38ZHCaElKQ=="],
 
     "color-name": ["color-name@1.1.4", "", {}, "sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA=="],
+
+    "colorette": ["colorette@2.0.20", "", {}, "sha512-IfEDxwoWIjkeXL1eXcDiow4UbKjhLdq6/EuSVR9GMN7KVH3r9gQ83e73hsz1Nd1T3ijd5xv1wcWRYO+D6kCI2w=="],
 
     "concat-map": ["concat-map@0.0.1", "", {}, "sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg=="],
 

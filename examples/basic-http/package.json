@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@nl-framework/core": "workspace:*",
-    "@nl-framework/http": "workspace:*"
+    "@nl-framework/http": "workspace:*",
+    "@nl-framework/logger": "workspace:*"
   }
 }
