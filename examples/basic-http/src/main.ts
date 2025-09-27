@@ -49,7 +49,7 @@ const bootstrap = async () => {
 
   await app.listen(port);
   const displayHost = host === '0.0.0.0' ? 'localhost' : host;
-  appLogger.info(`Basic HTTP example listening http://${displayHost}:${port}/hello`);
+  appLogger.info(`Server successfully started`);
 
   const shutdown = async (signal: string) => {
     appLogger.warn('Received shutdown signal', { signal });

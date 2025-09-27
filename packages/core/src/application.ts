@@ -113,9 +113,7 @@ export class Application {
       };
     });
 
-    rootLogger.info('Core application context initialized', {
-      modules: moduleSummaries,
-    });
+    rootLogger.info('Core application context initialized');
 
     return new ApplicationContext(this.container, controllersMap, configService, rootLogger);
   }

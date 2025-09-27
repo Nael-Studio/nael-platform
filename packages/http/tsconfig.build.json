@@ -8,15 +8,19 @@
     "outDir": "dist",
     "noEmit": false,
     "paths": {
-      "@nl-framework/core": ["packages/core/dist/index.d.ts"],
-      "@nl-framework/core/*": ["packages/core/dist/*"],
-      "@nl-framework/*": ["packages/*/src"]
+      "@nl-framework/core": ["../core/dist/index.d.ts"],
+      "@nl-framework/core/*": ["../core/dist/*"],
+      "@nl-framework/logger": ["../logger/dist/index.d.ts"],
+      "@nl-framework/logger/*": ["../logger/dist/*"]
     }
   },
   "include": ["src/**/*"],
   "references": [
     {
       "path": "../core/tsconfig.build.json"
+    },
+    {
+      "path": "../logger/tsconfig.build.json"
     }
   ]
 }

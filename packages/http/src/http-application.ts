@@ -1,7 +1,6 @@
 import type { ClassType, ApplicationOptions, Token, ApplicationContext } from '@nl-framework/core';
 import { Application, getControllerPrefix } from '@nl-framework/core';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
-import { GLOBAL_PROVIDERS } from '@nl-framework/core';
 import type { Server } from 'bun';
 import { Router } from './router/router';
 import type { MiddlewareHandler } from './interfaces/http';
@@ -38,10 +37,11 @@ export class HttpApplication {
       this.router.use(middleware);
     }
 
-    this.logger.info('HTTP module loaded', {
-      controllers: this.context.getControllers().length,
-      middleware: options.middleware?.length ?? 0,
-    });
+    const controllerCount = this.context.getControllers().length;
+    const middlewareCount = options.middleware?.length ?? 0;
+    this.logger.info(
+      `HTTP module loaded (controllers=${controllerCount}, middleware=${middlewareCount})`,
+    );
   }
 
   private registerControllers(): void {
@@ -86,10 +86,7 @@ export class HttpApplication {
     const boundPort = this.server.port ?? listenPort;
     const url = `http://${accessibleHost}:${boundPort}`;
 
-    this.logger.info(`HTTP server listening on ${url}`, {
-      host: actualHost,
-      port: boundPort,
-    });
+    this.logger.info(`NL Framework HTTP started at ${url}`);
 
     return this.server;
   }
