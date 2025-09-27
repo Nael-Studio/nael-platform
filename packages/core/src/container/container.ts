@@ -40,6 +40,7 @@ type NormalizedProvider<T = any> =
 interface ModuleDefinition {
   metadata: Required<ModuleMetadata>;
   controllers: ClassType[];
+  resolvers: ClassType[];
 }
 
 const MODULE_NOT_FOUND = (token: Token) =>
@@ -62,6 +63,7 @@ export class Container {
     const definition: ModuleDefinition = {
       metadata,
       controllers: metadata.controllers ?? [],
+      resolvers: metadata.resolvers ?? [],
     };
 
     this.moduleRegistry.set(moduleClass, definition);
@@ -76,6 +78,10 @@ export class Container {
 
     for (const controller of metadata.controllers ?? []) {
       this.registerProvider(controller);
+    }
+
+    for (const resolver of metadata.resolvers ?? []) {
+      this.registerProvider(resolver);
     }
 
     // Auto-register exported providers if they are class references.

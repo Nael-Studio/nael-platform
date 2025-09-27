@@ -1,0 +1,17 @@
+{
+  "name": "@nl-framework/example-federated-graphql",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Apollo Federation subgraph example built with nl-framework GraphQL module.",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/main.ts",
+    "start": "bun run src/main.ts",
+    "check": "bunx tsc --noEmit"
+  },
+  "dependencies": {
+    "@nl-framework/core": "workspace:*",
+    "@nl-framework/graphql": "workspace:*",
+    "@nl-framework/logger": "workspace:*"
+  }
+}

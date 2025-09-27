@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "emitDeclarationOnly": false,
+    "declaration": true,
+    "declarationMap": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "noEmit": false,
+    "paths": {
+      "@nl-framework/core": ["../core/dist/index.d.ts"],
+      "@nl-framework/core/*": ["../core/dist/*"],
+      "@nl-framework/logger": ["../logger/dist/index.d.ts"],
+      "@nl-framework/logger/*": ["../logger/dist/*"]
+    }
+  },
+  "include": ["src/**/*"],
+  "references": [
+    { "path": "../core/tsconfig.build.json" },
+    { "path": "../logger/tsconfig.build.json" }
+  ]
+}

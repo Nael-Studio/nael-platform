@@ -1,0 +1,31 @@
+import { createGraphqlApplication } from '@nl-framework/graphql';
+import { Logger, LoggerFactory } from '@nl-framework/logger';
+import { AppModule } from './app.module';
+
+const bootstrap = async () => {
+  const app = await createGraphqlApplication(AppModule, {
+    federation: { enabled: true },
+  });
+
+  const loggerFactory = await app.get<LoggerFactory>(LoggerFactory);
+  const appLogger = loggerFactory.create({ context: 'FederatedGraphqlExample' });
+
+  const { url } = await app.listen(4011);
+  appLogger.info('Federated GraphQL subgraph ready', { url });
+
+  const shutdown = async (signal: string) => {
+    appLogger.warn('Received shutdown signal', { signal });
+    await app.close();
+    appLogger.info('Federated GraphQL example stopped');
+    process.exit(0);
+  };
+
+  process.on('SIGINT', () => void shutdown('SIGINT'));
+  process.on('SIGTERM', () => void shutdown('SIGTERM'));
+};
+
+bootstrap().catch((error) => {
+  const fallback = new Logger({ context: 'FederatedGraphqlExample' });
+  fallback.fatal('Failed to start the federated example', error instanceof Error ? error : undefined);
+  process.exit(1);
+});

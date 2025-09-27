@@ -14,20 +14,34 @@ export interface ApplicationOptions {
 
 export class ApplicationContext {
   private readonly controllers = new Map<ClassType, unknown[]>();
+  private readonly resolvers = new Map<ClassType, unknown[]>();
 
   constructor(
     private readonly container: Container,
     controllers: Map<ClassType, unknown[]>,
+    resolvers: Map<ClassType, unknown[]>,
     private readonly configService: ConfigService,
     private readonly logger: Logger,
   ) {
     controllers.forEach((instances, moduleClass) => {
       this.controllers.set(moduleClass, instances);
     });
+
+    resolvers.forEach((instances, moduleClass) => {
+      this.resolvers.set(moduleClass, instances);
+    });
   }
 
   async get<T>(token: Token<T>): Promise<T> {
     return this.container.resolve(token);
+  }
+
+  getResolvers<T = unknown>(module?: ClassType): T[] {
+    if (module) {
+      return (this.resolvers.get(module) ?? []) as T[];
+    }
+
+    return Array.from(this.resolvers.values()).flat() as T[];
   }
 
   getControllers<T = unknown>(module?: ClassType): T[] {
@@ -93,6 +107,7 @@ export class Application {
     await this.container.registerModule(rootModule);
 
     const controllersMap = new Map<ClassType, unknown[]>();
+    const resolversMap = new Map<ClassType, unknown[]>();
     for (const moduleClass of this.container.getModules()) {
       const definition = this.container.getModuleDefinition(moduleClass);
       if (!definition) {
@@ -102,6 +117,11 @@ export class Application {
         definition.controllers,
       );
       controllersMap.set(moduleClass, controllerInstances);
+
+      const resolverInstances = await Promise.all(
+        definition.resolvers.map((resolver) => this.container.resolve(resolver)),
+      );
+      resolversMap.set(moduleClass, resolverInstances);
     }
 
     const moduleSummaries = Array.from(this.container.getModules()).map((moduleClass) => {
@@ -109,13 +129,20 @@ export class Application {
       return {
         name: moduleClass.name ?? 'AnonymousModule',
         controllers: controllersMap.get(moduleClass)?.length ?? 0,
+        resolvers: resolversMap.get(moduleClass)?.length ?? 0,
         providers: definition?.metadata.providers?.length ?? 0,
       };
     });
 
     rootLogger.info('Core application context initialized');
 
-    return new ApplicationContext(this.container, controllersMap, configService, rootLogger);
+    return new ApplicationContext(
+      this.container,
+      controllersMap,
+      resolversMap,
+      configService,
+      rootLogger,
+    );
   }
 
   async close(): Promise<void> {

@@ -7,6 +7,7 @@ const defaultMetadata: Required<ModuleMetadata> = {
   imports: [],
   providers: [],
   controllers: [],
+  resolvers: [],
   exports: [],
 };
 
