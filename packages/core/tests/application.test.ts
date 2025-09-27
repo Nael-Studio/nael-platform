@@ -70,7 +70,7 @@ describe('Application bootstrap', () => {
       app: { name: string };
     }>();
 
-    expect(config.get('app.name')).toBe('test-app');
+    expect(config.get<string>('app.name')).toBe('test-app');
 
     await context.close();
   });
