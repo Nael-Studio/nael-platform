@@ -1,7 +1,14 @@
 import type { HttpMethod, RouteDefinition } from '../interfaces/http';
 import { getMetadata, setMetadata } from '../utils/metadata';
 
-const ROUTE_METADATA_KEY = Symbol('nl:http:routes');
+const ROUTE_METADATA_KEY = Symbol.for('nl:http:routes');
+
+type Stage3MethodContext = {
+  kind: 'method';
+  name: string | symbol;
+  static: boolean;
+  addInitializer(initializer: (this: unknown) => void): void;
+};
 
 const appendRouteDefinition = (target: object, definition: RouteDefinition): void => {
   const existing: RouteDefinition[] =
@@ -9,14 +16,43 @@ const appendRouteDefinition = (target: object, definition: RouteDefinition): voi
   setMetadata(ROUTE_METADATA_KEY, [...existing, definition], target.constructor);
 };
 
+const isStage3Context = (value: unknown): value is Stage3MethodContext =>
+  typeof value === 'object' && value !== null && 'kind' in value && (value as Stage3MethodContext).kind === 'method';
+
 const createRouteDecorator = (method: HttpMethod) =>
-  (path = ''): MethodDecorator => (target, propertyKey) => {
-    appendRouteDefinition(target, {
-      method,
-      path,
-      handlerName: propertyKey as string,
-    });
-  };
+  (path = ''): MethodDecorator =>
+    ((targetOrValue: unknown, maybeContext?: unknown, descriptor?: PropertyDescriptor) => {
+      if (isStage3Context(maybeContext)) {
+        const context = maybeContext;
+        if (context.kind !== 'method') {
+          return targetOrValue;
+        }
+
+        context.addInitializer(function () {
+          const prototype = context.static ? this : Object.getPrototypeOf(this);
+          if (!prototype) {
+            return;
+          }
+
+          appendRouteDefinition(prototype as object, {
+            method,
+            path,
+            handlerName: String(context.name),
+          });
+        });
+
+        return targetOrValue as PropertyDescriptor['value'];
+      }
+
+      const target = targetOrValue as object;
+      const propertyKey = maybeContext as string | symbol;
+      appendRouteDefinition(target, {
+        method,
+        path,
+        handlerName: String(propertyKey),
+      });
+      return descriptor;
+    }) as MethodDecorator;
 
 export const Get = createRouteDecorator('GET');
 export const Post = createRouteDecorator('POST');

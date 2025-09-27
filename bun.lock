@@ -33,6 +33,7 @@
         "@nl-framework/core": "workspace:*",
         "@nl-framework/http": "workspace:*",
         "@nl-framework/logger": "workspace:*",
+        "@nl-framework/platform": "workspace:*",
       },
     },
     "examples/federated-graphql": {

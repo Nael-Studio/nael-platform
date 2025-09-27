@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 export { Router } from './router/router';
 export type {
   MiddlewareHandler,

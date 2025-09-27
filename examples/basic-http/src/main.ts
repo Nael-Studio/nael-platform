@@ -1,6 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
-import { createHttpApplication, type MiddlewareHandler } from '@nl-framework/http';
+import { type MiddlewareHandler } from '@nl-framework/http';
+import { NaelFactory } from '@nl-framework/platform';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
 import { AppModule } from './app.module';
 import type { ExampleConfig } from './types';
@@ -8,15 +9,22 @@ import type { ExampleConfig } from './types';
 const bootstrap = async () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
   const configDir = resolve(currentDir, '../config');
-  const app = await createHttpApplication(AppModule, {
+  const app = await NaelFactory.create(AppModule, {
     config: {
       dir: configDir,
     },
+    graphql: false,
   });
 
   const loggerFactory = await app.get<LoggerFactory>(LoggerFactory);
   const appLogger = loggerFactory.create({ context: 'BasicHttpExample' });
   const requestLog = appLogger.child('Request');
+
+  const httpApp = app.getHttpApplication();
+  if (!httpApp) {
+    appLogger.fatal('HTTP application was not created by NaelFactory');
+    throw new Error('HTTP application is not available. Ensure HTTP is enabled in NaelFactory options.');
+  }
 
   const requestLogger: MiddlewareHandler = async (ctx, next) => {
     const started = Date.now();
@@ -41,15 +49,22 @@ const bootstrap = async () => {
     }
   };
 
-  app.use(requestLogger);
+  httpApp.use(requestLogger);
 
   const config = app.getConfig<ExampleConfig>();
   const host = config.get('server.host', '0.0.0.0');
   const port = config.get('server.port', 3000);
 
-  await app.listen(port);
+  await app.listen({ http: port });
   const displayHost = host === '0.0.0.0' ? 'localhost' : host;
-  appLogger.info(`Server successfully started`);
+  appLogger.info('Server successfully started', {
+    url: `http://${displayHost}:${port}`,
+  });
+  appLogger.info('Available endpoints', {
+    root: `http://${displayHost}:${port}/`,
+    hello: `http://${displayHost}:${port}/hello`,
+    personalGreeting: `http://${displayHost}:${port}/hello/:name`,
+  });
 
   const shutdown = async (signal: string) => {
     appLogger.warn('Received shutdown signal', { signal });

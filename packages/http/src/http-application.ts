@@ -52,8 +52,16 @@ export class HttpApplication {
       const controllerClass = controller.constructor as ClassType;
       const routes = getRouteDefinitions(controllerClass);
       if (!routes.length) {
+        this.logger.warn('Controller has no routable handlers', {
+          controller: controllerClass.name,
+        });
         continue;
       }
+
+      this.logger.info('Registering HTTP routes', {
+        controller: controllerClass.name,
+        routes: routes.map((route) => ({ method: route.method, path: route.path })),
+      });
 
       this.router.registerController(
         {
