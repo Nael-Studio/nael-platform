@@ -17,10 +17,13 @@ export const createRouteMatcher = (path: string): RouteMatcher => {
   return { regex, paramNames };
 };
 
-export const extractParams = (matcher: RouteMatcher, actual: string): Record<string, string> => {
+export const extractParams = (
+  matcher: RouteMatcher,
+  actual: string,
+): Record<string, string> | null => {
   const match = matcher.regex.exec(actual);
   if (!match) {
-    return {};
+    return null;
   }
 
   return matcher.paramNames.reduce<Record<string, string>>((acc, name, index) => {

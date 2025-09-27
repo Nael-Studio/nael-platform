@@ -49,6 +49,7 @@ export class Container {
   private readonly providerDefinitions = new Map<Token, NormalizedProvider>();
   private readonly providerInstances = new Map<Token, unknown>();
   private readonly providerPromises = new Map<Token, Promise<unknown>>();
+  private readonly namedProviderTokens = new Map<string, Token>();
   private readonly moduleRegistry = new Map<ClassType, ModuleDefinition>();
   private readonly destroyCallbacks: Array<() => void | Promise<void>> = [];
 
@@ -100,6 +101,9 @@ export class Container {
         token: provider,
         useClass: provider,
       });
+      if (provider.name) {
+        this.namedProviderTokens.set(provider.name, provider);
+      }
       return;
     }
 
@@ -110,6 +114,9 @@ export class Container {
         useClass: provider.useClass,
       };
       this.providerDefinitions.set(provider.provide, normalized);
+      if (typeof provider.provide === 'function' && provider.provide.name) {
+        this.namedProviderTokens.set(provider.provide.name, provider.provide);
+      }
       return;
     }
 
@@ -121,6 +128,9 @@ export class Container {
       };
       this.providerDefinitions.set(provider.provide, normalized);
       this.providerInstances.set(provider.provide, provider.useValue);
+      if (typeof provider.provide === 'function' && provider.provide.name) {
+        this.namedProviderTokens.set(provider.provide.name, provider.provide);
+      }
       return;
     }
 
@@ -143,26 +153,43 @@ export class Container {
       return (await this.providerPromises.get(token)) as T;
     }
 
+    let effectiveToken: Token = token;
+
     if (!this.providerDefinitions.has(token)) {
+      if (typeof token === 'function' && token.name) {
+        const alias = this.namedProviderTokens.get(token.name);
+        if (alias && this.providerDefinitions.has(alias)) {
+          effectiveToken = alias;
+        }
+      }
+    }
+
+    if (!this.providerDefinitions.has(effectiveToken)) {
       if (typeof token === 'function' && isInjectable(token)) {
         this.registerProvider(token);
+        if (token.name) {
+          this.namedProviderTokens.set(token.name, token);
+        }
       } else {
         throw MODULE_NOT_FOUND(token);
       }
     }
 
-    const definition = this.providerDefinitions.get(token);
+    const definition = this.providerDefinitions.get(effectiveToken);
     if (!definition) {
       throw MODULE_NOT_FOUND(token);
     }
 
     const creation = this.instantiateProvider(definition).then((instance) => {
-      this.providerInstances.set(token, instance);
-      this.providerPromises.delete(token);
+      this.providerInstances.set(effectiveToken, instance);
+      if (typeof token !== typeof effectiveToken || token !== effectiveToken) {
+        this.providerInstances.set(token, instance);
+      }
+      this.providerPromises.delete(effectiveToken);
       return instance;
     });
 
-    this.providerPromises.set(token, creation);
+    this.providerPromises.set(effectiveToken, creation);
     return (await creation) as T;
   }
 

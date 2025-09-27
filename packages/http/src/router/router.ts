@@ -61,7 +61,7 @@ export class Router {
 
     for (const handler of handlers) {
       const params = extractParams(handler.matcher, url.pathname);
-      if (Object.keys(params).length === handler.matcher.paramNames.length) {
+      if (params && Object.keys(params).length === handler.matcher.paramNames.length) {
         const controller = handler.controllerInstance as Record<string, unknown>;
         const callable = controller[handler.route.handlerName];
         if (typeof callable === 'function') {

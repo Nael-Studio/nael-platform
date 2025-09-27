@@ -1,0 +1,16 @@
+{
+  "name": "@nl-framework/example-basic-http",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Basic HTTP server example showcasing nl-framework controllers, providers, and configuration.",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/main.ts",
+    "start": "bun run src/main.ts",
+    "check": "bunx tsc --noEmit"
+  },
+  "dependencies": {
+    "@nl-framework/core": "workspace:*",
+    "@nl-framework/http": "workspace:*"
+  }
+}

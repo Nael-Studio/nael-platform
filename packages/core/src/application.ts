@@ -48,7 +48,6 @@ export class Application {
   async bootstrap(rootModule: ClassType, options: ApplicationOptions = {}): Promise<ApplicationContext> {
     const configObject = await ConfigLoader.load(options.config);
     const configService = new ConfigService(configObject);
-
     this.container.registerProvider({
       provide: GLOBAL_PROVIDERS.config,
       useValue: configService,

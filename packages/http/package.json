@@ -24,8 +24,7 @@
     }
   },
   "scripts": {
-    "build": "bun run build:types && bun build ./src/index.ts --target bun --outdir dist",
-    "build:types": "bunx tsc --build tsconfig.build.json",
+  "build": "bunx tsc --build tsconfig.build.json",
     "test": "bun test"
   },
   "dependencies": {

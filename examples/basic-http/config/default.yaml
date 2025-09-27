@@ -1,0 +1,6 @@
+app:
+  name: Basic HTTP Example
+  greeting: Welcome to nl-framework!
+server:
+  host: 127.0.0.1
+  port: 4000
