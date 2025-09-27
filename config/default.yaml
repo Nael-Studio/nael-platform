@@ -1,0 +1,27 @@
+app:
+  name: nl-framework
+  env: development
+  host: 0.0.0.0
+  port: 3000
+
+microservices:
+  dapr:
+    httpPort: 3500
+    grpcPort: 50001
+    componentsPath: ./dapr/components
+  pubsub:
+    name: redis-pubsub
+    type: redis
+    config:
+      host: localhost
+      port: 6379
+
+auth:
+  provider: better-auth
+  sessionSecret: change-me
+
+mongodb:
+  uri: mongodb://localhost:27017/nl-framework
+  options:
+    retryWrites: true
+    w: majority

@@ -1,6 +1,5 @@
 # Bun & Node artifacts
 node_modules/
-bun.lockb
 pnpm-lock.yaml
 yarn.lock
 package-lock.json

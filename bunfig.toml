@@ -1,0 +1,14 @@
+[install]
+auto = true
+
+[test]
+coverage = true
+reporters = ["spec"]
+
+[default]
+target = "bun"
+external = ["node:*"]
+
+[build]
+outdir = "dist"
+minify = false
