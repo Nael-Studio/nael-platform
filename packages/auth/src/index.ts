@@ -1,8 +1,14 @@
+/// <reference path="./ambient.d.ts" />
 import 'reflect-metadata';
 
 export { AuthModule } from './module';
 export { BetterAuthService } from './better-auth.service';
 export { InMemoryBetterAuth } from './fallback-adapter';
+export {
+  createBetterAuthMiddleware,
+  getAuthSessionFromContext,
+  getAuthTokenFromContext,
+} from './http-middleware';
 export type {
   BetterAuthModuleOptions,
   BetterAuthModuleAsyncOptions,

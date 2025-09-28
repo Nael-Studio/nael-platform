@@ -1,0 +1,10 @@
+app:
+  name: Auth HTTP Example
+  defaultUsers:
+    - email: admin@example.com
+      password: changeme
+      roles:
+        - admin
+server:
+  host: 127.0.0.1
+  port: 4100
