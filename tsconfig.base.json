@@ -22,6 +22,8 @@
       "@nl-framework/*": ["packages/*/src"],
       "@nl-framework/logger": ["packages/logger/src"],
       "@nl-framework/logger/*": ["packages/logger/src/*"],
+      "@nl-framework/config": ["packages/config/src"],
+      "@nl-framework/config/*": ["packages/config/src/*"],
       "@nl-framework/orm": ["packages/orm/src"],
       "@nl-framework/orm/*": ["packages/orm/src/*"]
     }

@@ -1,7 +1,7 @@
 import type { Server } from 'bun';
 import type { ApplicationOptions, ClassType, Token, ApplicationContext } from '@nl-framework/core';
 import { Application } from '@nl-framework/core';
-import type { ConfigService } from '@nl-framework/core';
+import type { ConfigService } from '@nl-framework/config';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
 import {
   createHttpApplicationFromContext,

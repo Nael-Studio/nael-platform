@@ -1,0 +1,30 @@
+{
+  "name": "@nl-framework/config",
+  "version": "0.1.0",
+  "description": "Configuration module for nl-framework with DI integration and YAML loading utilities.",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "bunx tsc --build tsconfig.build.json",
+    "test": "bun test"
+  },
+  "keywords": [
+    "configuration",
+    "bun",
+    "dependency-injection"
+  ],
+  "peerDependencies": {
+    "@nl-framework/core": "workspace:*"
+  }
+}

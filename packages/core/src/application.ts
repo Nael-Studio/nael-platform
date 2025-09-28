@@ -69,16 +69,15 @@ export class Application {
   private readonly container = new Container();
 
   async bootstrap(rootModule: ClassType, options: ApplicationOptions = {}): Promise<ApplicationContext> {
-    const configObject = await ConfigLoader.load(options.config);
-    const configService = new ConfigService(configObject);
     this.container.registerProvider({
       provide: GLOBAL_PROVIDERS.config,
-      useValue: configService,
+      useFactory: async () => new ConfigService(await ConfigLoader.load(options.config)),
     });
 
     this.container.registerProvider({
       provide: ConfigService,
-      useValue: configService,
+      useFactory: (service: ConfigService) => service,
+      inject: [GLOBAL_PROVIDERS.config],
     });
 
     this.container.registerProvider({
@@ -105,6 +104,8 @@ export class Application {
     });
 
     await this.container.registerModule(rootModule);
+
+    const configService = await this.container.resolve(ConfigService);
 
     const controllersMap = new Map<ClassType, unknown[]>();
     const resolversMap = new Map<ClassType, unknown[]>();

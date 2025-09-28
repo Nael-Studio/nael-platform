@@ -29,6 +29,7 @@
     "test": "bun test"
   },
   "dependencies": {
+    "@nl-framework/config": "workspace:*",
     "@nl-framework/core": "workspace:*",
     "@nl-framework/graphql": "workspace:*",
     "@nl-framework/http": "workspace:*",

@@ -13,6 +13,7 @@
     { "path": "../core/tsconfig.build.json" },
     { "path": "../http/tsconfig.build.json" },
     { "path": "../graphql/tsconfig.build.json" },
-    { "path": "../logger/tsconfig.build.json" }
+    { "path": "../logger/tsconfig.build.json" },
+    { "path": "../config/tsconfig.build.json" }
   ]
 }
