@@ -3,6 +3,7 @@ import { LoggerFactory } from '@nl-framework/logger';
 import type { DocumentClass } from './interfaces/document';
 import type { OrmModuleOptions, OrmFeatureOptions } from './interfaces/module-options';
 import type { OrmDriver, OrmConnection } from './interfaces/driver';
+import type { SeedHistoryStore } from './interfaces/seeding';
 import {
   getConnectionToken,
   getDatabaseToken,
@@ -10,10 +11,12 @@ import {
   getRepositoryToken,
   getSeedRegistryToken,
   getSeedRunnerToken,
+  getSeedHistoryToken,
   normalizeConnectionName,
   getDriverToken,
 } from './constants';
 import { SeedRunner, type SeedRegistry } from './seeding/seed-runner';
+import { getRegisteredSeeds } from './decorators/seed';
 
 const createRootProviders = (options: OrmModuleOptions, connectionName: string): Provider[] => {
   const normalizedOptions = {
@@ -21,9 +24,18 @@ const createRootProviders = (options: OrmModuleOptions, connectionName: string):
     connectionName,
   } satisfies OrmModuleOptions & { connectionName: string };
 
+  const defaultEnvironment = process.env.NODE_ENV ?? 'default';
+  const environment = (normalizedOptions.seedEnvironment ?? defaultEnvironment).toLowerCase();
+
+  const discoveredSeeds = normalizedOptions.seeds?.length
+    ? normalizedOptions.seeds
+    : getRegisteredSeeds().map((metadata) => metadata.target);
+  const uniqueSeeds = Array.from(new Set(discoveredSeeds));
+
   const seedRegistry: SeedRegistry = {
-    seeds: normalizedOptions.seeds ?? [],
+    seeds: uniqueSeeds,
     autoRun: normalizedOptions.autoRunSeeds ?? false,
+    environment,
   };
 
   return [
@@ -34,6 +46,12 @@ const createRootProviders = (options: OrmModuleOptions, connectionName: string):
     {
       provide: getDriverToken(connectionName),
       useValue: normalizedOptions.driver,
+    },
+    {
+      provide: getSeedHistoryToken(connectionName),
+      useFactory: async (connection: OrmConnection, driver: OrmDriver) =>
+        driver.createSeedHistory(connection, { connectionName, environment }),
+      inject: [getConnectionToken(connectionName), getDriverToken(connectionName)],
     },
     {
       provide: getSeedRegistryToken(connectionName),
@@ -62,12 +80,14 @@ const createRootProviders = (options: OrmModuleOptions, connectionName: string):
         connection: OrmConnection,
         driver: OrmDriver,
         registry: SeedRegistry,
+        history: SeedHistoryStore,
         loggerFactory: LoggerFactory,
-      ) => new SeedRunner(connection, driver, registry, loggerFactory, connectionName),
+      ) => new SeedRunner(connection, driver, registry, history, loggerFactory, connectionName),
       inject: [
         getConnectionToken(connectionName),
         getDriverToken(connectionName),
         getSeedRegistryToken(connectionName),
+        getSeedHistoryToken(connectionName),
         LoggerFactory,
       ],
     },

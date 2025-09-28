@@ -12,6 +12,7 @@ export const getConnectionToken = (name?: string): symbol => Symbol.for(buildKey
 export const getDatabaseToken = (name?: string): symbol => Symbol.for(buildKey('database', name));
 export const getSeedRegistryToken = (name?: string): symbol => Symbol.for(buildKey('seeds', name));
 export const getSeedRunnerToken = (name?: string): symbol => Symbol.for(buildKey('seed-runner', name));
+export const getSeedHistoryToken = (name?: string): symbol => Symbol.for(buildKey('seed-history', name));
 export const getDriverToken = (name?: string): symbol => Symbol.for(buildKey('driver', name));
 
 export const getRepositoryToken = <T extends Record<string, unknown>>(

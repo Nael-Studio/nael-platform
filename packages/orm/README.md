@@ -26,6 +26,7 @@ import { OrmModule, createMongoDriver } from '@nl-framework/orm';
       connectionName: 'primary',
       entities: [User],
       autoRunSeeds: true,
+      seedEnvironment: process.env.APP_ENV ?? process.env.NODE_ENV ?? 'default',
       seeds: [InitialUsersSeed],
     }),
   ],
@@ -83,11 +84,12 @@ Repositories provide familiar helpers (`find`, `findOne`, `insertOne`, `save`, `
 
 ## Seeding
 
-Seeds run through the `SeedRunner`. Provide a list of seed classes via `OrmModule.forRoot` and set `autoRunSeeds` to execute them on startup, or resolve the runner manually:
+Decorate each seeder with `@Seed` to register metadata used by the automatic runner and history tracker:
 
 ```ts
-import type { SeederContext } from '@nl-framework/orm';
+import { Seed, type SeederContext } from '@nl-framework/orm';
 
+@Seed({ name: 'initial-users', environments: ['development', 'test'] })
 export class InitialUsersSeed {
   async run(context: SeederContext) {
     const users = await context.getRepository(User);
@@ -98,4 +100,14 @@ export class InitialUsersSeed {
 }
 ```
 
-Each seed receives a context for resolving repositories bound to the same connection. You can also resolve the `SeedRunner` manually via the `getSeedRunnerToken()` helper if you prefer to execute seeds outside of application bootstrap.
+- `name` becomes the stable seed identifier (defaults to the class name).
+- `environments` limits execution to matching environments (case-insensitive); omit it to run everywhere.
+- `connections` targets specific ORM connections when you run multiple databases.
+
+When `autoRunSeeds` is `true`, the `SeedRunner` executes during module init, only running seeds that:
+
+1. Match the current connection.
+2. Match the resolved environment (`seedEnvironment` option, defaulting to `process.env.NODE_ENV ?? 'default'`).
+3. Haven't already been recorded in the driver-provided seed history store.
+
+The Mongo driver persists history in the same database (collection `orm_seed_history` by default), guaranteeing idempotent startups across deployments. You can still resolve the runner manually via `getSeedRunnerToken()` if you need to trigger seeds on demand.

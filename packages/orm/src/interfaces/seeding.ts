@@ -14,3 +14,16 @@ export interface Seeder {
 }
 
 export type SeedClass = ClassType<Seeder>;
+
+export interface SeedHistoryRecord {
+  seedId: string;
+  connectionName: string;
+  environment: string;
+  ranAt: Date;
+  durationMs?: number;
+}
+
+export interface SeedHistoryStore {
+  wasExecuted(seedId: string, environment: string, connectionName: string): Promise<boolean>;
+  markExecuted(record: SeedHistoryRecord): Promise<void>;
+}

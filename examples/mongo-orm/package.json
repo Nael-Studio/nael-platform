@@ -7,7 +7,6 @@
   "scripts": {
     "dev": "bun run --watch src/main.ts",
     "start": "bun run src/main.ts",
-    "seed": "bun run src/seed.ts",
     "check": "bunx tsc --noEmit"
   },
   "dependencies": {

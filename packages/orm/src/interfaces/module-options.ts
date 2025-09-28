@@ -8,6 +8,7 @@ export interface OrmModuleOptions {
   entities?: DocumentClass[];
   seeds?: SeedClass[];
   autoRunSeeds?: boolean;
+  seedEnvironment?: string;
 }
 
 export interface OrmFeatureOptions {

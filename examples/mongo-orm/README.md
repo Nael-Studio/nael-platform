@@ -1,10 +1,10 @@
 # Mongo ORM Example
 
-This example shows how to combine the NL Framework HTTP stack with the driver-based ORM package. It wires up a simple `User` collection using the bundled MongoDB driver, exposes REST endpoints, and demonstrates seed execution.
+This example shows how to combine the NL Framework HTTP stack with the driver-based ORM package. It wires up a simple `User` collection using the bundled MongoDB driver, exposes REST endpoints, and demonstrates tracked, automatic seed execution.
 
 ## What you get
 
-- `OrmModule.forRoot` + `createMongoDriver` configuration with automatic seed execution
+- `OrmModule.forRoot` + `createMongoDriver` configuration with automatic, history-aware seed execution
 - `OrmRepository` usage from services and seeds
 - REST handlers built with `@nl-framework/http`
 - Config-driven HTTP server bootstrap via `NaelFactory`
@@ -30,7 +30,6 @@ examples/mongo-orm
 ├── src/
 │   ├── app.module.ts         # Module wiring Mongo ORM + HTTP controller
 │   ├── main.ts               # Server bootstrap
-│   ├── seed.ts               # Standalone seed runner
 │   └── users/
 │       ├── user.document.ts  # @Document metadata for the User collection
 │       ├── users.controller.ts# REST controller exposing CRUD-ish routes
@@ -48,13 +47,13 @@ examples/mongo-orm
    bun run build
    ```
 
-2. Start the example HTTP API:
+2. Start the example HTTP API (seeds run automatically on the configured environment the first time):
 
    ```bash
    bun run --filter @nl-framework/example-mongo-orm start
    ```
 
-   The server logs its URL (default `http://localhost:4010`). Seeds run automatically on startup; the default seed inserts two demo users if the collection is empty.
+   The server logs its URL (default `http://localhost:4010`). Seeds execute automatically the first time—tracked per environment and connection—so reruns stay idempotent without manual scripts.
 
 3. Hit the endpoints:
 
@@ -65,12 +64,6 @@ examples/mongo-orm
      -d '{"email":"new@example.com","name":"New User"}'
    curl -X DELETE http://localhost:4010/users/<id>
    curl -X POST http://localhost:4010/users/<id>/restore
-   ```
-
-4. (Optional) Re-run seeds without restarting the server:
-
-   ```bash
-   bun run --filter @nl-framework/example-mongo-orm seed
    ```
 
 ## Configuration
@@ -84,4 +77,4 @@ The MongoDB connection uses environment variables exclusively so the example can
 - Add additional entities and register them with `OrmModule.forFeature`
 - Layer validation or request DTOs on the controller methods
 - Experiment with soft deletes by querying with the `?withDeleted=true` flag
-- Extend `seed.ts` to accept CLI arguments for specific seeds
+- Create more `@Seed`-decorated classes for fixtures per environment or connection

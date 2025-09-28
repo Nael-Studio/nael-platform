@@ -1,5 +1,6 @@
 export * from './interfaces';
 export * from './decorators/document';
+export * from './decorators/seed';
 export * from './module';
 export * from './repository/mongo-repository';
 export * from './seeding/seed-runner';
@@ -13,6 +14,7 @@ export {
 	getRepositoryToken,
 	getSeedRegistryToken,
 	getSeedRunnerToken,
+	getSeedHistoryToken,
 	getDriverToken,
 	normalizeConnectionName,
 } from './constants';
