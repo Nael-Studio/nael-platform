@@ -21,7 +21,9 @@
     "paths": {
       "@nl-framework/*": ["packages/*/src"],
       "@nl-framework/logger": ["packages/logger/src"],
-      "@nl-framework/logger/*": ["packages/logger/src/*"]
+      "@nl-framework/logger/*": ["packages/logger/src/*"],
+      "@nl-framework/orm": ["packages/orm/src"],
+      "@nl-framework/orm/*": ["packages/orm/src/*"]
     }
   },
   "exclude": ["node_modules", "dist", "coverage"],
