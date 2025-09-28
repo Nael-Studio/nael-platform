@@ -12,7 +12,10 @@
   "dependencies": {
     "@apollo/gateway": "^2.7.4",
     "@apollo/server": "^4.10.0",
+    "@nl-framework/core": "workspace:*",
+    "@nl-framework/http": "workspace:*",
     "@nl-framework/logger": "workspace:*",
+    "@nl-framework/platform": "workspace:*",
     "graphql": "^16.8.1"
   }
 }

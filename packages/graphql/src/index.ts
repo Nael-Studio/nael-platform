@@ -11,6 +11,16 @@ export {
   type GraphqlContextBase,
   type GraphqlContextFactory,
 } from './application';
+export {
+  FederationGatewayApplication,
+  createFederationGatewayApplication,
+  createFederationGatewayApplicationFromContext,
+  type FederationGatewayApplicationOptions,
+  type FederationGatewayServerOptions,
+  type FederationGatewayListenOptions,
+  type FederationGatewayListenResult,
+  type FederationSubgraphDefinition,
+} from './gateway-application';
 export { GraphqlSchemaBuilder, type GraphqlBuildOptions, type GraphqlBuildArtifacts } from './schema-builder';
 export {
   ObjectType,

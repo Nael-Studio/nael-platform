@@ -31,6 +31,7 @@
   "dependencies": {
     "@apollo/server": "^4.10.0",
     "@apollo/subgraph": "^2.7.4",
+    "@apollo/gateway": "^2.7.4",
     "@nl-framework/core": "workspace:*",
     "@nl-framework/logger": "workspace:*",
     "graphql": "^16.8.1"

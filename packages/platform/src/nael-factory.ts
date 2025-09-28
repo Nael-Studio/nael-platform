@@ -18,6 +18,11 @@ import {
   type GraphqlApplication,
   type GraphqlServerOptions,
   type GraphqlListenResult,
+  createFederationGatewayApplicationFromContext,
+  type FederationGatewayApplication,
+  type FederationGatewayServerOptions,
+  type FederationGatewayListenResult,
+  type FederationGatewayListenOptions,
 } from '@nl-framework/graphql';
 
 interface NormalizedHttpOptions {
@@ -32,6 +37,12 @@ interface NormalizedGraphqlOptions {
   explicit: boolean;
 }
 
+interface NormalizedGatewayOptions {
+  enabled: boolean;
+  options: FederationGatewayServerOptions;
+  explicit: boolean;
+}
+
 export interface NaelFactoryHttpOptions extends HttpServerOptions {
   enabled?: boolean;
 }
@@ -40,24 +51,32 @@ export interface NaelFactoryGraphqlOptions extends GraphqlServerOptions {
   enabled?: boolean;
 }
 
+export interface NaelFactoryGatewayOptions extends FederationGatewayServerOptions {
+  enabled?: boolean;
+}
+
 export interface NaelFactoryOptions extends ApplicationOptions {
   http?: boolean | NaelFactoryHttpOptions;
   graphql?: boolean | NaelFactoryGraphqlOptions;
+  gateway?: boolean | NaelFactoryGatewayOptions;
 }
 
 export interface NaelListenOptions {
   http?: number;
   graphql?: number;
+  gateway?: number | FederationGatewayListenOptions;
 }
 
 export interface NaelListenResults {
   http?: Server;
   graphql?: GraphqlListenResult;
+  gateway?: FederationGatewayListenResult;
 }
 
 export interface NaelApplication {
   getHttpApplication(): HttpApplication | undefined;
   getGraphqlApplication(): GraphqlApplication | undefined;
+  getGatewayApplication(): FederationGatewayApplication | undefined;
   listen(options?: NaelListenOptions): Promise<NaelListenResults>;
   close(): Promise<void>;
   get<T>(token: Token<T>): Promise<T>;
@@ -73,6 +92,7 @@ class NaelPlatformApplication implements NaelApplication {
     private readonly context: ApplicationContext,
     private readonly httpApp?: HttpApplication,
     private readonly graphqlApp?: GraphqlApplication,
+    private readonly gatewayApp?: FederationGatewayApplication,
   ) {
     const baseLogger = this.context.getLogger().child('NaelPlatform');
     this.logger = baseLogger;
@@ -94,11 +114,15 @@ class NaelPlatformApplication implements NaelApplication {
     return this.graphqlApp;
   }
 
+  getGatewayApplication(): FederationGatewayApplication | undefined {
+    return this.gatewayApp;
+  }
+
   async listen(options: NaelListenOptions = {}): Promise<NaelListenResults> {
     const results: NaelListenResults = {};
 
-    if (!this.httpApp && !this.graphqlApp) {
-      this.logger.warn('listen() invoked but both HTTP and GraphQL are disabled.');
+    if (!this.httpApp && !this.graphqlApp && !this.gatewayApp) {
+      this.logger.warn('listen() invoked but HTTP, GraphQL, and Gateway are all disabled.');
       return results;
     }
 
@@ -110,9 +134,14 @@ class NaelPlatformApplication implements NaelApplication {
       results.graphql = await this.graphqlApp.listen(options.graphql);
     }
 
+    if (this.gatewayApp) {
+      results.gateway = await this.gatewayApp.listen(options.gateway);
+    }
+
     this.logger.info('Nael application started', {
       http: Boolean(results.http),
       graphql: Boolean(results.graphql),
+      gateway: Boolean(results.gateway),
     });
 
     return results;
@@ -128,6 +157,14 @@ class NaelPlatformApplication implements NaelApplication {
     if (this.graphqlApp) {
       try {
         await this.graphqlApp.close();
+      } catch (error) {
+        errors.push(error instanceof Error ? error : new Error(String(error)));
+      }
+    }
+
+    if (this.gatewayApp) {
+      try {
+        await this.gatewayApp.close();
       } catch (error) {
         errors.push(error instanceof Error ? error : new Error(String(error)));
       }
@@ -206,17 +243,45 @@ const normalizeGraphqlOptions = (
   };
 };
 
+const normalizeGatewayOptions = (
+  value?: boolean | NaelFactoryGatewayOptions,
+): NormalizedGatewayOptions => {
+  if (typeof value === 'boolean') {
+    return { enabled: value, options: {}, explicit: true };
+  }
+
+  if (!value) {
+    return { enabled: false, options: {}, explicit: false };
+  }
+
+  const { enabled, subgraphs, ...rest } = value;
+  const options: FederationGatewayServerOptions = {
+    ...rest,
+  };
+
+  if (subgraphs) {
+    options.subgraphs = subgraphs;
+  }
+
+  return {
+    enabled: enabled ?? true,
+    options,
+    explicit: enabled !== undefined,
+  };
+};
+
 export class NaelFactory {
   static async create(
     rootModule: ClassType,
     options: NaelFactoryOptions = {},
   ): Promise<NaelApplication> {
-    const { http, graphql, ...appOptions } = options;
+    const { http, graphql, gateway, ...appOptions } = options;
     const app = new Application();
     const context = await app.bootstrap(rootModule, appOptions);
 
     const normalizedHttp = normalizeHttpOptions(http);
     const normalizedGraphql = normalizeGraphqlOptions(graphql);
+    const normalizedGateway = normalizeGatewayOptions(gateway);
     const logger = context.getLogger();
     const hasResolvers = context.getResolvers().length > 0;
 
@@ -236,12 +301,16 @@ export class NaelFactory {
     const graphqlApp = graphqlEnabled
       ? createGraphqlApplicationFromContext(context, normalizedGraphql.options)
       : undefined;
+    const gatewayApp = normalizedGateway.enabled
+      ? createFederationGatewayApplicationFromContext(context, normalizedGateway.options)
+      : undefined;
 
     logger.info('NaelFactory created shared application context', {
       httpEnabled: normalizedHttp.enabled,
       graphqlEnabled,
+      gatewayEnabled: Boolean(gatewayApp),
     });
 
-    return new NaelPlatformApplication(context, httpApp, graphqlApp);
+    return new NaelPlatformApplication(context, httpApp, graphqlApp, gatewayApp);
   }
 }

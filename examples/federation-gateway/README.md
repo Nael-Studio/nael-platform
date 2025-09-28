@@ -1,6 +1,6 @@
 # Federation Gateway Example
 
-This example composes the `products` subgraph from `examples/federated-graphql` into a single supergraph using Apollo Gateway. It demonstrates how to run subgraphs built with `@nl-framework/graphql` alongside a central router, similar to a NestJS federation setup.
+This example composes the `products` subgraph from `examples/federated-graphql` into a single supergraph using Apollo Gateway. It also enables an HTTP greeting endpoint via `NaelFactory` so you can see the framework running GraphQL federation and HTTP side-by-side.
 
 ## Prerequisites
 
@@ -27,14 +27,14 @@ bun run start
 
 ## Run the gateway
 
-With the subgraph running, launch the gateway:
+With the subgraph running, launch the gateway (this starts both the Apollo Gateway and the HTTP greeting server):
 
 ```bash
 cd examples/federation-gateway
 bun run start
 ```
 
-The gateway listens on `http://localhost:4020/graphql` by default and forwards requests to the registered subgraphs.
+The gateway listens on `http://localhost:4020/graphql` by default and forwards requests to the registered subgraphs. The greeting endpoint is exposed from the same process at `http://localhost:4021/greeting`.
 
 ## Environment options
 
@@ -42,6 +42,8 @@ The gateway listens on `http://localhost:4020/graphql` by default and forwards r
 | --- | --- | --- |
 | `PORT` | `4020` | Port where the gateway HTTP server listens. |
 | `HOST` | `0.0.0.0` | Network interface for the gateway server. |
+| `HTTP_PORT` | `4021` | Port for the Bun-powered HTTP greeting endpoint. |
+| `HTTP_HOST` | `0.0.0.0` | Network interface for the HTTP greeting endpoint. |
 | `PRODUCTS_SUBGRAPH_URL` | `http://localhost:4011/graphql` | Location of the products subgraph. |
 | `EXTRA_SUBGRAPHS` | _undefined_ | JSON array of additional `{ name, url }` objects to compose alongside the products subgraph. |
 
@@ -63,3 +65,15 @@ curl -X POST \
 ```
 
 You should receive the combined response resolved by the products subgraph.
+
+## Try the HTTP greeting endpoint
+
+```bash
+curl http://localhost:4021/greeting
+```
+
+Add a name to personalize the message:
+
+```bash
+curl http://localhost:4021/greeting/Apollo
+```
