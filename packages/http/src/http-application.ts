@@ -3,7 +3,7 @@ import { Application, getControllerPrefix } from '@nl-framework/core';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
 import type { Server } from 'bun';
 import { Router } from './router/router';
-import type { MiddlewareHandler } from './interfaces/http';
+import type { MiddlewareHandler, HttpMethod, RequestContext } from './interfaces/http';
 import { getRouteDefinitions } from './decorators/routes';
 
 export interface HttpServerOptions {
@@ -18,6 +18,7 @@ export class HttpApplication {
   private readonly router = new Router();
   private server?: Server;
   private logger: Logger;
+  private customRouteCounter = 0;
 
   constructor(
     private readonly context: ApplicationContext,
@@ -76,6 +77,34 @@ export class HttpApplication {
 
   use(middleware: MiddlewareHandler): void {
     this.router.use(middleware);
+  }
+
+  registerRouteHandler(
+    method: HttpMethod,
+    path: string,
+    handler: (context: RequestContext) => unknown | Promise<unknown>,
+  ): void {
+    const handlerName = `__custom_route_${++this.customRouteCounter}`;
+    const routeDefinition = {
+      method,
+      path,
+      handlerName,
+    } as const;
+
+    const proxyController = {
+      [handlerName]: handler,
+    } as Record<string, unknown>;
+
+    this.router.registerController(
+      {
+        prefix: '',
+        controller: proxyController.constructor as ClassType,
+        routes: [routeDefinition],
+      },
+      proxyController,
+    );
+
+    this.logger.debug('Registered custom HTTP route handler', { method, path });
   }
 
   async listen(port?: number): Promise<Server> {

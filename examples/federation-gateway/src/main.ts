@@ -12,10 +12,9 @@ const resolvePort = (value: string | undefined, fallback: string, label: string)
   return parsed;
 };
 
-const resolveGatewayHost = (): string => process.env.HOST ?? '0.0.0.0';
-const resolveGatewayPort = (): number => resolvePort(process.env.PORT, '4020', 'PORT');
-const resolveHttpHost = (): string => process.env.HTTP_HOST ?? '0.0.0.0';
-const resolveHttpPort = (): number => resolvePort(process.env.HTTP_PORT, '4021', 'HTTP_PORT');
+const resolveHost = (): string => process.env.HOST ?? '0.0.0.0';
+const resolvePortFromEnv = (): number => resolvePort(process.env.PORT, '4020', 'PORT');
+const resolveGraphqlPath = (): string => process.env.GRAPHQL_PATH ?? '/graphql';
 
 const resolveSubgraphs = (): FederationSubgraphDefinition[] => {
   const defaults: FederationSubgraphDefinition[] = [
@@ -40,22 +39,20 @@ const resolveSubgraphs = (): FederationSubgraphDefinition[] => {
 };
 
 const bootstrap = async (): Promise<void> => {
-  const httpHost = resolveHttpHost();
-  const httpPort = resolveHttpPort();
-  const gatewayHost = resolveGatewayHost();
-  const gatewayPort = resolveGatewayPort();
+  const host = resolveHost();
+  const port = resolvePortFromEnv();
+  const graphqlPath = resolveGraphqlPath();
   const subgraphs = resolveSubgraphs();
 
   try {
     const app = await NaelFactory.create(AppModule, {
       http: {
-        host: httpHost,
-        port: httpPort,
+        host,
+        port,
       },
       graphql: false,
       gateway: {
-        host: gatewayHost,
-        port: gatewayPort,
+        path: graphqlPath,
         subgraphs,
       },
     });
@@ -65,16 +62,14 @@ const bootstrap = async (): Promise<void> => {
 
     const { http, gateway } = await app.listen();
 
-    const httpBoundPort = http?.port ?? httpPort;
-    const httpDisplayHost = httpHost === '0.0.0.0' ? 'localhost' : httpHost;
-    const httpBaseUrl = `http://${httpDisplayHost}:${httpBoundPort}`;
+    const httpBoundPort = http?.port ?? port;
+    const httpHostName = http?.hostname ?? host;
+    const displayHost = httpHostName === '0.0.0.0' ? 'localhost' : httpHostName;
+    const httpBaseUrl = `http://${displayHost}:${httpBoundPort}`;
 
-    appLogger.info('HTTP greeting endpoint ready', {
-      baseUrl: httpBaseUrl,
-      greeting: `${httpBaseUrl}/greeting`,
-    });
+    appLogger.info('HTTP greeting endpoint ready');
 
-    const gatewayUrl = gateway?.url ?? `http://${gatewayHost}:${gatewayPort}`;
+    const gatewayUrl = gateway?.url ?? `${httpBaseUrl}${graphqlPath === '/' ? '' : graphqlPath}`;
     appLogger.info('Apollo Federation gateway ready', {
       url: gatewayUrl,
       subgraphs: subgraphs.map((definition) => definition.url),

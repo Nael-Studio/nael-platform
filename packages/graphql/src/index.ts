@@ -20,6 +20,7 @@ export {
   type FederationGatewayListenOptions,
   type FederationGatewayListenResult,
   type FederationSubgraphDefinition,
+  type FederationGatewayHttpRequestInit,
 } from './gateway-application';
 export { GraphqlSchemaBuilder, type GraphqlBuildOptions, type GraphqlBuildArtifacts } from './schema-builder';
 export {

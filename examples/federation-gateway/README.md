@@ -1,6 +1,6 @@
 # Federation Gateway Example
 
-This example composes the `products` subgraph from `examples/federated-graphql` into a single supergraph using Apollo Gateway. It also enables an HTTP greeting endpoint via `NaelFactory` so you can see the framework running GraphQL federation and HTTP side-by-side.
+This example composes the `products` subgraph from `examples/federated-graphql` into a single supergraph using Apollo Gateway. It also enables an HTTP greeting endpoint via `NaelFactory` so you can see the framework running GraphQL federation and HTTP side-by-side on the same server instance.
 
 ## Prerequisites
 
@@ -34,23 +34,22 @@ cd examples/federation-gateway
 bun run start
 ```
 
-The gateway listens on `http://localhost:4020/graphql` by default and forwards requests to the registered subgraphs. The greeting endpoint is exposed from the same process at `http://localhost:4021/greeting`.
+The gateway listens on `http://localhost:4020/graphql` by default and forwards requests to the registered subgraphs. The greeting endpoint is exposed from the same process at `http://localhost:4020/greeting`.
 
 ## Environment options
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `PORT` | `4020` | Port where the gateway HTTP server listens. |
-| `HOST` | `0.0.0.0` | Network interface for the gateway server. |
-| `HTTP_PORT` | `4021` | Port for the Bun-powered HTTP greeting endpoint. |
-| `HTTP_HOST` | `0.0.0.0` | Network interface for the HTTP greeting endpoint. |
+| `PORT` | `4020` | Port where the combined HTTP + GraphQL server listens. |
+| `HOST` | `0.0.0.0` | Network interface for the combined server. |
+| `GRAPHQL_PATH` | `/graphql` | Route where the Apollo Gateway is mounted. |
 | `PRODUCTS_SUBGRAPH_URL` | `http://localhost:4011/graphql` | Location of the products subgraph. |
 | `EXTRA_SUBGRAPHS` | _undefined_ | JSON array of additional `{ name, url }` objects to compose alongside the products subgraph. |
 
 Example of adding an extra subgraph:
 
 ```bash
-EXTRA_SUBGRAPHS='[{"name":"inventory","url":"http://localhost:4021/graphql"}]' bun run start
+EXTRA_SUBGRAPHS='[{"name":"inventory","url":"http://localhost:4022/graphql"}]' bun run start
 ```
 
 ## Test the supergraph
@@ -69,11 +68,11 @@ You should receive the combined response resolved by the products subgraph.
 ## Try the HTTP greeting endpoint
 
 ```bash
-curl http://localhost:4021/greeting
+curl http://localhost:4020/greeting
 ```
 
 Add a name to personalize the message:
 
 ```bash
-curl http://localhost:4021/greeting/Apollo
+curl http://localhost:4020/greeting/Apollo
 ```

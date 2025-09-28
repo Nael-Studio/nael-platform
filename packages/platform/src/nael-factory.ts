@@ -1,10 +1,5 @@
 import type { Server } from 'bun';
-import type {
-  ApplicationOptions,
-  ClassType,
-  Token,
-  ApplicationContext,
-} from '@nl-framework/core';
+import type { ApplicationOptions, ClassType, Token, ApplicationContext } from '@nl-framework/core';
 import { Application } from '@nl-framework/core';
 import type { ConfigService } from '@nl-framework/core';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
@@ -12,6 +7,8 @@ import {
   createHttpApplicationFromContext,
   type HttpApplication,
   type HttpServerOptions,
+  type HttpMethod,
+  type RequestContext,
 } from '@nl-framework/http';
 import {
   createGraphqlApplicationFromContext,
@@ -42,6 +39,16 @@ interface NormalizedGatewayOptions {
   options: FederationGatewayServerOptions;
   explicit: boolean;
 }
+
+const normalizeGatewayPath = (path: string): string => {
+  if (!path.startsWith('/')) {
+    path = `/${path}`;
+  }
+  if (path.length > 1 && path.endsWith('/')) {
+    return path.slice(0, -1);
+  }
+  return path;
+};
 
 export interface NaelFactoryHttpOptions extends HttpServerOptions {
   enabled?: boolean;
@@ -135,14 +142,32 @@ class NaelPlatformApplication implements NaelApplication {
     }
 
     if (this.gatewayApp) {
-      results.gateway = await this.gatewayApp.listen(options.gateway);
+      const gatewayListenOptions =
+        typeof options.gateway === 'number' ? { port: options.gateway } : options.gateway;
+
+      if (this.gatewayApp.isHttpIntegrated() && this.httpApp && results.http) {
+        if (
+          gatewayListenOptions?.path &&
+          gatewayListenOptions.path !== this.gatewayApp.getHttpIntegrationPath()
+        ) {
+          this.logger.warn(
+            'Gateway path override was ignored because the gateway is mounted within the HTTP server.',
+          );
+        }
+
+        await this.gatewayApp.start(gatewayListenOptions?.subgraphs);
+        results.gateway = {
+          url: this.gatewayApp.getHttpIntegrationUrl(results.http),
+        };
+      } else {
+        results.gateway = await this.gatewayApp.listen(options.gateway);
+      }
     }
 
-    this.logger.info('Nael application started', {
-      http: Boolean(results.http),
-      graphql: Boolean(results.graphql),
-      gateway: Boolean(results.gateway),
-    });
+    this.logger.info('NaelPlatform application started');
+    Boolean(results.http) && this.logger.info('HTTP server is running');
+    Boolean(results.graphql) && this.logger.info('GraphQL server is running');
+    Boolean(results.gateway) && this.logger.info('Federation gateway is running');
 
     return results;
   }
@@ -247,14 +272,14 @@ const normalizeGatewayOptions = (
   value?: boolean | NaelFactoryGatewayOptions,
 ): NormalizedGatewayOptions => {
   if (typeof value === 'boolean') {
-    return { enabled: value, options: {}, explicit: true };
+    return { enabled: value, options: { path: '/graphql' }, explicit: true };
   }
 
   if (!value) {
     return { enabled: false, options: {}, explicit: false };
   }
 
-  const { enabled, subgraphs, ...rest } = value;
+  const { enabled, subgraphs, path, ...rest } = value;
   const options: FederationGatewayServerOptions = {
     ...rest,
   };
@@ -262,6 +287,8 @@ const normalizeGatewayOptions = (
   if (subgraphs) {
     options.subgraphs = subgraphs;
   }
+
+  options.path = path ? normalizeGatewayPath(path) : '/graphql';
 
   return {
     enabled: enabled ?? true,
@@ -291,7 +318,9 @@ export class NaelFactory {
     }
 
     if (graphqlEnabled && !hasResolvers) {
-      logger.warn('GraphQL was enabled but no resolvers were discovered; skipping GraphQL server startup.');
+      logger.warn(
+        'GraphQL was enabled but no resolvers were discovered; skipping GraphQL server startup.',
+      );
       graphqlEnabled = false;
     }
 
@@ -305,11 +334,39 @@ export class NaelFactory {
       ? createFederationGatewayApplicationFromContext(context, normalizedGateway.options)
       : undefined;
 
-    logger.info('NaelFactory created shared application context', {
-      httpEnabled: normalizedHttp.enabled,
-      graphqlEnabled,
-      gatewayEnabled: Boolean(gatewayApp),
-    });
+    if (httpApp && gatewayApp) {
+      gatewayApp.setHttpIntegration(normalizedGateway.options.path);
+      const mountPath = gatewayApp.getHttpIntegrationPath();
+
+      const gatewayHandler = async (ctx: RequestContext) => {
+        const url = new URL(ctx.request.url);
+        let body: unknown;
+
+        if (ctx.request.method !== 'GET' && ctx.request.method !== 'HEAD') {
+          if (ctx.body instanceof ArrayBuffer) {
+            body = new Uint8Array(ctx.body);
+          } else {
+            body = ctx.body;
+          }
+        }
+
+        return gatewayApp.execute({
+          method: ctx.request.method,
+          headers: ctx.headers,
+          search: url.search,
+          body,
+        });
+      };
+
+      const gatewayMethods: HttpMethod[] = ['GET', 'POST', 'OPTIONS'];
+      for (const method of gatewayMethods) {
+        httpApp.registerRouteHandler(method, mountPath, gatewayHandler);
+      }
+
+      logger.info('Mounted federation gateway within HTTP server /graphql');
+    }
+
+    logger.info('NaelFactory created shared application context');
 
     return new NaelPlatformApplication(context, httpApp, graphqlApp, gatewayApp);
   }
