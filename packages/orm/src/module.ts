@@ -1,9 +1,14 @@
 import { Module, type Provider, type ClassType } from '@nl-framework/core';
 import { LoggerFactory } from '@nl-framework/logger';
 import type { DocumentClass } from './interfaces/document';
-import type { OrmModuleOptions, OrmFeatureOptions } from './interfaces/module-options';
+import type {
+  OrmModuleOptions,
+  OrmFeatureOptions,
+  OrmModuleAsyncOptions,
+  OrmOptionsFactory,
+} from './interfaces/module-options';
 import type { OrmDriver, OrmConnection } from './interfaces/driver';
-import type { SeedHistoryStore } from './interfaces/seeding';
+import type { SeedHistoryStore, SeedClass } from './interfaces/seeding';
 import {
   getConnectionToken,
   getDatabaseToken,
@@ -19,83 +24,153 @@ import { SeedRunner, type SeedRegistry } from './seeding/seed-runner';
 import { getRegisteredSeeds } from './decorators/seed';
 import { getRegisteredDocuments } from './decorators/document';
 
-const createRootProviders = (options: OrmModuleOptions, connectionName: string): Provider[] => {
+type NormalizedOrmModuleOptions = OrmModuleOptions & {
+  connectionName: string;
+  entities: DocumentClass[];
+  seeds: SeedClass[];
+  environment: string;
+};
+
+const normalizeOrmModuleOptions = (
+  options: OrmModuleOptions,
+  connectionName: string,
+): NormalizedOrmModuleOptions => {
+  if (!options.driver) {
+    throw new Error('OrmModule requires a driver. Provide one via the "driver" option.');
+  }
+
   const explicitEntities = options.entities?.length ? options.entities : undefined;
   const discoveredEntities = getRegisteredDocuments().map((metadata) => metadata.target);
-  const uniqueEntities = Array.from(new Set(explicitEntities ?? discoveredEntities));
-
-  const normalizedOptions = {
-    ...options,
-    connectionName,
-    entities: uniqueEntities,
-  } satisfies OrmModuleOptions & { connectionName: string; entities: DocumentClass[] };
+  const entities = Array.from(new Set(explicitEntities ?? discoveredEntities));
 
   const defaultEnvironment = process.env.NODE_ENV ?? 'default';
-  const environment = (normalizedOptions.seedEnvironment ?? defaultEnvironment).toLowerCase();
+  const environment = (options.seedEnvironment ?? defaultEnvironment).toLowerCase();
 
-  const discoveredSeeds = normalizedOptions.seeds?.length
-    ? normalizedOptions.seeds
+  const providedSeeds = options.seeds?.length
+    ? options.seeds
     : getRegisteredSeeds().map((metadata) => metadata.target);
-  const uniqueSeeds = Array.from(new Set(discoveredSeeds));
+  const seeds = Array.from(new Set(providedSeeds));
 
-  const seedRegistry: SeedRegistry = {
-    seeds: uniqueSeeds,
-    autoRun: normalizedOptions.autoRunSeeds ?? false,
+  return {
+    ...options,
+    connectionName,
+    entities,
     environment,
-  };
+    seeds,
+  } satisfies NormalizedOrmModuleOptions;
+};
+
+const createOptionsProvider = (options: OrmModuleOptions, connectionName: string): Provider => ({
+  provide: getOptionsToken(connectionName),
+  useFactory: () => normalizeOrmModuleOptions(options, connectionName),
+});
+
+const createAsyncOptionsProvider = (
+  options: OrmModuleAsyncOptions,
+  connectionName: string,
+): Provider => {
+  if (options.useFactory) {
+    return {
+      provide: getOptionsToken(connectionName),
+      useFactory: async (...args: unknown[]) =>
+        normalizeOrmModuleOptions(await options.useFactory!(...args), connectionName),
+      inject: options.inject ?? [],
+    } satisfies Provider;
+  }
+
+  const target = options.useExisting ?? options.useClass;
+  if (!target) {
+    throw new Error(
+      'OrmModule.forRootAsync requires either useFactory, useClass, or useExisting to be configured.',
+    );
+  }
+
+  return {
+    provide: getOptionsToken(connectionName),
+    useFactory: async (factory: OrmOptionsFactory) =>
+      normalizeOrmModuleOptions(await factory.createOrmOptions(), connectionName),
+    inject: [target],
+  } satisfies Provider;
+};
+
+const createRootProviders = (connectionName: string, optionsProvider: Provider): Provider[] => [
+  optionsProvider,
+  {
+    provide: getDriverToken(connectionName),
+    useFactory: (options: NormalizedOrmModuleOptions) => options.driver,
+    inject: [getOptionsToken(connectionName)],
+  },
+  {
+    provide: getSeedRegistryToken(connectionName),
+    useFactory: (options: NormalizedOrmModuleOptions): SeedRegistry => ({
+      seeds: options.seeds,
+      autoRun: options.autoRunSeeds ?? false,
+      environment: options.environment,
+    }),
+    inject: [getOptionsToken(connectionName)],
+  },
+  {
+    provide: getConnectionToken(connectionName),
+    useFactory: (
+      driver: OrmDriver,
+      loggerFactory: LoggerFactory,
+      options: NormalizedOrmModuleOptions,
+    ) => {
+      const connection = driver.createConnection(connectionName, loggerFactory);
+      options.entities.forEach((entity) => connection.registerEntity(entity));
+      return connection;
+    },
+    inject: [getDriverToken(connectionName), LoggerFactory, getOptionsToken(connectionName)],
+  },
+  {
+    provide: getSeedHistoryToken(connectionName),
+    useFactory: async (
+      connection: OrmConnection,
+      driver: OrmDriver,
+      options: NormalizedOrmModuleOptions,
+    ) => driver.createSeedHistory(connection, { connectionName, environment: options.environment }),
+    inject: [getConnectionToken(connectionName), getDriverToken(connectionName), getOptionsToken(connectionName)],
+  },
+  {
+    provide: getDatabaseToken(connectionName),
+    useFactory: async (connection: OrmConnection) => {
+      await connection.ensureConnection();
+      return connection.getDatabase();
+    },
+    inject: [getConnectionToken(connectionName)],
+  },
+  {
+    provide: getSeedRunnerToken(connectionName),
+    useFactory: (
+      connection: OrmConnection,
+      driver: OrmDriver,
+      registry: SeedRegistry,
+      history: SeedHistoryStore,
+      loggerFactory: LoggerFactory,
+    ) => new SeedRunner(connection, driver, registry, history, loggerFactory, connectionName),
+    inject: [
+      getConnectionToken(connectionName),
+      getDriverToken(connectionName),
+      getSeedRegistryToken(connectionName),
+      getSeedHistoryToken(connectionName),
+      LoggerFactory,
+    ],
+  },
+];
+
+const createAsyncProviders = (options: OrmModuleAsyncOptions): Provider[] => {
+  if (options.useFactory || options.useExisting) {
+    return [];
+  }
+
+  if (!options.useClass) {
+    throw new Error('OrmModule.forRootAsync requires useClass when neither useFactory nor useExisting are provided.');
+  }
 
   return [
     {
-      provide: getOptionsToken(connectionName),
-      useValue: normalizedOptions,
-    },
-    {
-      provide: getDriverToken(connectionName),
-      useValue: normalizedOptions.driver,
-    },
-    {
-      provide: getSeedHistoryToken(connectionName),
-      useFactory: async (connection: OrmConnection, driver: OrmDriver) =>
-        driver.createSeedHistory(connection, { connectionName, environment }),
-      inject: [getConnectionToken(connectionName), getDriverToken(connectionName)],
-    },
-    {
-      provide: getSeedRegistryToken(connectionName),
-      useValue: seedRegistry,
-    },
-    {
-      provide: getConnectionToken(connectionName),
-      useFactory: (driver: OrmDriver, loggerFactory: LoggerFactory) => {
-        const connection = driver.createConnection(connectionName, loggerFactory);
-        normalizedOptions.entities.forEach((entity) => connection.registerEntity(entity));
-        return connection;
-      },
-      inject: [getDriverToken(connectionName), LoggerFactory],
-    },
-    {
-      provide: getDatabaseToken(connectionName),
-      useFactory: async (connection: OrmConnection) => {
-        await connection.ensureConnection();
-        return connection.getDatabase();
-      },
-      inject: [getConnectionToken(connectionName)],
-    },
-    {
-      provide: getSeedRunnerToken(connectionName),
-      useFactory: (
-        connection: OrmConnection,
-        driver: OrmDriver,
-        registry: SeedRegistry,
-        history: SeedHistoryStore,
-        loggerFactory: LoggerFactory,
-      ) => new SeedRunner(connection, driver, registry, history, loggerFactory, connectionName),
-      inject: [
-        getConnectionToken(connectionName),
-        getDriverToken(connectionName),
-        getSeedRegistryToken(connectionName),
-        getSeedHistoryToken(connectionName),
-        LoggerFactory,
-      ],
+      provide: options.useClass,
+      useClass: options.useClass,
     },
   ];
 };
@@ -120,7 +195,8 @@ export class OrmModule {
     }
 
     const connectionName = normalizeConnectionName(options.connectionName);
-    const providers = createRootProviders(options, connectionName);
+    const optionsProvider = createOptionsProvider(options, connectionName);
+    const providers = createRootProviders(connectionName, optionsProvider);
 
     const exports = providers.map((provider) =>
       typeof provider === 'function' ? provider : provider.provide,
@@ -133,6 +209,28 @@ export class OrmModule {
   class OrmRootModule {}
 
   return OrmRootModule;
+  }
+
+  static forRootAsync(options: OrmModuleAsyncOptions): ClassType {
+    const connectionName = normalizeConnectionName(options.connectionName);
+    const optionsProvider = createAsyncOptionsProvider(options, connectionName);
+    const providers = [
+      ...createRootProviders(connectionName, optionsProvider),
+      ...createAsyncProviders(options),
+    ];
+
+    const exports = providers.map((provider) =>
+      typeof provider === 'function' ? provider : provider.provide,
+    );
+
+    @Module({
+      imports: options.imports ?? [],
+      providers,
+      exports,
+    })
+    class OrmRootAsyncModule {}
+
+    return OrmRootAsyncModule;
   }
 
   static forFeature(entitiesOrOptions: OrmFeatureOptions | DocumentClass[]): ClassType {

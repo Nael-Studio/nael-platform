@@ -32,6 +32,37 @@ import { OrmModule, createMongoDriver } from '@nl-framework/orm';
 export class AppModule {}
 ```
 
+### Async configuration
+
+For configuration modules that resolve database settings at runtime, use `OrmModule.forRootAsync`:
+
+```ts
+import { Module } from '@nl-framework/core';
+import { ConfigModule, ConfigService } from '@nl-framework/config';
+import { OrmModule, createMongoDriver } from '@nl-framework/orm';
+
+@Module({
+  imports: [
+    ConfigModule,
+    OrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        const uri = config.get('database.mongo.uri');
+        const dbName = config.get('database.mongo.dbName');
+        return {
+          driver: createMongoDriver({ uri, dbName }),
+          autoRunSeeds: true,
+        };
+      },
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+The async variant accepts `useFactory`, `useClass`, or `useExisting` patterns—mirroring other framework modules—so you can compose the ORM connection with any DI-managed configuration source.
+
 Register repositories for feature modules:
 
 ```ts

@@ -75,6 +75,8 @@ HTTP host and port live in `config/default.yaml`. Override them by creating `con
 
 The MongoDB connection uses environment variables exclusively so the example can run outside the config system. Customize with `MONGODB_URI` / `MONGODB_DB` or edit `app.module.ts` directly if needed.
 
+When integrating with a configuration module, switch to `OrmModule.forRootAsync` and resolve the driver inside a factory so connection details can come from DI-managed services.
+
 ## Next steps
 
 - Add additional entities and register them with `OrmModule.forFeature`
