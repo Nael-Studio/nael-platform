@@ -19,7 +19,17 @@ Explore the `examples/` folder for runnable samples that demonstrate the current
 
 ## Roadmap
 
-The following checklist captures the major features we plan to add or stabilize before the first stable release:
+The roadmap tracks both the pieces that already landed and the ones we still plan to ship ahead of the first stable release.
+
+### Completed
+
+- [x] Modular application core with dependency injection and scoped contexts
+- [x] HTTP module with decorator-driven routing, middleware, and Bun-native server
+- [x] GraphQL module with schema-first resolver discovery and federation hooks
+- [x] NaelFactory-powered Apollo Federation gateway running alongside HTTP routes
+- [x] Structured logger with pluggable transports (console provided)
+
+### Planned
 
 - [ ] Command-line tooling for project scaffolding and code generation
 - [ ] Production-ready configuration presets and environment management
