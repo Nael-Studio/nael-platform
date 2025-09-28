@@ -1,0 +1,34 @@
+{
+  "name": "@nl-framework/auth",
+  "version": "0.1.0",
+  "description": "BetterAuth integration module for nl-framework with optional plugins and a built-in fallback provider.",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "bunx tsc --build tsconfig.build.json",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@nl-framework/core": "workspace:*",
+    "@nl-framework/logger": "workspace:*"
+  },
+  "peerDependencies": {
+    "better-auth": "*"
+  },
+  "peerDependenciesMeta": {
+    "better-auth": {
+      "optional": true
+    }
+  }
+}
