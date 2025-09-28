@@ -35,11 +35,11 @@ export class ProductService {
     }
   }
 
-  list(): Product[] {
+  findAll(): Product[] {
     return Array.from(this.products.values());
   }
 
-  findById(id: string): Product | undefined {
+  findOne(id: string): Product | undefined {
     return this.products.get(id);
   }
 
