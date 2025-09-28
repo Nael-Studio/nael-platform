@@ -30,6 +30,15 @@ const formatPrimitive = (value: unknown): string => {
     return cyan(value.toISOString());
   }
 
+  if (Array.isArray(value) || (typeof value === 'object' && value !== null)) {
+    try {
+      const encoded = JSON.stringify(value);
+      return encoded ?? gray('[unserializable]');
+    } catch {
+      return red('[invalid-json]');
+    }
+  }
+
   switch (typeof value) {
     case 'string':
       return value;
@@ -41,71 +50,18 @@ const formatPrimitive = (value: unknown): string => {
       return yellow(`${value}n`);
     case 'symbol':
       return magenta(String(value));
-    case 'object': {
-      const entries = Object.entries(value as Record<string, unknown>);
-      if (!entries.length) {
-        return gray('{}');
-      }
-      const formatted = entries
-        .map(([key, nested]) => `${cyan(key)}=${formatPrimitive(nested)}`)
-        .join(dim(', '));
-      return `{ ${formatted} }`;
-    }
     default:
       return String(value);
   }
 };
 
 const formatMeta = (meta: Record<string, unknown>): string => {
-  const lines: string[] = [];
-
-  for (const [key, value] of Object.entries(meta)) {
-    const label = dim(`${key}:`);
-
-    if (Array.isArray(value)) {
-      if (!value.length) {
-        lines.push(`${label} ${gray('[]')}`);
-        continue;
-      }
-
-      const objectEntries = value.every(
-        (item) => item && typeof item === 'object' && !Array.isArray(item),
-      );
-
-      if (objectEntries) {
-        lines.push(`${label}`);
-        for (const item of value as Array<Record<string, unknown>>) {
-          const formatted = Object.entries(item)
-            .map(([nestedKey, nestedValue]) => `${cyan(nestedKey)}=${formatPrimitive(nestedValue)}`)
-            .join(dim(', '));
-          lines.push(`  • ${formatted}`);
-        }
-        continue;
-      }
-
-      const formatted = value
-        .map((item) =>
-          typeof item === 'object' && item !== null
-            ? formatPrimitive(item)
-            : formatPrimitive(item as unknown),
-        )
-        .join(dim(', '));
-      lines.push(`${label} ${formatted}`);
-      continue;
-    }
-
-    if (value && typeof value === 'object') {
-      const formatted = Object.entries(value as Record<string, unknown>)
-        .map(([nestedKey, nestedValue]) => `${cyan(nestedKey)}=${formatPrimitive(nestedValue)}`)
-        .join(dim(', '));
-      lines.push(`${label} ${formatted}`);
-      continue;
-    }
-
-    lines.push(`${label} ${formatPrimitive(value)}`);
+  try {
+    const serialized = JSON.stringify(meta);
+    return gray(serialized ?? '[unserializable]');
+  } catch {
+    return red('[invalid-json]');
   }
-
-  return lines.join('\n');
 };
 
 const defaultFormat = (entry: LogMessage): string => {
