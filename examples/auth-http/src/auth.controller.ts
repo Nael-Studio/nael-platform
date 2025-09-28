@@ -19,7 +19,7 @@ export class AuthController {
 
   @Post('login')
   async login(ctx: RequestContext) {
-    const payload = await this.safeParseBody<LoginPayload>(ctx);
+    const payload = ctx.body as LoginPayload;
     if (!payload?.email || !payload?.password) {
       return new Response(
         JSON.stringify({ message: 'Request body must include email and password fields.' }),
@@ -69,6 +69,7 @@ export class AuthController {
         email: payload.email,
         password: payload.password,
         roles: payload.roles,
+        metadata: payload.metadata,
       });
 
       return new Response(

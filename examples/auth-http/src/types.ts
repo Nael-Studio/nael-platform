@@ -2,6 +2,7 @@ export interface DefaultUserConfig {
   email: string;
   password: string;
   roles?: string[];
+  metadata?: Record<string, unknown>;
 }
 
 export interface AuthExampleConfig {
@@ -12,6 +13,13 @@ export interface AuthExampleConfig {
   server: {
     port: number;
     host?: string;
+  };
+  database: {
+    uri: string;
+    dbName: string;
+  };
+  auth?: {
+    sessionTtlMs?: number;
   };
   [key: string]: unknown;
 }

@@ -2,7 +2,7 @@
   "name": "@nl-framework/example-auth-http",
   "private": true,
   "version": "0.1.0",
-  "description": "HTTP example demonstrating the @nl-framework/auth module with in-memory fallback authentication.",
+  "description": "HTTP example demonstrating the @nl-framework/auth module backed by the ORM for user persistence.",
   "type": "module",
   "scripts": {
     "dev": "bun run --watch src/main.ts",
@@ -13,6 +13,7 @@
     "@nl-framework/auth": "workspace:*",
     "@nl-framework/config": "workspace:*",
     "@nl-framework/core": "workspace:*",
+  "@nl-framework/orm": "workspace:*",
     "@nl-framework/http": "workspace:*",
     "@nl-framework/logger": "workspace:*",
     "@nl-framework/platform": "workspace:*"

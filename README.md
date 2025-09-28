@@ -14,7 +14,7 @@ Nael Platform is a [NestJS](https://nestjs.com/)-inspired application framework 
 Explore the `examples/` folder for runnable samples that demonstrate the current functionality:
 
 - `examples/basic-http` – minimal REST-style greeting controller
-- `examples/auth-http` – HTTP API with authentication flows and role-protected routes via `@nl-framework/auth`
+- `examples/auth-http` – HTTP API with authentication flows, ORM-backed user persistence, and role-protected routes via `@nl-framework/auth`
 - `examples/basic-graphql` – standalone GraphQL server with resolver discovery
 - `examples/federated-graphql` – subgraph service suitable for Apollo Federation
 - `examples/federation-gateway` – single-port HTTP + GraphQL gateway using NaelFactory

@@ -1,11 +1,11 @@
 # Auth HTTP Example
 
-This example shows how to plug `@nl-framework/auth` into an HTTP application. It combines configuration-driven user seeding, request logging, role-based middleware, and simple controllers for registering, logging in, and accessing protected resources.
+This example shows how to plug `@nl-framework/auth` into an HTTP application while persisting users with the built-in ORM. It combines configuration-driven user seeding, request logging, role-based middleware, and simple controllers for registering, logging in, and accessing protected resources.
 
 ## Highlights
 
 - Bootstraps `AuthModule.forRootAsync` to load default users from YAML configuration
-- Demonstrates the in-memory BetterAuth fallback adapter—no external dependency required
+- Persists accounts through `@nl-framework/orm` with a custom BetterAuth adapter
 - Provides login and registration endpoints plus authenticated `/me` and admin-only routes
 - Reuses the framework's HTTP middleware system to wrap protected routes with `createBetterAuthMiddleware`
 
@@ -20,25 +20,32 @@ examples/auth-http
 │   ├── auth.controller.ts    # Handles registration and login flows
 │   ├── protected.controller.ts# Uses middleware-attached session data
 │   ├── main.ts               # Bootstraps NaelFactory and applies middleware
+│   ├── persistence/          # ORM document + BetterAuth adapter backed by MongoDB
 │   └── types.ts              # Shared config typing and payload helpers
 └── package.json
 ```
 
 ## Getting started
 
-1. Build the core packages so the example can use local workspace dependencies:
+1. Make sure MongoDB is running locally. The defaults expect a server listening at `mongodb://127.0.0.1:27017/nl-framework-auth-example`. You can start one quickly with Docker:
+
+  ```bash
+  docker run --name nl-auth-mongo -p 27017:27017 -d mongo:7
+  ```
+
+2. Build the core packages so the example can use local workspace dependencies:
 
    ```bash
    bun run build
    ```
 
-2. Start the example (from the repo root or inside `examples/auth-http`):
+3. Start the example (from the repo root or inside `examples/auth-http`):
 
    ```bash
    bun run --filter @nl-framework/example-auth-http start
    ```
 
-   The server listens on `http://localhost:4100` by default. The bundled YAML configuration seeds an admin user (`admin@example.com` / `changeme`) and sets the HTTP port.
+  The server listens on `http://localhost:4100` by default. The bundled YAML configuration seeds an admin user (`admin@example.com` / `changeme`), configures the MongoDB connection, and sets the HTTP port. Sessions remain in memory for simplicity, but user records persist across restarts.
 
 ## Try it out
 
@@ -74,6 +81,6 @@ curl -s \
 
 ## Experiment further
 
-- Adjust `config/default.yaml` to seed different users or change the session TTL passed to `AuthModule`
+- Adjust `config/default.yaml` to seed different users, tweak MongoDB connection details, or change the session TTL
 - Swap in a real BetterAuth adapter by installing the library in this example and providing `instance` via the module options
 - Extend the request middleware in `main.ts` to add rate limiting, auditing, or multi-tenant routing
