@@ -13,5 +13,10 @@
     }
   },
   "include": ["src/**/*"],
-  "exclude": ["tests/**/*"]
+  "exclude": ["tests/**/*"],
+  "references": [
+    {
+      "path": "../logger/tsconfig.build.json"
+    }
+  ]
 }
