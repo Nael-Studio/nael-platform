@@ -96,6 +96,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@nl-framework/core": "workspace:*",
+        "@nl-framework/logger": "workspace:*",
         "reflect-metadata": "^0.1.13",
       },
     },
