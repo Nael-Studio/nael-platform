@@ -28,9 +28,10 @@ examples/mongo-orm
 ├── config/
 │   └── default.yaml          # HTTP host/port defaults
 ├── src/
-│   ├── app.module.ts         # Module wiring Mongo ORM + HTTP controller
+│   ├── app.module.ts         # Root module wiring ORM + feature modules
 │   ├── main.ts               # Server bootstrap
 │   └── users/
+│       ├── users.module.ts   # Feature module exposing controller/service
 │       ├── user.document.ts  # @Document metadata for the User collection
 │       ├── users.controller.ts# REST controller exposing CRUD-ish routes
 │       ├── users.service.ts  # Service wrapping the generic ORM repository helpers
@@ -54,6 +55,8 @@ examples/mongo-orm
    ```
 
    The server logs its URL (default `http://localhost:4010`). Seeds execute automatically the first time—tracked per environment and connection—so reruns stay idempotent without manual scripts.
+
+   Thanks to the new `UsersModule`, all feature wiring lives in a dedicated module while the root module simply imports it. Entities and seeds are discovered from their decorators, so you only need to import the module once to activate them.
 
 3. Hit the endpoints:
 

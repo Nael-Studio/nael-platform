@@ -24,10 +24,8 @@ import { OrmModule, createMongoDriver } from '@nl-framework/orm';
         dbName: 'app-db',
       }),
       connectionName: 'primary',
-      entities: [User],
       autoRunSeeds: true,
       seedEnvironment: process.env.APP_ENV ?? process.env.NODE_ENV ?? 'default',
-      seeds: [InitialUsersSeed],
     }),
   ],
 })
@@ -59,6 +57,8 @@ export class User {
 ```
 
 Timestamps automatically manage `createdAt`/`updatedAt` fields, while `softDelete` adds `deletedAt` support for repositories.
+
+> **Auto-discovery.** The ORM automatically registers every decorated document that has been imported before `OrmModule.forRoot` executes. Provide the optional `entities` array only when you need to scope a connection to a specific subset.
 
 ## Repositories
 
@@ -111,3 +111,5 @@ When `autoRunSeeds` is `true`, the `SeedRunner` executes during module init, onl
 3. Haven't already been recorded in the driver-provided seed history store.
 
 The Mongo driver persists history in the same database (collection `orm_seed_history` by default), guaranteeing idempotent startups across deployments. You can still resolve the runner manually via `getSeedRunnerToken()` if you need to trigger seeds on demand.
+
+> **Auto-discovery.** Seed classes decorated with `@Seed` are picked up automatically when their modules are imported. You can still pass an explicit `seeds` array to `OrmModule.forRoot` if you want to restrict execution to a subset.

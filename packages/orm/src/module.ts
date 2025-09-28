@@ -17,12 +17,18 @@ import {
 } from './constants';
 import { SeedRunner, type SeedRegistry } from './seeding/seed-runner';
 import { getRegisteredSeeds } from './decorators/seed';
+import { getRegisteredDocuments } from './decorators/document';
 
 const createRootProviders = (options: OrmModuleOptions, connectionName: string): Provider[] => {
+  const explicitEntities = options.entities?.length ? options.entities : undefined;
+  const discoveredEntities = getRegisteredDocuments().map((metadata) => metadata.target);
+  const uniqueEntities = Array.from(new Set(explicitEntities ?? discoveredEntities));
+
   const normalizedOptions = {
     ...options,
     connectionName,
-  } satisfies OrmModuleOptions & { connectionName: string };
+    entities: uniqueEntities,
+  } satisfies OrmModuleOptions & { connectionName: string; entities: DocumentClass[] };
 
   const defaultEnvironment = process.env.NODE_ENV ?? 'default';
   const environment = (normalizedOptions.seedEnvironment ?? defaultEnvironment).toLowerCase();
@@ -61,7 +67,7 @@ const createRootProviders = (options: OrmModuleOptions, connectionName: string):
       provide: getConnectionToken(connectionName),
       useFactory: (driver: OrmDriver, loggerFactory: LoggerFactory) => {
         const connection = driver.createConnection(connectionName, loggerFactory);
-        normalizedOptions.entities?.forEach((entity) => connection.registerEntity(entity));
+        normalizedOptions.entities.forEach((entity) => connection.registerEntity(entity));
         return connection;
       },
       inject: [getDriverToken(connectionName), LoggerFactory],
