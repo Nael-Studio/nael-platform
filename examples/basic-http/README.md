@@ -5,7 +5,7 @@ This example demonstrates how to build a tiny HTTP API on top of `@nl-framework/
 ## Features
 
 - Module + provider structure powered by the framework's DI container
-- YAML-based configuration resolved via `ConfigService`
+- YAML-based configuration resolved via `ConfigModule.forRoot` and `ConfigService`
 - Route decorators (`@Controller`, `@Get`) with automatic parameter parsing
 - Context-aware logging via `@nl-framework/logger` for request tracing and lifecycle events
 
@@ -29,9 +29,7 @@ examples/basic-http
 1. Build the framework packages so typings are ready:
 
    ```bash
-   bun run build --filter @nl-framework/logger
-   bun run build --filter @nl-framework/core
-   bun run build --filter @nl-framework/http
+   bun run build
    ```
 
 2. Start the example application (from the repo root or by `cd`-ing into the example):

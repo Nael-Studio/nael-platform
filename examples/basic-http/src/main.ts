@@ -1,5 +1,3 @@
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
 import { type MiddlewareHandler } from '@nl-framework/http';
 import { NaelFactory } from '@nl-framework/platform';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
@@ -7,12 +5,7 @@ import { AppModule } from './app.module';
 import type { ExampleConfig } from './types';
 
 const bootstrap = async () => {
-  const currentDir = dirname(fileURLToPath(import.meta.url));
-  const configDir = resolve(currentDir, '../config');
   const app = await NaelFactory.create(AppModule, {
-    config: {
-      dir: configDir,
-    },
     graphql: false,
   });
 
