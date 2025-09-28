@@ -74,6 +74,7 @@
       "name": "@nl-framework/core",
       "version": "0.1.0",
       "dependencies": {
+        "@nl-framework/logger": "workspace:*",
         "reflect-metadata": "^0.1.13",
         "yaml": "^2.8.1",
       },
