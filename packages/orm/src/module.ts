@@ -1,8 +1,8 @@
 import { Module, type Provider, type ClassType } from '@nl-framework/core';
 import { LoggerFactory } from '@nl-framework/logger';
 import type { DocumentClass } from './interfaces/document';
-import type { MongoOrmModuleOptions, MongoOrmFeatureOptions } from './interfaces/module-options';
-import { MongoConnection } from './connection/mongo-connection';
+import type { OrmModuleOptions, OrmFeatureOptions } from './interfaces/module-options';
+import type { OrmDriver, OrmConnection } from './interfaces/driver';
 import {
   getConnectionToken,
   getDatabaseToken,
@@ -11,16 +11,15 @@ import {
   getSeedRegistryToken,
   getSeedRunnerToken,
   normalizeConnectionName,
+  getDriverToken,
 } from './constants';
-import { getDocumentMetadata } from './decorators/document';
-import { MongoRepository } from './repository/mongo-repository';
 import { SeedRunner, type SeedRegistry } from './seeding/seed-runner';
 
-const createRootProviders = (options: MongoOrmModuleOptions, connectionName: string): Provider[] => {
-  const normalizedOptions: MongoOrmModuleOptions = {
+const createRootProviders = (options: OrmModuleOptions, connectionName: string): Provider[] => {
+  const normalizedOptions = {
     ...options,
     connectionName,
-  };
+  } satisfies OrmModuleOptions & { connectionName: string };
 
   const seedRegistry: SeedRegistry = {
     seeds: normalizedOptions.seeds ?? [],
@@ -33,18 +32,25 @@ const createRootProviders = (options: MongoOrmModuleOptions, connectionName: str
       useValue: normalizedOptions,
     },
     {
+      provide: getDriverToken(connectionName),
+      useValue: normalizedOptions.driver,
+    },
+    {
       provide: getSeedRegistryToken(connectionName),
       useValue: seedRegistry,
     },
     {
       provide: getConnectionToken(connectionName),
-      useFactory: (moduleOptions: MongoOrmModuleOptions, loggerFactory: LoggerFactory) =>
-        new MongoConnection(moduleOptions, loggerFactory),
-      inject: [getOptionsToken(connectionName), LoggerFactory],
+      useFactory: (driver: OrmDriver, loggerFactory: LoggerFactory) => {
+        const connection = driver.createConnection(connectionName, loggerFactory);
+        normalizedOptions.entities?.forEach((entity) => connection.registerEntity(entity));
+        return connection;
+      },
+      inject: [getDriverToken(connectionName), LoggerFactory],
     },
     {
       provide: getDatabaseToken(connectionName),
-      useFactory: async (connection: MongoConnection) => {
+      useFactory: async (connection: OrmConnection) => {
         await connection.ensureConnection();
         return connection.getDatabase();
       },
@@ -53,12 +59,14 @@ const createRootProviders = (options: MongoOrmModuleOptions, connectionName: str
     {
       provide: getSeedRunnerToken(connectionName),
       useFactory: (
-        connection: MongoConnection,
+        connection: OrmConnection,
+        driver: OrmDriver,
         registry: SeedRegistry,
         loggerFactory: LoggerFactory,
-      ) => new SeedRunner(connection, registry, loggerFactory, connectionName),
+      ) => new SeedRunner(connection, driver, registry, loggerFactory, connectionName),
       inject: [
         getConnectionToken(connectionName),
+        getDriverToken(connectionName),
         getSeedRegistryToken(connectionName),
         LoggerFactory,
       ],
@@ -72,17 +80,19 @@ const createFeatureProviders = (
 ): Provider[] =>
   entities.map((entity) => ({
     provide: getRepositoryToken(entity, connectionName),
-    useFactory: async (connection: MongoConnection) => {
+    useFactory: async (connection: OrmConnection, driver: OrmDriver) => {
       connection.registerEntity(entity);
-      const metadata = getDocumentMetadata(entity);
-      const collection = await connection.getCollection(entity);
-      return new MongoRepository(collection, metadata);
+      return driver.createRepository(connection, entity);
     },
-    inject: [getConnectionToken(connectionName)],
+    inject: [getConnectionToken(connectionName), getDriverToken(connectionName)],
   }));
 
-export class MongoOrmModule {
-  static forRoot(options: MongoOrmModuleOptions): ClassType {
+export class OrmModule {
+  static forRoot(options: OrmModuleOptions): ClassType {
+    if (!options.driver) {
+      throw new Error('OrmModule.forRoot requires a driver. Provide one via the "driver" option.');
+    }
+
     const connectionName = normalizeConnectionName(options.connectionName);
     const providers = createRootProviders(options, connectionName);
 
@@ -94,14 +104,12 @@ export class MongoOrmModule {
       providers,
       exports,
     })
-    class MongoOrmRootModule {}
+  class OrmRootModule {}
 
-    return MongoOrmRootModule;
+  return OrmRootModule;
   }
 
-  static forFeature(
-    entitiesOrOptions: MongoOrmFeatureOptions | DocumentClass[],
-  ): ClassType {
+  static forFeature(entitiesOrOptions: OrmFeatureOptions | DocumentClass[]): ClassType {
     const { entities, connectionName } = Array.isArray(entitiesOrOptions)
       ? { entities: entitiesOrOptions, connectionName: undefined }
       : entitiesOrOptions;
@@ -117,8 +125,8 @@ export class MongoOrmModule {
       providers,
       exports,
     })
-    class MongoOrmFeatureModule {}
+    class OrmFeatureModule {}
 
-    return MongoOrmFeatureModule;
+    return OrmFeatureModule;
   }
 }

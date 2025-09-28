@@ -59,6 +59,17 @@
         "graphql": "^16.8.1",
       },
     },
+    "examples/mongo-orm": {
+      "name": "@nl-framework/example-mongo-orm",
+      "version": "0.1.0",
+      "dependencies": {
+        "@nl-framework/core": "workspace:*",
+        "@nl-framework/http": "workspace:*",
+        "@nl-framework/logger": "workspace:*",
+        "@nl-framework/orm": "workspace:*",
+        "@nl-framework/platform": "workspace:*",
+      },
+    },
     "packages/core": {
       "name": "@nl-framework/core",
       "version": "0.1.0",
@@ -217,6 +228,8 @@
     "@nl-framework/example-federated-graphql": ["@nl-framework/example-federated-graphql@workspace:examples/federated-graphql"],
 
     "@nl-framework/example-federation-gateway": ["@nl-framework/example-federation-gateway@workspace:examples/federation-gateway"],
+
+    "@nl-framework/example-mongo-orm": ["@nl-framework/example-mongo-orm@workspace:examples/mongo-orm"],
 
     "@nl-framework/graphql": ["@nl-framework/graphql@workspace:packages/graphql"],
 

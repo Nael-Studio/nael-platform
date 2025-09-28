@@ -9,6 +9,7 @@ import type {
 } from 'mongodb';
 import { ObjectId } from 'mongodb';
 import type { DocumentMetadata, BaseDocument, DocumentClass } from '../interfaces/document';
+import type { OrmRepository } from '../interfaces/repository';
 
 export interface FindManyOptions<T> extends FindOptions<T & BaseDocument> {
   withDeleted?: boolean;
@@ -23,7 +24,7 @@ const buildNotDeletedFilter = <T>(): Filter<T & BaseDocument> =>
     $or: [{ deletedAt: { $exists: false } }, { deletedAt: null }],
   }) as Filter<T & BaseDocument>;
 
-export class MongoRepository<T extends Record<string, unknown>> {
+export class MongoRepository<T extends Record<string, unknown>> implements OrmRepository<T> {
   constructor(
     private readonly collection: Collection<T & BaseDocument>,
     private readonly metadata: DocumentMetadata,

@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "paths": {
+      "@nl-framework/*": ["../../packages/*/src", "../../packages/*/dist"],
+      "@nl-framework/logger": ["../../packages/logger/src", "../../packages/logger/dist"],
+      "@nl-framework/logger/*": ["../../packages/logger/src/*", "../../packages/logger/dist/*"]
+    }
+  },
+  "include": ["src/**/*", "config/**/*"]
+}

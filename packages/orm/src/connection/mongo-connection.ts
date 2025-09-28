@@ -1,10 +1,16 @@
-import { MongoClient, type Db, type Collection } from 'mongodb';
-import type { OnModuleInit, OnModuleDestroy } from '@nl-framework/core';
+import { MongoClient, type Db, type Collection, type MongoClientOptions } from 'mongodb';
 import { LoggerFactory, Logger } from '@nl-framework/logger';
 import type { DocumentClass, DocumentMetadata, BaseDocument } from '../interfaces/document';
-import type { MongoOrmModuleOptions } from '../interfaces/module-options';
 import { getDocumentMetadata } from '../decorators/document';
 import { normalizeConnectionName } from '../constants';
+import type { OrmConnection } from '../interfaces/driver';
+
+export interface MongoConnectionOptions {
+  uri: string;
+  dbName?: string;
+  clientOptions?: MongoClientOptions;
+  connectionName: string;
+}
 
 const sanitizeUri = (uri: string): string => {
   try {
@@ -16,19 +22,18 @@ const sanitizeUri = (uri: string): string => {
   }
 };
 
-export class MongoConnection implements OnModuleInit, OnModuleDestroy {
+export class MongoConnection implements OrmConnection {
   private client?: MongoClient;
   private database?: Db;
   private readonly entities = new Set<DocumentClass>();
   private readonly logger: Logger;
 
   constructor(
-    private readonly options: MongoOrmModuleOptions,
+    private readonly options: MongoConnectionOptions,
     loggerFactory: LoggerFactory,
   ) {
     const connectionName = normalizeConnectionName(options.connectionName);
     this.logger = loggerFactory.create({ context: `MongoConnection(${connectionName})` });
-    options.entities?.forEach((entity) => this.registerEntity(entity));
   }
 
   registerEntity(entity: DocumentClass): void {

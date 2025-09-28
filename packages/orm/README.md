@@ -1,6 +1,6 @@
 # @nl-framework/orm
 
-MongoDB-first ORM utilities for the NL Framework. This package provides TypeORM-inspired module registration helpers, metadata-driven repositories, and seeding utilities that plug into the core DI container.
+Database-agnostic ORM utilities for the NL Framework with a MongoDB driver included. The package offers TypeORM-inspired module registration helpers, metadata-driven repositories, and seeding utilities that plug into the core DI container while leaving room for additional database drivers.
 
 ## Installation
 
@@ -14,13 +14,15 @@ Register the ORM connection at the root of your application:
 
 ```ts
 import { Module } from '@nl-framework/core';
-import { MongoOrmModule } from '@nl-framework/orm';
+import { OrmModule, createMongoDriver } from '@nl-framework/orm';
 
 @Module({
   imports: [
-    MongoOrmModule.forRoot({
-      uri: process.env.MONGO_URI!,
-      dbName: 'app-db',
+    OrmModule.forRoot({
+      driver: createMongoDriver({
+        uri: process.env.MONGO_URI!,
+        dbName: 'app-db',
+      }),
       connectionName: 'primary',
       entities: [User],
       autoRunSeeds: true,
@@ -35,7 +37,7 @@ Register repositories for feature modules:
 
 ```ts
 @Module({
-  imports: [MongoOrmModule.forFeature([User])],
+  imports: [OrmModule.forFeature([User])],
 })
 export class UsersModule {}
 ```
@@ -59,16 +61,16 @@ Timestamps automatically manage `createdAt`/`updatedAt` fields, while `softDelet
 
 ## Repositories
 
-Inject a `MongoRepository` using the generated token helpers:
+Inject an `OrmRepository` (or the Mongo-specific implementation) using the generated token helpers:
 
 ```ts
 import { Inject } from '@nl-framework/core';
-import { MongoRepository, getRepositoryToken } from '@nl-framework/orm';
+import { getRepositoryToken, type OrmRepository } from '@nl-framework/orm';
 
 export class UsersService {
   constructor(
     @Inject(getRepositoryToken(User))
-    private readonly users: MongoRepository<User>,
+    private readonly users: OrmRepository<User>,
   ) {}
 
   async listActive() {
@@ -81,15 +83,14 @@ Repositories provide familiar helpers (`find`, `findOne`, `insertOne`, `save`, `
 
 ## Seeding
 
-Seeds run through the `SeedRunner`. Provide a list of seed classes via `MongoOrmModule.forRoot` and set `autoRunSeeds` to execute them on startup, or resolve the runner manually:
+Seeds run through the `SeedRunner`. Provide a list of seed classes via `OrmModule.forRoot` and set `autoRunSeeds` to execute them on startup, or resolve the runner manually:
 
 ```ts
-import { Seed, SeedContext } from '@nl-framework/orm';
+import type { SeederContext } from '@nl-framework/orm';
 
-@Seed('InitialUsers')
 export class InitialUsersSeed {
-  async run(context: SeedContext<'primary'>) {
-    const users = context.getRepository(User);
+  async run(context: SeederContext) {
+    const users = await context.getRepository(User);
     await users.insertMany([
       { email: 'admin@example.com', name: 'Admin' },
     ]);
@@ -97,4 +98,4 @@ export class InitialUsersSeed {
 }
 ```
 
-Each seed receives a typed context for resolving repositories bound to the same connection.
+Each seed receives a context for resolving repositories bound to the same connection. You can also resolve the `SeedRunner` manually via the `getSeedRunnerToken()` helper if you prefer to execute seeds outside of application bootstrap.

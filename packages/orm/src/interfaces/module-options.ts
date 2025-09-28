@@ -1,21 +1,16 @@
-import type { MongoClientOptions } from 'mongodb';
 import type { DocumentClass } from './document';
+import type { OrmDriver } from './driver';
 import type { SeedClass } from './seeding';
 
-export interface MongoOrmConnectionOptions {
-  uri: string;
-  dbName?: string;
-  clientOptions?: MongoClientOptions;
+export interface OrmModuleOptions {
+  driver: OrmDriver;
   connectionName?: string;
-}
-
-export interface MongoOrmModuleOptions extends MongoOrmConnectionOptions {
   entities?: DocumentClass[];
   seeds?: SeedClass[];
   autoRunSeeds?: boolean;
 }
 
-export interface MongoOrmFeatureOptions {
+export interface OrmFeatureOptions {
   entities: DocumentClass[];
   connectionName?: string;
 }

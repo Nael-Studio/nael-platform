@@ -1,0 +1,20 @@
+{
+  "name": "@nl-framework/example-mongo-orm",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Demonstrates the ORM driver architecture with MongoDB, seeding, and soft deletes.",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/main.ts",
+    "start": "bun run src/main.ts",
+    "seed": "bun run src/seed.ts",
+    "check": "bunx tsc --noEmit"
+  },
+  "dependencies": {
+    "@nl-framework/core": "workspace:*",
+    "@nl-framework/http": "workspace:*",
+    "@nl-framework/logger": "workspace:*",
+    "@nl-framework/platform": "workspace:*",
+    "@nl-framework/orm": "workspace:*"
+  }
+}

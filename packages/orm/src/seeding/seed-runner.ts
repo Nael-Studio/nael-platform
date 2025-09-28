@@ -1,10 +1,10 @@
 import type { OnModuleInit } from '@nl-framework/core';
 import { LoggerFactory, Logger } from '@nl-framework/logger';
-import type { MongoConnection } from '../connection/mongo-connection';
 import type { SeedClass, SeederContext } from '../interfaces/seeding';
 import type { DocumentClass } from '../interfaces/document';
 import { getDocumentMetadata } from '../decorators/document';
-import { MongoRepository } from '../repository/mongo-repository';
+import type { OrmRepository } from '../interfaces/repository';
+import type { OrmConnection, OrmDriver } from '../interfaces/driver';
 
 export interface SeedRegistry {
   seeds: SeedClass[];
@@ -15,7 +15,8 @@ export class SeedRunner implements OnModuleInit {
   private readonly logger: Logger;
 
   constructor(
-    private readonly connection: MongoConnection,
+    private readonly connection: OrmConnection,
+    private readonly driver: OrmDriver,
     private readonly registry: SeedRegistry,
     loggerFactory: LoggerFactory,
     private readonly connectionName: string,
@@ -42,6 +43,12 @@ export class SeedRunner implements OnModuleInit {
       ) => this.createRepository(document),
     };
 
+    this.logger.info('Running seed set', {
+      connection: this.connectionName,
+      driver: this.driver.name,
+      count: seeds.length,
+    });
+
     for (const seedClass of seeds) {
       const seedInstance = new seedClass();
       this.logger.info('Executing seed', { seed: seedClass.name, connection: this.connectionName });
@@ -56,10 +63,14 @@ export class SeedRunner implements OnModuleInit {
 
   private async createRepository<T extends Record<string, unknown>>(
     document: DocumentClass<T>,
-  ): Promise<MongoRepository<T>> {
+  ): Promise<OrmRepository<T>> {
     this.connection.registerEntity(document);
     const metadata = getDocumentMetadata(document);
-    const collection = await this.connection.getCollection(document);
-    return new MongoRepository(collection, metadata);
+    const repository = await this.driver.createRepository(this.connection, document);
+    this.logger.debug('Prepared repository for seeding', {
+      entity: metadata.target.name,
+      collection: metadata.collection,
+    });
+    return repository;
   }
 }
