@@ -30,6 +30,6 @@
   "dependencies": {
     "@nl-framework/core": "workspace:*",
     "@nl-framework/logger": "workspace:*",
-    "reflect-metadata": "^0.1.13"
+    "reflect-metadata": "^0.2.2"
   }
 }
