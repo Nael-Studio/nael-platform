@@ -9,6 +9,7 @@ Nael Platform is a [NestJS](https://nestjs.com/)-inspired application framework 
 - GraphQL module with schema-first resolvers and federation-ready tooling
 - Federation gateway wrapper that embeds Apollo Gateway into the shared server
 - Structured logging with pluggable transports (console out-of-the-box)
+- Driver-based ORM module with TypeORM-style registration, MongoDB support, timestamps, and seeding hooks
 
 Explore the `examples/` folder for runnable samples that demonstrate the current functionality:
 
@@ -16,6 +17,7 @@ Explore the `examples/` folder for runnable samples that demonstrate the current
 - `examples/basic-graphql` – standalone GraphQL server with resolver discovery
 - `examples/federated-graphql` – subgraph service suitable for Apollo Federation
 - `examples/federation-gateway` – single-port HTTP + GraphQL gateway using NaelFactory
+- `examples/mongo-orm` – REST API backed by the Mongo ORM with seeding and soft deletes
 
 ## Roadmap
 
@@ -28,6 +30,7 @@ The roadmap tracks both the pieces that already landed and the ones we still pla
 - [x] GraphQL module with schema-first resolver discovery and federation hooks
 - [x] NaelFactory-powered Apollo Federation gateway running alongside HTTP routes
 - [x] Structured logger with pluggable transports (console provided)
+- [x] MongoDB ORM module with repositories, timestamps, soft delete, and seeding support
 
 ### Planned
 

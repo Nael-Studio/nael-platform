@@ -1,0 +1,35 @@
+{
+  "name": "@nl-framework/orm",
+  "version": "0.1.0",
+  "description": "MongoDB-first ORM module for Nael Platform with TypeORM-style registration and seeding support.",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "bunx tsc --build tsconfig.build.json",
+    "test": "bun test"
+  },
+  "keywords": [
+    "orm",
+    "mongodb",
+    "bun",
+    "nl-framework"
+  ],
+  "dependencies": {
+    "mongodb": "^6.9.0"
+  },
+  "peerDependencies": {
+    "@nl-framework/core": "workspace:*",
+    "@nl-framework/logger": "workspace:*"
+  }
+}
