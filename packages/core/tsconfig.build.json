@@ -6,11 +6,7 @@
     "declarationMap": true,
     "rootDir": "src",
     "outDir": "dist",
-    "noEmit": false,
-    "paths": {
-      "@nl-framework/logger": ["../logger/dist/index.d.ts"],
-      "@nl-framework/logger/*": ["../logger/dist/*"]
-    }
+    "noEmit": false
   },
   "include": ["src/**/*"],
   "exclude": ["tests/**/*"],
