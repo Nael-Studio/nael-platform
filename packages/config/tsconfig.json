@@ -3,14 +3,12 @@
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": ".",
-    "composite": true
+    "composite": true,
+    "declarationDir": "dist/types"
   },
   "include": ["src/**/*", "tests/**/*"],
+  "exclude": ["dist"],
   "references": [
-    { "path": "../core" },
-    { "path": "../http" },
-    { "path": "../graphql" },
-    { "path": "../logger" },
-    { "path": "../config" }
+    { "path": "../core" }
   ]
 }

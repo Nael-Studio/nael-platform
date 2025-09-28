@@ -1,4 +1,5 @@
-import { Injectable, ConfigService } from '@nl-framework/core';
+import { Injectable } from '@nl-framework/core';
+import { ConfigService } from '@nl-framework/config';
 import type { ExampleConfig } from './types';
 
 @Injectable()
