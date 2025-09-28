@@ -1,6 +1,6 @@
 # Nael Platform
 
-Nael Platform is a [NestJS](https://nestjs.com/)-inspired application framework built on top of [Bun](https://bun.sh). It aims to bring Nest-style modular architecture, decorators, and structured tooling to Bun while remaining lightweight and fast. The project is actively under development and the API surface is expected to evolve.
+Nael Platform is a [NestJS](https://nestjs.com/)-inspired application framework built on top of [Bun](https://bun.sh). It exists because we love Nest's developer ergonomics but grew frustrated with how heavy the experience can feel in modern tooling stacks: long boot times, CommonJS-centric builds that complicate native ESM adoption, and slow feedback loops when pairing with newer libraries that expect pure ESM runtimes. By embracing Bun end-to-end—TypeScript transpilation, test running, package management, and production serving—we get dramatically faster startup, tighter iteration loops, and first-class ESM compatibility while keeping the modular architecture, decorators, and structured tooling that make Nest approachable. The project is actively under development and the API surface is expected to evolve.
 
 ## Current Capabilities
 
