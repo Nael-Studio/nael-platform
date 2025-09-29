@@ -1,0 +1,13 @@
+app:
+  name: Better Auth GraphQL Example
+server:
+  host: 127.0.0.1
+  httpPort: 4201
+  graphqlPort: 4202
+auth:
+  baseUrl: http://127.0.0.1:4201
+  secret: justanotherpassword
+  routePrefix: /api/auth
+mongo:
+  uri: mongodb://127.0.0.1:27017/nl-framework-auth-example
+  db: nl-framework-auth-example

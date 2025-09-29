@@ -42,3 +42,11 @@ export {
   Info,
 } from './decorators/resolver';
 export { ID, Int, Float, BooleanScalar, StringScalar, DateTime } from './scalars';
+export {
+  registerGraphqlGuard,
+  registerGraphqlGuards,
+  listGraphqlGuards,
+  clearGraphqlGuards,
+} from './guards/registry';
+export { createGraphqlGuardExecutionContext } from './guards/execution-context';
+export type { GraphqlExecutionContext } from './guards/types';

@@ -1,0 +1,23 @@
+{
+  "name": "@nl-framework/example-auth-graphql",
+  "private": true,
+  "version": "0.1.0",
+  "description": "GraphQL example demonstrating Better Auth integration with guards and public resolvers.",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/main.ts",
+    "start": "bun run src/main.ts",
+    "check": "bunx tsc --noEmit"
+  },
+  "dependencies": {
+    "@nl-framework/core": "workspace:*",
+    "@nl-framework/graphql": "workspace:*",
+    "@nl-framework/config": "workspace:*",
+    "@nl-framework/http": "workspace:*",
+    "@nl-framework/auth": "workspace:*",
+    "@nl-framework/platform": "workspace:*",
+    "@nl-framework/logger": "workspace:*",
+    "@nl-framework/orm": "workspace:*",
+    "mongodb": "^6.8.0"
+  }
+}

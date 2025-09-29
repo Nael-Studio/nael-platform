@@ -61,7 +61,12 @@ export class GraphqlApplication {
 
     const builder = new GraphqlSchemaBuilder();
     const resolvers = this.context.getResolvers();
-    const artifacts = builder.build(resolvers, { federation: this.options.federation });
+    const artifacts = builder.build(resolvers, {
+      federation: this.options.federation,
+      guards: {
+        resolve: <T>(token: Token<T>) => this.context.get(token),
+      },
+    });
 
     if (this.options.federation?.enabled) {
       this.apolloServer = new ApolloServer<GraphqlContext>({

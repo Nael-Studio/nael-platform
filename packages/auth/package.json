@@ -31,6 +31,7 @@
   "peerDependencies": {
     "@nl-framework/core": "workspace:*",
     "@nl-framework/http": "workspace:*",
+    "@nl-framework/graphql": "workspace:*",
     "@nl-framework/logger": "workspace:*",
     "@nl-framework/orm": "workspace:*"
   }
