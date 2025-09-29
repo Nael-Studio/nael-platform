@@ -7,6 +7,7 @@ This example bootstraps an HTTP application that wires the native [`better-auth`
 - Auto-mount the Better Auth request handler under a configurable `/api/auth/*` prefix via the provided module
 - Enforce authentication globally via the Auth guard while opting specific routes out with the `@Public()` decorator
 - Opt specific controllers or handlers into authentication by adding `@UseGuards(AuthGuard)` wherever you need scoped protection instead of the global guard
+- Register additional global guards (like the example `TenantGuard`) to apply organization-specific checks across every request
 - Attach the authenticated session to every request with the provided middleware
 
 ## Prerequisites
@@ -60,7 +61,6 @@ Change `auth.routePrefix` to mount the Better Auth API under a different base pa
 
    The response sets Better Auth cookies automatically which Postman (or `curl` with `-b`/`-c`) will reuse.
 3. Call `/api/auth/get-session` to inspect the resolved session payload.
-4. Access `/profile` to fetch the authenticated user. When the guard is active, unauthenticated requests immediately receive a `401` JSON response.
 
 ## How it works
 

@@ -1,4 +1,4 @@
-import type { HttpMethod, RequestContext } from '@nl-framework/http';
+import type { HttpMethod, HttpRouteRegistrar, RequestContext } from '@nl-framework/http';
 import { registerHttpRouteRegistrar } from '@nl-framework/http';
 import type { NormalizedBetterAuthHttpOptions } from './options';
 import type { BetterAuthService } from '../service';
@@ -134,13 +134,13 @@ const createOptionsResponse = (
   return new Response(null, { status: 204, headers });
 };
 
-export const registerBetterAuthHttpRoutes = (
+export const createBetterAuthRouteRegistrar = (
   service: BetterAuthService,
   options: NormalizedBetterAuthHttpOptions,
-): void => {
+): HttpRouteRegistrar => {
   const betterAuth = service.instance as BetterAuthApi;
 
-  registerHttpRouteRegistrar(async ({ registerRoute, logger }) => {
+  return async ({ registerRoute, logger }) => {
     const registry = Array.isArray(betterAuth.api)
       ? betterAuth.api
       : Object.values(betterAuth.api ?? {});
@@ -195,5 +195,12 @@ export const registerBetterAuthHttpRoutes = (
       prefix: options.prefix,
       routes: registered.size,
     });
-  });
+  };
+};
+
+export const registerBetterAuthHttpRoutes = (
+  service: BetterAuthService,
+  options: NormalizedBetterAuthHttpOptions,
+): void => {
+  registerHttpRouteRegistrar(createBetterAuthRouteRegistrar(service, options));
 };

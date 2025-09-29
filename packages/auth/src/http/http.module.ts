@@ -1,13 +1,5 @@
-import {
-  Inject,
-  Injectable,
-  Module,
-  type ClassType,
-  type Provider,
-  type Token,
-} from '@nl-framework/core';
-import { LoggerFactory } from '@nl-framework/logger';
-import type { OnModuleInit } from '@nl-framework/core';
+import { Module, type ClassType, type Provider, type Token } from '@nl-framework/core';
+import { registerHttpRouteRegistrar } from '@nl-framework/http';
 import { BetterAuthService } from '../service';
 import { BETTER_AUTH_HTTP_OPTIONS } from './constants';
 import {
@@ -15,27 +7,30 @@ import {
   type BetterAuthHttpOptions,
   type NormalizedBetterAuthHttpOptions,
 } from './options';
-import { registerBetterAuthHttpRoutes } from './routes';
+import { createBetterAuthRouteRegistrar } from './routes';
 import { AuthGuard, registerAuthGuard } from './guard';
 
-@Injectable()
-class BetterAuthHttpRegistrar implements OnModuleInit {
-  constructor(
-    private readonly authService: BetterAuthService,
-    private readonly loggerFactory: LoggerFactory,
-    @Inject(BETTER_AUTH_HTTP_OPTIONS) private readonly httpOptions: NormalizedBetterAuthHttpOptions,
-  ) {}
+let betterAuthHttpRouteRegistrarRegistered = false;
 
-  onModuleInit(): void {
-    registerBetterAuthHttpRoutes(this.authService, this.httpOptions);
-    const logger = this.loggerFactory.create({ context: 'BetterAuthHttpRegistrar' });
-    logger.info('Configured Better Auth HTTP integration', {
-      prefix: this.httpOptions.prefix,
-      handleOptions: this.httpOptions.handleOptions,
-    });
-    registerAuthGuard();
+const ensureBetterAuthHttpIntegration = (): void => {
+  registerAuthGuard();
+
+  if (betterAuthHttpRouteRegistrarRegistered) {
+    return;
   }
-}
+
+  betterAuthHttpRouteRegistrarRegistered = true;
+
+  registerHttpRouteRegistrar(async (api) => {
+    const [authService, options] = await Promise.all([
+      api.resolve(BetterAuthService),
+      api.resolve<NormalizedBetterAuthHttpOptions>(BETTER_AUTH_HTTP_OPTIONS),
+    ]);
+
+    const registrar = createBetterAuthRouteRegistrar(authService, options);
+    await registrar(api);
+  });
+};
 
 const createOptionsProvider = (options?: BetterAuthHttpOptions): Provider => ({
   provide: BETTER_AUTH_HTTP_OPTIONS,
@@ -59,8 +54,10 @@ const createAsyncOptionsProvider = (options: BetterAuthHttpAsyncOptions): Provid
 
 export class BetterAuthHttpModule {
   static register(options?: BetterAuthHttpOptions): ClassType {
+    ensureBetterAuthHttpIntegration();
+
     @Module({
-      providers: [createOptionsProvider(options), BetterAuthHttpRegistrar, AuthGuard],
+      providers: [createOptionsProvider(options), AuthGuard],
       exports: [BETTER_AUTH_HTTP_OPTIONS],
     })
     class BetterAuthHttpFeatureModule {}
@@ -73,9 +70,11 @@ export class BetterAuthHttpModule {
       throw new Error('BetterAuthHttpModule.registerAsync requires a useFactory function.');
     }
 
+    ensureBetterAuthHttpIntegration();
+
     @Module({
       imports: options.imports ?? [],
-      providers: [createAsyncOptionsProvider(options), BetterAuthHttpRegistrar, AuthGuard],
+      providers: [createAsyncOptionsProvider(options), AuthGuard],
       exports: [BETTER_AUTH_HTTP_OPTIONS],
     })
     class BetterAuthHttpAsyncModule {}

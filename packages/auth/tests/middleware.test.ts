@@ -10,6 +10,7 @@ const createContext = (): RequestContext => ({
   query: new URLSearchParams(),
   headers: new Headers(),
   body: undefined,
+  route: {} as RequestContext['route'],
   container: {
     resolve: async () => {
       throw new Error('not implemented');

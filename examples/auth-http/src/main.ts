@@ -1,7 +1,7 @@
 import { NaelFactory } from '@nl-framework/platform';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
-import type { MiddlewareHandler } from '@nl-framework/http';
-import { createBetterAuthMiddleware, BetterAuthService } from '@nl-framework/auth';
+import { registerHttpGuards, type MiddlewareHandler } from '@nl-framework/http';
+import { createBetterAuthMiddleware, BetterAuthService, AuthGuard } from '@nl-framework/auth';
 import { AppModule } from './app.module';
 import type { ExampleConfig } from './types';
 
@@ -20,6 +20,7 @@ const bootstrap = async () => {
     throw new Error('HTTP application was not created.');
   }
 
+  registerHttpGuards(AuthGuard);
   const authService = await httpApp.get(BetterAuthService);
 
   const requestLogMiddleware: MiddlewareHandler = async (ctx, next) => {

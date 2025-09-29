@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { Module, ConfigService } from '@nl-framework/core';
 import { ConfigModule } from '@nl-framework/config';
 import { OrmModule, createMongoDriver, getDatabaseToken } from '@nl-framework/orm';
-import { BetterAuthModule, BetterAuthHttpModule, createMongoAdapterFromDb } from '@nl-framework/auth';
+import { BetterAuthModule, BetterAuthHttpModule, createMongoAdapterFromDb, AuthGuard } from '@nl-framework/auth';
 import type { Db } from 'mongodb';
 import { username } from 'better-auth/plugins/username';
 import type { ExampleConfig } from './types';
@@ -58,5 +58,6 @@ const configDir = resolve(dirname(fileURLToPath(import.meta.url)), '../config');
     }),
   ],
   controllers: [RootController, AuthController, ProfileController],
+  providers: [AuthGuard],
 })
 export class AppModule {}
