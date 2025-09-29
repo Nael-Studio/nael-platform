@@ -1,3 +1,4 @@
+import type { ClassType } from '@nl-framework/core';
 import type {
   ControllerDefinition,
   RouteDefinition,
@@ -5,9 +6,20 @@ import type {
   RequestContext,
 } from '../interfaces/http';
 import { createRouteMatcher, extractParams } from './path-utils';
+import { listHttpGuards } from '../registry';
+import { listAppliedGuards } from '../guards/metadata';
+import { createHttpGuardExecutionContext } from '../guards/execution-context';
+import type {
+  GuardDecision,
+  GuardFunction,
+  GuardToken,
+  CanActivate,
+  HttpExecutionContext,
+} from '../guards/types';
 
 interface HandlerEntry {
   controllerInstance: unknown;
+  controllerClass: ClassType;
   route: RouteDefinition;
   matcher: ReturnType<typeof createRouteMatcher>;
 }
@@ -34,6 +46,7 @@ export class Router {
 
       const entry: HandlerEntry = {
         controllerInstance: instance,
+        controllerClass: definition.controller,
         route,
         matcher,
       };
@@ -97,14 +110,24 @@ export class Router {
   }): Promise<Response> {
     const body = await this.readBody(request);
 
-    const context = {
+    const context: RequestContext = {
       request,
       params,
       query: new URL(request.url).searchParams,
       headers: request.headers,
       body,
+      route: {
+        controller: handler.controllerClass,
+        handlerName: handler.route.handlerName,
+        definition: handler.route,
+      },
       container,
     };
+
+    const guardResponse = await this.runGuards(context, handler);
+    if (guardResponse) {
+      return guardResponse;
+    }
 
     let index = -1;
 
@@ -166,5 +189,61 @@ export class Router {
     }
 
     return new Response(String(result));
+  }
+
+  private async runGuards(context: RequestContext, handler: HandlerEntry): Promise<Response | null> {
+    const guardTokens: GuardToken[] = [
+      ...listHttpGuards(),
+      ...listAppliedGuards(handler.controllerClass, handler.route.handlerName),
+    ];
+
+    if (!guardTokens.length) {
+      return null;
+    }
+
+    const executionContext = createHttpGuardExecutionContext(context);
+
+    for (const guard of guardTokens) {
+      const result = await this.invokeGuard(guard, context, executionContext);
+      if (result instanceof Response) {
+        return result;
+      }
+      if (result === false) {
+        return new Response('Forbidden', { status: 403 });
+      }
+    }
+
+    return null;
+  }
+
+  private isClassGuardToken(token: GuardToken): token is ClassType<CanActivate> {
+    return (
+      typeof token === 'function' &&
+      Object.prototype.hasOwnProperty.call(token, 'prototype') &&
+      typeof (token as { prototype?: { canActivate?: unknown } }).prototype?.canActivate === 'function'
+    );
+  }
+
+  private isGuardFunction(token: GuardToken): token is GuardFunction {
+    return typeof token === 'function' && !this.isClassGuardToken(token);
+  }
+
+  private async invokeGuard(
+    token: GuardToken,
+    context: RequestContext,
+    executionContext: HttpExecutionContext,
+  ): Promise<GuardDecision> {
+    if (this.isGuardFunction(token)) {
+      return token(executionContext);
+    }
+
+    const instance = (await context.container.resolve(
+      token as Parameters<RequestContext['container']['resolve']>[0],
+    )) as CanActivate | undefined;
+    if (typeof instance?.canActivate !== 'function') {
+      throw new Error('Resolved guard does not implement canActivate');
+    }
+
+    return instance.canActivate(executionContext);
   }
 }

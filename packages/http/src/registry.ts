@@ -1,11 +1,14 @@
 import type { Token } from '@nl-framework/core';
 import type { Logger } from '@nl-framework/logger';
 import type { HttpMethod, RequestContext } from './interfaces/http';
+import type { GuardToken } from './guards/types';
 
 const GLOBAL_REGISTRARS_KEY = Symbol.for('nl:http:route-registrars');
+const GLOBAL_GUARDS_KEY = Symbol.for('nl:http:guards');
 
 interface GlobalRegistrars {
   [GLOBAL_REGISTRARS_KEY]?: HttpRouteRegistrar[];
+  [GLOBAL_GUARDS_KEY]?: GuardToken[];
 }
 
 const getGlobalRegistrars = (): GlobalRegistrars => globalThis as GlobalRegistrars;
@@ -43,5 +46,35 @@ export const clearHttpRouteRegistrars = (): void => {
   const registry = getGlobalRegistrars();
   if (registry[GLOBAL_REGISTRARS_KEY]) {
     delete registry[GLOBAL_REGISTRARS_KEY];
+  }
+};
+
+export const registerHttpGuard = (guard: GuardToken): void => {
+  const registry = getGlobalRegistrars();
+  const existing = registry[GLOBAL_GUARDS_KEY];
+
+  if (existing) {
+    existing.push(guard);
+    return;
+  }
+
+  registry[GLOBAL_GUARDS_KEY] = [guard];
+};
+
+export const registerHttpGuards = (...guards: GuardToken[]): void => {
+  for (const guard of guards) {
+    registerHttpGuard(guard);
+  }
+};
+
+export const listHttpGuards = (): GuardToken[] => {
+  const registry = getGlobalRegistrars();
+  return [...(registry[GLOBAL_GUARDS_KEY] ?? [])];
+};
+
+export const clearHttpGuards = (): void => {
+  const registry = getGlobalRegistrars();
+  if (registry[GLOBAL_GUARDS_KEY]) {
+    delete registry[GLOBAL_GUARDS_KEY];
   }
 };

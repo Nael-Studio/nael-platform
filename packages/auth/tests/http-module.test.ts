@@ -43,12 +43,23 @@ const createContext = (overrides: Partial<RequestContext> = {}): RequestContext 
       headers,
     });
 
+  const route = overrides.route ?? {
+    controller: class TestController {},
+    handlerName: 'handler',
+    definition: {
+      method: 'POST' as const,
+      path: '/api/auth/sign-up/email',
+      handlerName: 'handler',
+    },
+  };
+
   return {
     request,
     params: overrides.params ?? {},
     query: overrides.query ?? new URLSearchParams(),
     headers,
     body: overrides.body ?? { email: 'user@example.com' },
+    route,
     container: overrides.container ?? {
       resolve: async () => {
         throw new Error('not implemented');

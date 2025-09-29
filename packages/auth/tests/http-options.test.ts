@@ -4,6 +4,15 @@ import type { RequestContext } from '@nl-framework/http';
 
 const createContext = (headers: Record<string, string> = {}): RequestContext => {
   const requestHeaders = new Headers(headers);
+  const route = {
+    controller: class DummyController {},
+    handlerName: 'handler',
+    definition: {
+      method: 'GET' as const,
+      path: '/',
+      handlerName: 'handler',
+    },
+  } satisfies RequestContext['route'];
   return {
     request: new Request('http://localhost/example', {
       method: 'GET',
@@ -13,6 +22,7 @@ const createContext = (headers: Record<string, string> = {}): RequestContext => 
     query: new URLSearchParams(),
     headers: requestHeaders,
     body: null,
+    route,
     container: {
       resolve: async () => {
         throw new Error('not implemented');

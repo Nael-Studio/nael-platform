@@ -1,8 +1,10 @@
 import { Controller } from '@nl-framework/core';
 import { Get } from '@nl-framework/http';
+import { Public } from '@nl-framework/auth';
 
 @Controller()
 export class RootController {
+  @Public()
   @Get()
   index() {
     return {

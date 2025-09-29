@@ -31,3 +31,27 @@ export {
   type HttpRouteRegistrar,
   type HttpRouteRegistrationApi,
 } from './registry';
+export {
+  registerHttpGuard,
+  registerHttpGuards,
+  listHttpGuards,
+  clearHttpGuards,
+} from './registry';
+export {
+  type GuardDecision,
+  type CanActivate,
+  type GuardFunction,
+  type GuardInstance,
+  type GuardToken,
+  type HttpExecutionContext,
+} from './guards/types';
+export {
+  HttpGuardExecutionContext,
+  createHttpGuardExecutionContext,
+} from './guards/execution-context';
+export {
+  UseGuards,
+  getGuardMetadata,
+  listAppliedGuards,
+  HTTP_GUARDS_METADATA_KEY,
+} from './guards/metadata';

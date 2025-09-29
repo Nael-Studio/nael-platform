@@ -24,4 +24,6 @@ export type { BetterAuthMiddlewareOptions } from './http/middleware';
 export { BetterAuthHttpModule } from './http/http.module';
 export type { BetterAuthHttpOptions } from './http/options';
 export type { BetterAuthHttpAsyncOptions } from './http/http.module';
+export { Public } from './http/public.decorator';
+export { AuthGuard, registerAuthGuard, resetAuthGuard } from './http/guard';
 export * from './orm';

@@ -5,6 +5,8 @@ This example bootstraps an HTTP application that wires the native [`better-auth`
 - Load configuration with `@nl-framework/config`
 - Share a MongoDB connection between the ORM and Better Auth via the new auth module helpers
 - Auto-mount the Better Auth request handler under a configurable `/api/auth/*` prefix via the provided module
+- Enforce authentication globally via the Auth guard while opting specific routes out with the `@Public()` decorator
+- Opt specific controllers or handlers into authentication by adding `@UseGuards(AuthGuard)` wherever you need scoped protection instead of the global guard
 - Attach the authenticated session to every request with the provided middleware
 
 ## Prerequisites
@@ -21,7 +23,7 @@ cd examples/auth-http
 BETTER_AUTH_SECRET="your-64-byte-secret" bun run src/main.ts
 ```
 
-By default the server listens on <http://127.0.0.1:4100>. The `BetterAuthHttpModule` automatically registers every native Better Auth endpoint under `/api/auth/*`, so you can hit paths like `/api/auth/sign-up/email` or `/api/auth/get-session` immediately. A sample protected route is still available at `/profile`.
+By default the server listens on <http://127.0.0.1:4100>. The `BetterAuthHttpModule` automatically registers every native Better Auth endpoint under `/api/auth/*`, so you can hit paths like `/api/auth/sign-up/email` or `/api/auth/get-session` immediately. The guard secures application routes such as `/profile`, while `@Public()` keeps endpoints like `/` and `/auth/session` open for unauthenticated calls.
 
 ## Configuration
 
@@ -58,12 +60,14 @@ Change `auth.routePrefix` to mount the Better Auth API under a different base pa
 
    The response sets Better Auth cookies automatically which Postman (or `curl` with `-b`/`-c`) will reuse.
 3. Call `/api/auth/get-session` to inspect the resolved session payload.
-4. Access `/profile` to fetch the authenticated user. Unauthenticated requests receive a `401` JSON response.
+4. Access `/profile` to fetch the authenticated user. When the guard is active, unauthenticated requests immediately receive a `401` JSON response.
 
 ## How it works
 
-- `AppModule` configures MongoDB via `OrmModule`, shares the connection with Better Auth using `createMongoAdapterFromDb`, and imports `BetterAuthHttpModule.register()` to expose the native routes.
-- `main.ts` keeps the logging and middleware pipeline lightweight—the Better Auth HTTP module owns route registration while the middleware attaches request sessions.
+- `AppModule` configures MongoDB via `OrmModule`, shares the connection with Better Auth using `createMongoAdapterFromDb`, and imports `BetterAuthHttpModule.registerAsync()` to expose the native routes, configure the prefix from config, and register the Auth guard.
+- The exported `AuthGuard` can be applied selectively with `@UseGuards(AuthGuard)` when you only want to secure certain controllers or handlers instead of using the global guard.
+- `main.ts` keeps the logging and middleware pipeline lightweight—the Better Auth HTTP module owns route registration and guard wiring while the middleware attaches request sessions.
+- Controllers use `@Public()` to mark the root landing page and session probe as unauthenticated endpoints, leaving everything else protected.
 - Controllers retrieve the active session through `getRequestAuth`, demonstrating how downstream code can read authentication state without re-validating cookies.
 
 Feel free to extend the example by enabling additional Better Auth plugins or connecting the session data to your own domain modules.

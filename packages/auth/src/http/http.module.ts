@@ -16,6 +16,7 @@ import {
   type NormalizedBetterAuthHttpOptions,
 } from './options';
 import { registerBetterAuthHttpRoutes } from './routes';
+import { AuthGuard, registerAuthGuard } from './guard';
 
 @Injectable()
 class BetterAuthHttpRegistrar implements OnModuleInit {
@@ -32,6 +33,7 @@ class BetterAuthHttpRegistrar implements OnModuleInit {
       prefix: this.httpOptions.prefix,
       handleOptions: this.httpOptions.handleOptions,
     });
+    registerAuthGuard();
   }
 }
 
@@ -58,7 +60,7 @@ const createAsyncOptionsProvider = (options: BetterAuthHttpAsyncOptions): Provid
 export class BetterAuthHttpModule {
   static register(options?: BetterAuthHttpOptions): ClassType {
     @Module({
-      providers: [createOptionsProvider(options), BetterAuthHttpRegistrar],
+      providers: [createOptionsProvider(options), BetterAuthHttpRegistrar, AuthGuard],
       exports: [BETTER_AUTH_HTTP_OPTIONS],
     })
     class BetterAuthHttpFeatureModule {}
@@ -73,7 +75,7 @@ export class BetterAuthHttpModule {
 
     @Module({
       imports: options.imports ?? [],
-      providers: [createAsyncOptionsProvider(options), BetterAuthHttpRegistrar],
+      providers: [createAsyncOptionsProvider(options), BetterAuthHttpRegistrar, AuthGuard],
       exports: [BETTER_AUTH_HTTP_OPTIONS],
     })
     class BetterAuthHttpAsyncModule {}

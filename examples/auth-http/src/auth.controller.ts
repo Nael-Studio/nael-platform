@@ -1,11 +1,12 @@
 import { Controller } from '@nl-framework/core';
 import { Get, type RequestContext } from '@nl-framework/http';
-import { BetterAuthService, getRequestAuth } from '@nl-framework/auth';
+import { BetterAuthService, Public, getRequestAuth } from '@nl-framework/auth';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: BetterAuthService) {}
 
+  @Public()
   @Get('session')
   async getSession(context: RequestContext) {
     const snapshot = getRequestAuth(context) ?? (await this.authService.getSessionOrNull(context.request));
