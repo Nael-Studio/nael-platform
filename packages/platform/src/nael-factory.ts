@@ -32,7 +32,6 @@ interface NormalizedGraphqlOptions {
   enabled: boolean;
   options: GraphqlServerOptions;
   explicit: boolean;
-  integrateWithHttp: boolean;
   path: string;
 }
 
@@ -82,7 +81,6 @@ export interface NaelFactoryOptions extends ApplicationOptions {
 
 export interface NaelListenOptions {
   http?: number;
-  graphql?: number;
   gateway?: number | FederationGatewayListenOptions;
 }
 
@@ -150,10 +148,6 @@ class NaelPlatformApplication implements NaelApplication {
       results.http = await this.httpApp.listen(options.http);
     }
 
-    if (this.graphqlApp && !this.graphqlIntegrationPath) {
-      results.graphql = await this.graphqlApp.listen(options.graphql);
-    }
-
     if (this.graphqlApp && this.graphqlIntegrationPath && results.http) {
       const host = results.http.hostname ?? '0.0.0.0';
       const displayHost = host === '0.0.0.0' || host === '::' ? '127.0.0.1' : host;
@@ -161,6 +155,8 @@ class NaelPlatformApplication implements NaelApplication {
       const url = `http://${displayHost}:${port}${this.graphqlIntegrationPath}`;
       results.graphql = { url };
       this.logger.info('GraphQL mounted within HTTP server', { url });
+    } else if (this.graphqlApp) {
+      this.logger.error('GraphQL application was created without HTTP integration.');
     }
 
     if (this.gatewayApp) {
@@ -278,9 +274,8 @@ const normalizeGraphqlOptions = (
     const path = normalizeGraphqlPath('/graphql');
     return {
       enabled: value,
-      options: { path, integrateWithHttp: true },
+      options: { path },
       explicit: true,
-      integrateWithHttp: true,
       path,
     };
   }
@@ -289,29 +284,23 @@ const normalizeGraphqlOptions = (
     const path = normalizeGraphqlPath('/graphql');
     return {
       enabled: false,
-      options: { path, integrateWithHttp: true },
+      options: { path },
       explicit: false,
-      integrateWithHttp: true,
       path,
     };
   }
 
-  const { enabled, integrateWithHttp, path, ...rest } = value;
+  const { enabled, path, ...rest } = value;
   const normalizedPath = normalizeGraphqlPath(path ?? '/graphql');
   const options: GraphqlServerOptions = {
     ...rest,
     path: normalizedPath,
   };
 
-  if (integrateWithHttp !== undefined) {
-    options.integrateWithHttp = integrateWithHttp;
-  }
-
   return {
     enabled: enabled ?? true,
     options,
     explicit: enabled !== undefined,
-    integrateWithHttp: integrateWithHttp ?? true,
     path: normalizedPath,
   };
 };
@@ -372,6 +361,12 @@ export class NaelFactory {
       graphqlEnabled = false;
     }
 
+    if (graphqlEnabled && !normalizedHttp.enabled) {
+      throw new Error(
+        'GraphQL support requires the HTTP server to be enabled. Enable HTTP or disable GraphQL.',
+      );
+    }
+
     const httpApp = normalizedHttp.enabled
       ? createHttpApplicationFromContext(context, normalizedHttp.options)
       : undefined;
@@ -384,10 +379,10 @@ export class NaelFactory {
 
     let graphqlIntegrationPath: string | undefined;
 
-    if (httpApp && graphqlApp && normalizedGraphql.integrateWithHttp) {
+    if (httpApp && graphqlApp) {
       const mountPath = normalizedGraphql.path;
       const graphqlHandler = await graphqlApp.createHttpHandler(mountPath);
-  const methods: HttpMethod[] = ['GET', 'POST', 'OPTIONS', 'HEAD'];
+      const methods: HttpMethod[] = ['GET', 'POST', 'OPTIONS', 'HEAD'];
       for (const method of methods) {
         httpApp.registerRouteHandler(method, mountPath, graphqlHandler, { public: true });
       }

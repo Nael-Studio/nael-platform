@@ -6,8 +6,6 @@ import { AppModule } from './app.module';
 import type { ExampleConfig } from './types';
 
 const bootstrap = async () => {
-  // TODO: Remove fallback to http
-  // TODO: Create Wrapper Graphql for BetterAuth
   const app = await NaelFactory.create(AppModule, {
     http: true,
     graphql: {

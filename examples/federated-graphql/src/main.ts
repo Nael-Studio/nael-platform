@@ -4,7 +4,7 @@ import { AppModule } from './app.module';
 
 const bootstrap = async () => {
   const app = await NaelFactory.create(AppModule, {
-    http: false,
+    http: true,
     graphql: {
       federation: { enabled: true },
     },
@@ -13,7 +13,7 @@ const bootstrap = async () => {
   const loggerFactory = await app.get<LoggerFactory>(LoggerFactory);
   const appLogger = loggerFactory.create({ context: 'FederatedGraphqlExample' });
 
-  const { graphql } = await app.listen({ graphql: 4011 });
+  const { graphql } = await app.listen({ http: 4011 });
   const url = graphql?.url ?? 'unknown';
   appLogger.info('Federated GraphQL subgraph ready', { url });
 

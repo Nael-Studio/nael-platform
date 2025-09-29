@@ -3,7 +3,6 @@ import { Application } from '@nl-framework/core';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
 import { ApolloServer, HeaderMap } from '@apollo/server';
 import type { HTTPGraphQLRequest, HTTPGraphQLResponse } from '@apollo/server';
-import { startStandaloneServer } from '@apollo/server/standalone';
 import { buildSubgraphSchema } from '@apollo/subgraph';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { RequestContext } from '@nl-framework/http';
@@ -13,7 +12,6 @@ export interface GraphqlServerOptions {
   host?: string;
   port?: number;
   path?: string;
-  integrateWithHttp?: boolean;
   federation?: GraphqlBuildOptions['federation'];
   context?: GraphqlContextFactory;
 }
@@ -60,39 +58,6 @@ export class GraphqlApplication {
     this.logger.info(`GraphQL module loaded (resolvers=${resolverCount})`);
   }
 
-  async listen(port?: number): Promise<GraphqlListenResult> {
-    if (this.apolloServerStarted && this.apolloServer) {
-      throw new Error('GraphQL server is already running via HTTP integration. Only one mode can be active at a time.');
-    }
-
-    const server = await this.ensureApolloServer({ start: false });
-    const listenPort = port ?? this.options.port ?? 4001;
-    const host = this.options.host ?? '0.0.0.0';
-
-    const serverInfo = await startStandaloneServer(server, {
-      listen: {
-        port: listenPort,
-        host,
-      },
-      context: async ({ req, res }: { req: IncomingMessage; res: ServerResponse<IncomingMessage> }) => {
-        const baseContext: GraphqlContext = { req, res };
-        if (this.options.context) {
-          const extra = await this.options.context({ req, res });
-          if (extra && typeof extra === 'object') {
-            Object.assign(baseContext, extra);
-          }
-        }
-        return baseContext;
-      },
-    });
-
-    const { url } = serverInfo as GraphqlListenResult;
-    this.logger.info(`NL Framework GraphQL started at ${url}`);
-    this.apolloServerStarted = true;
-
-    return { url };
-  }
-
   async createHttpHandler(path = this.options.path ?? '/graphql'): Promise<(ctx: RequestContext) => Promise<Response>> {
     const server = await this.ensureApolloServer({ start: true });
     const normalizedPath = this.normalizePath(path);
@@ -103,14 +68,14 @@ export class GraphqlApplication {
         return new Response('Not Found', { status: 404 });
       }
 
-        const httpRequest = await this.createHttpGraphqlRequest(ctx, requestUrl);
-        const nodeLikeRequest = this.createNodeIncomingRequest(ctx, requestUrl);
-        const responseStub = this.createServerResponseStub();
-        const baseContext: GraphqlContext = {
-          req: nodeLikeRequest,
-          res: responseStub,
-          request: ctx.request,
-        };
+      const httpRequest = await this.createHttpGraphqlRequest(ctx, requestUrl);
+      const nodeLikeRequest = this.createNodeIncomingRequest(ctx, requestUrl);
+      const responseStub = this.createServerResponseStub();
+      const baseContext: GraphqlContext = {
+        req: nodeLikeRequest,
+        res: responseStub,
+        request: ctx.request,
+      };
 
       if (this.options.context) {
         const extra = await this.options.context({ req: nodeLikeRequest, res: baseContext.res });
