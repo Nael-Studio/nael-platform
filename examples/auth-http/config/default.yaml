@@ -6,6 +6,7 @@ server:
 auth:
   baseUrl: http://127.0.0.1:4100
   secret: justanotherpassword
+  routePrefix: /api/auth
 mongo:
   uri: mongodb://127.0.0.1:27017/nl-framework-auth-example
   db: nl-framework-auth-example

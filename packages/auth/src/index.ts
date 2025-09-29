@@ -21,4 +21,7 @@ export {
 	clearRequestAuth,
 } from './http/middleware';
 export type { BetterAuthMiddlewareOptions } from './http/middleware';
+export { BetterAuthHttpModule } from './http/http.module';
+export type { BetterAuthHttpOptions } from './http/options';
+export type { BetterAuthHttpAsyncOptions } from './http/http.module';
 export * from './orm';

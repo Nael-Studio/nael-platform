@@ -24,3 +24,10 @@ export {
   type HttpApplicationOptions,
   type HttpServerOptions,
 } from './http-application';
+export {
+  registerHttpRouteRegistrar,
+  listHttpRouteRegistrars,
+  clearHttpRouteRegistrars,
+  type HttpRouteRegistrar,
+  type HttpRouteRegistrationApi,
+} from './registry';

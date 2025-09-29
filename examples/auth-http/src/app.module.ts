@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { Module, ConfigService } from '@nl-framework/core';
 import { ConfigModule } from '@nl-framework/config';
 import { OrmModule, createMongoDriver, getDatabaseToken } from '@nl-framework/orm';
-import { BetterAuthModule, createMongoAdapterFromDb } from '@nl-framework/auth';
+import { BetterAuthModule, BetterAuthHttpModule, createMongoAdapterFromDb } from '@nl-framework/auth';
 import type { Db } from 'mongodb';
 import { username } from 'better-auth/plugins/username';
 import type { ExampleConfig } from './types';
@@ -44,6 +44,15 @@ const configDir = resolve(dirname(fileURLToPath(import.meta.url)), '../config');
           },
           adapter: createMongoAdapterFromDb(db),
           extendPlugins: [username()],
+        };
+      },
+    }),
+    BetterAuthHttpModule.registerAsync({
+      inject: [ConfigService],
+      useFactory: (...args: unknown[]) => {
+        const [config] = args as [ConfigService<ExampleConfig>];
+        return {
+          prefix: config.get('auth.routePrefix', '/api/auth') as string,
         };
       },
     }),

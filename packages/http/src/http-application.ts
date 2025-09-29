@@ -5,6 +5,7 @@ import type { Server } from 'bun';
 import { Router } from './router/router';
 import type { MiddlewareHandler, HttpMethod, RequestContext } from './interfaces/http';
 import { getRouteDefinitions } from './decorators/routes';
+import { listHttpRouteRegistrars } from './registry';
 
 export interface HttpServerOptions {
   host?: string;
@@ -19,6 +20,7 @@ export class HttpApplication {
   private server?: Server;
   private logger: Logger;
   private customRouteCounter = 0;
+  private readonly routeRegistrarPromise: Promise<void>;
 
   constructor(
     private readonly context: ApplicationContext,
@@ -36,6 +38,7 @@ export class HttpApplication {
         this.logger = baseLogger;
       });
     this.registerControllers();
+    this.routeRegistrarPromise = this.initializeRouteRegistrars();
     for (const middleware of options.middleware ?? []) {
       this.router.use(middleware);
     }
@@ -108,6 +111,7 @@ export class HttpApplication {
   }
 
   async listen(port?: number): Promise<Server> {
+    await this.routeRegistrarPromise;
     const listenPort = port ?? this.options.port ?? 3000;
     const hostname = this.options.host ?? '0.0.0.0';
 
@@ -144,6 +148,30 @@ export class HttpApplication {
     if (this.ownsContext) {
       await this.context.close();
     }
+  }
+
+  private async initializeRouteRegistrars(): Promise<void> {
+    const registrars = listHttpRouteRegistrars();
+    if (!registrars.length) {
+      return;
+    }
+
+    for (const registrar of registrars) {
+      try {
+        await registrar({
+          logger: this.logger,
+          registerRoute: (method, path, handler) =>
+            this.registerRouteHandler(method, path, handler),
+          resolve: <T>(token: Token<T>) => this.context.get(token),
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+        this.logger.error('Failed to execute HTTP route registrar', { error: message });
+      }
+    }
+
+    this.logger.info('HTTP route registrars executed', { count: registrars.length });
   }
 }
 

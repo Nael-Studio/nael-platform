@@ -4,7 +4,7 @@ This example bootstraps an HTTP application that wires the native [`better-auth`
 
 - Load configuration with `@nl-framework/config`
 - Share a MongoDB connection between the ORM and Better Auth via the new auth module helpers
-- Mount the Better Auth request handler under `/api/auth/*`
+- Auto-mount the Better Auth request handler under a configurable `/api/auth/*` prefix via the provided module
 - Attach the authenticated session to every request with the provided middleware
 
 ## Prerequisites
@@ -21,7 +21,7 @@ cd examples/auth-http
 BETTER_AUTH_SECRET="your-64-byte-secret" bun run src/main.ts
 ```
 
-By default the server listens on <http://127.0.0.1:4100>. During bootstrap we automatically register every native Better Auth endpoint under `/api/auth/*`, so you can hit paths like `/api/auth/sign-up/email` or `/api/auth/get-session` immediately. A sample protected route is still available at `/profile`.
+By default the server listens on <http://127.0.0.1:4100>. The `BetterAuthHttpModule` automatically registers every native Better Auth endpoint under `/api/auth/*`, so you can hit paths like `/api/auth/sign-up/email` or `/api/auth/get-session` immediately. A sample protected route is still available at `/profile`.
 
 ## Configuration
 
@@ -34,12 +34,15 @@ server:
 auth:
   baseUrl: http://127.0.0.1:4100
   secret: change-me-in-env
+  routePrefix: /api/auth
 mongo:
   uri: mongodb://127.0.0.1:27017/nl-framework-auth-example
   db: nl-framework-auth-example
 ```
 
 Override any value with environment variables (e.g. `MONGODB_URI`, `MONGODB_DB`, `BETTER_AUTH_SECRET`).
+
+Change `auth.routePrefix` to mount the Better Auth API under a different base path without touching application code.
 
 ## Testing the flow
 
@@ -59,8 +62,8 @@ Override any value with environment variables (e.g. `MONGODB_URI`, `MONGODB_DB`,
 
 ## How it works
 
-- `AppModule` configures MongoDB via `OrmModule` and shares the connection with Better Auth using `createMongoAdapterFromDb`.
-- `main.ts` wires middleware that forwards `/api/auth/*` to the Better Auth handler and attaches sessions to all other requests.
+- `AppModule` configures MongoDB via `OrmModule`, shares the connection with Better Auth using `createMongoAdapterFromDb`, and imports `BetterAuthHttpModule.register()` to expose the native routes.
+- `main.ts` keeps the logging and middleware pipeline lightweight—the Better Auth HTTP module owns route registration while the middleware attaches request sessions.
 - Controllers retrieve the active session through `getRequestAuth`, demonstrating how downstream code can read authentication state without re-validating cookies.
 
 Feel free to extend the example by enabling additional Better Auth plugins or connecting the session data to your own domain modules.

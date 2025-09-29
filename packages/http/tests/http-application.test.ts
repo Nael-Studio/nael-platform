@@ -1,6 +1,12 @@
 import { describe, expect, it, beforeEach, afterEach } from 'bun:test';
 import { Controller, Injectable, Module } from '@nl-framework/core';
-import { createHttpApplication, Get, type MiddlewareHandler } from '../src/index';
+import {
+  clearHttpRouteRegistrars,
+  createHttpApplication,
+  Get,
+  registerHttpRouteRegistrar,
+  type MiddlewareHandler,
+} from '../src/index';
 import type { RequestContext } from '../src/interfaces/http';
 
 @Injectable()
@@ -29,6 +35,10 @@ class GreetingModule {}
 
 describe('HTTP Application', () => {
   let appUnderTest: Awaited<ReturnType<typeof createHttpApplication>>;
+
+  beforeEach(() => {
+    clearHttpRouteRegistrars();
+  });
 
   afterEach(async () => {
     if (appUnderTest) {
@@ -71,5 +81,18 @@ describe('HTTP Application', () => {
     });
 
     expect(requestIds).toEqual(['middleware-check']);
+  });
+
+  it('runs registered HTTP route registrars', async () => {
+    registerHttpRouteRegistrar(({ registerRoute }) => {
+      registerRoute('GET', '/dynamic', () => new Response('dynamic-route'));
+    });
+
+    appUnderTest = await createHttpApplication(GreetingModule, { port: 0 });
+    const server = await appUnderTest.listen();
+
+    const response = await fetch(`http://127.0.0.1:${server.port}/dynamic`);
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe('dynamic-route');
   });
 });
