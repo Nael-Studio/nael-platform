@@ -1,6 +1,6 @@
 import { NaelFactory } from '@nl-framework/platform';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
-import type { MiddlewareHandler } from '@nl-framework/http';
+import type { MiddlewareHandler, HttpMethod, RequestContext } from '@nl-framework/http';
 import { createBetterAuthMiddleware, BetterAuthService } from '@nl-framework/auth';
 import { AppModule } from './app.module';
 import type { ExampleConfig } from './types';
@@ -21,6 +21,106 @@ const bootstrap = async () => {
   }
 
   const authService = await httpApp.get(BetterAuthService);
+  const betterAuth = authService.instance;
+
+  const reconstructRequest = (ctx: RequestContext): Request => {
+    const original = ctx.request;
+    const method = original.method.toUpperCase();
+
+    if (method === 'GET' || method === 'HEAD') {
+      return original;
+    }
+
+    let body: BodyInit | undefined;
+
+    if (ctx.body instanceof ArrayBuffer) {
+      body = ctx.body;
+    } else if (typeof ctx.body === 'string') {
+      body = ctx.body;
+    } else if (ctx.body !== null && ctx.body !== undefined) {
+      body = JSON.stringify(ctx.body);
+    }
+
+    const headers = new Headers(original.headers);
+    if (body && typeof body === 'string' && !headers.has('content-type')) {
+      headers.set('content-type', 'application/json');
+    }
+
+    return new Request(original.url, {
+      method,
+      headers,
+      body,
+    });
+  };
+
+  const registerBetterAuthRoutes = () => {
+    const registered = new Set<string>();
+    const supportedMethods: HttpMethod[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'];
+
+    const apiEntries = Object.values(betterAuth.api ?? {}) as Array<{
+      path?: string;
+      options?: { method?: string | string[] };
+    }>;
+
+    for (const entry of apiEntries) {
+      if (!entry?.path) {
+        continue;
+      }
+
+      const rawMethods = entry.options?.method;
+      const methods = Array.isArray(rawMethods)
+        ? rawMethods
+        : rawMethods
+          ? [rawMethods]
+          : ['GET'];
+
+      for (const method of methods) {
+        const normalizedMethod = method.toUpperCase() as HttpMethod;
+        if (!supportedMethods.includes(normalizedMethod)) {
+          continue;
+        }
+
+        const fullPath = `/api/auth${entry.path}`;
+        const dedupeKey = `${normalizedMethod} ${fullPath}`;
+        if (registered.has(dedupeKey)) {
+          continue;
+        }
+        registered.add(dedupeKey);
+
+        httpApp.registerRouteHandler(normalizedMethod, fullPath, async (ctx) => {
+          const request = reconstructRequest(ctx);
+          return authService.handle(request);
+        });
+      }
+
+      if (!methods.includes('OPTIONS')) {
+        const optionsPath = `/api/auth${entry.path}`;
+        const optionsKey = `OPTIONS ${optionsPath}`;
+        if (!registered.has(optionsKey)) {
+          registered.add(optionsKey);
+          httpApp.registerRouteHandler('OPTIONS', optionsPath, async (ctx) => {
+            const origin = ctx.request.headers.get('origin') ?? '*';
+            const allowHeaders = ctx.request.headers.get('access-control-request-headers') ?? '*';
+            const allowMethod = ctx.request.headers.get('access-control-request-method') ?? 'GET,POST,PUT,PATCH,DELETE,OPTIONS,HEAD';
+
+            const headers = new Headers({
+              'Access-Control-Allow-Origin': origin,
+              'Access-Control-Allow-Credentials': 'true',
+              'Access-Control-Allow-Headers': allowHeaders,
+              'Access-Control-Allow-Methods': allowMethod,
+              Vary: 'Origin',
+            });
+
+            return new Response(null, { status: 204, headers });
+          });
+        }
+      }
+    }
+
+    appLogger.info('Better Auth routes registered', { count: registered.size });
+  };
+
+  registerBetterAuthRoutes();
 
   const requestLogMiddleware: MiddlewareHandler = async (ctx, next) => {
     const started = Date.now();
@@ -45,16 +145,7 @@ const bootstrap = async () => {
     }
   };
 
-  const authRouteMiddleware: MiddlewareHandler = async (ctx, next) => {
-    const { pathname } = new URL(ctx.request.url);
-    if (pathname.startsWith('/api/auth')) {
-      return authService.handle(ctx.request);
-    }
-    return next();
-  };
-
   httpApp.use(requestLogMiddleware);
-  httpApp.use(authRouteMiddleware);
   httpApp.use(createBetterAuthMiddleware(authService));
 
   const config = app.getConfig<ExampleConfig>();

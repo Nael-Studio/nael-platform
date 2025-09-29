@@ -21,7 +21,7 @@ cd examples/auth-http
 BETTER_AUTH_SECRET="your-64-byte-secret" bun run src/main.ts
 ```
 
-By default the server listens on <http://127.0.0.1:4100>. Better Auth APIs are exposed beneath `/api/auth/*` and an example protected route is available at `/profile`.
+By default the server listens on <http://127.0.0.1:4100>. During bootstrap we automatically register every native Better Auth endpoint under `/api/auth/*`, so you can hit paths like `/api/auth/sign-up/email` or `/api/auth/get-session` immediately. A sample protected route is still available at `/profile`.
 
 ## Configuration
 
@@ -44,8 +44,17 @@ Override any value with environment variables (e.g. `MONGODB_URI`, `MONGODB_DB`,
 ## Testing the flow
 
 1. Start the server with the command above.
-2. Use the Better Auth client (or direct HTTP calls) to hit `/api/auth/sign-up/email` and create a user.
-3. Call `/auth/session` to inspect the resolved session payload.
+2. Use the Better Auth client (or a simple `curl` request) to hit `/api/auth/sign-up/email` and create a user:
+
+   ```bash
+   curl -i -c cookies.txt \
+     -H "Content-Type: application/json" \
+     -X POST http://127.0.0.1:4100/api/auth/sign-up/email \
+     -d '{"name":"Ada Lovelace","email":"ada@example.com","password":"Str0ngPassw0rd!","rememberMe":true}'
+   ```
+
+   The response sets Better Auth cookies automatically which Postman (or `curl` with `-b`/`-c`) will reuse.
+3. Call `/api/auth/get-session` to inspect the resolved session payload.
 4. Access `/profile` to fetch the authenticated user. Unauthenticated requests receive a `401` JSON response.
 
 ## How it works
