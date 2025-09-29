@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import type { ClassType, ApplicationOptions, Token, ApplicationContext } from '@nl-framework/core';
 import { Application, getControllerPrefix } from '@nl-framework/core';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
@@ -86,6 +87,7 @@ export class HttpApplication {
     method: HttpMethod,
     path: string,
     handler: (context: RequestContext) => unknown | Promise<unknown>,
+    options: { public?: boolean } = {},
   ): void {
     const handlerName = `__custom_route_${++this.customRouteCounter}`;
     const routeDefinition = {
@@ -94,17 +96,27 @@ export class HttpApplication {
       handlerName,
     } as const;
 
-    const proxyController = {
-      [handlerName]: handler,
-    } as Record<string, unknown>;
+    const DynamicController = class {
+      [handlerName](context: RequestContext) {
+        return handler(context);
+      }
+    };
+
+    if (options.public) {
+      const metadataKey = Symbol.for('nl:auth:http:public');
+      Reflect.defineMetadata(metadataKey, true, DynamicController.prototype, handlerName);
+      Reflect.defineMetadata(metadataKey, true, DynamicController, handlerName);
+    }
+
+    const controllerInstance = new DynamicController();
 
     this.router.registerController(
       {
         prefix: '',
-        controller: proxyController.constructor as ClassType,
+        controller: DynamicController as unknown as ClassType,
         routes: [routeDefinition],
       },
-      proxyController,
+      controllerInstance,
     );
 
     this.logger.debug('Registered custom HTTP route handler', { method, path });

@@ -6,6 +6,8 @@ import { AppModule } from './app.module';
 import type { ExampleConfig } from './types';
 
 const bootstrap = async () => {
+  // TODO: Remove fallback to http
+  // TODO: Create Wrapper Graphql for BetterAuth
   const app = await NaelFactory.create(AppModule, {
     http: true,
     graphql: {
@@ -61,15 +63,16 @@ const bootstrap = async () => {
 
   const config = app.getConfig<ExampleConfig>();
   const host = config.get('server.host', '127.0.0.1') as string;
-  const httpPort = config.get('server.httpPort', 4201) as number;
-  const graphqlPort = config.get('server.graphqlPort', 4202) as number;
+  const port = config.get('server.port', 4201) as number;
 
-  await app.listen({ http: httpPort, graphql: graphqlPort });
+  const results = await app.listen({ http: port });
   const displayHost = host === '0.0.0.0' ? '127.0.0.1' : host;
+  const httpUrl = `http://${displayHost}:${port}`;
+  const graphqlUrl = results.graphql?.url ?? `${httpUrl}/graphql`;
   appLogger.info('Auth GraphQL example ready', {
-    httpUrl: `http://${displayHost}:${httpPort}`,
-    graphqlUrl: `http://${displayHost}:${graphqlPort}/graphql`,
-    authEndpoints: `http://${displayHost}:${httpPort}/api/auth/*`,
+    httpUrl,
+    graphqlUrl,
+    authEndpoints: `${httpUrl}/api/auth/*`,
   });
 
   const shutdown = async (signal: string) => {

@@ -7,7 +7,7 @@ This example pairs the NL Framework GraphQL module with Better Auth to protect r
 - GraphQL resolvers built with the code-first decorators.
 - Global `AuthGuard` execution shared between HTTP and GraphQL.
 - `@Public()` decorator to opt specific resolvers out of auth.
-- In-memory Better Auth adapter for quick local experimentation.
+- Better Auth + MongoDB integration via the shared ORM adapter.
 
 ## Prerequisites
 
@@ -29,10 +29,9 @@ Start the example from the repository root:
 bun run --filter @nl-framework/example-auth-graphql start
 ```
 
-The server boots both HTTP (for Better Auth) and GraphQL endpoints:
+The server boots a single HTTP listener that serves both Better Auth REST endpoints and GraphQL at `/graphql`:
 
-- HTTP: `http://127.0.0.1:4201`
-- GraphQL: `http://127.0.0.1:4202/graphql`
+- REST & GraphQL: `http://127.0.0.1:4201`
 
 ## Creating an account and session
 
@@ -60,7 +59,7 @@ The server boots both HTTP (for Better Auth) and GraphQL endpoints:
 
 ## Exercising the GraphQL API
 
-Open Apollo Sandbox or Postman at `http://127.0.0.1:4202/graphql` and run:
+Open Apollo Sandbox or Postman at `http://127.0.0.1:4201/graphql` and run:
 
 ```graphql
 query PublicGreeting {
@@ -77,7 +76,8 @@ query Viewer {
   viewer {
     id
     email
-    roles
+    name
+    emailVerified
   }
 }
 ```

@@ -11,8 +11,7 @@ export interface ExampleConfig extends Record<string, unknown> {
   };
   server: {
     host: string;
-    httpPort: number;
-    graphqlPort: number;
+    port: number;
   };
   auth: {
     baseUrl: string;

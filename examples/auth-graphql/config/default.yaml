@@ -2,8 +2,7 @@ app:
   name: Better Auth GraphQL Example
 server:
   host: 127.0.0.1
-  httpPort: 4201
-  graphqlPort: 4202
+  port: 4201
 auth:
   baseUrl: http://127.0.0.1:4201
   secret: justanotherpassword
