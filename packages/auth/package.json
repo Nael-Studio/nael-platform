@@ -1,0 +1,37 @@
+{
+  "name": "@nl-framework/auth",
+  "version": "0.1.0",
+  "description": "Better Auth integration for NL Framework with DI-friendly configuration and HTTP middleware.",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "bunx tsc --build tsconfig.build.json",
+    "test": "bun test"
+  },
+  "keywords": [
+    "auth",
+    "better-auth",
+    "bun",
+    "nl-framework"
+  ],
+  "dependencies": {
+    "better-auth": "^1.3.23"
+  },
+  "peerDependencies": {
+    "@nl-framework/core": "workspace:*",
+    "@nl-framework/http": "workspace:*",
+    "@nl-framework/logger": "workspace:*",
+    "@nl-framework/orm": "workspace:*"
+  }
+}
