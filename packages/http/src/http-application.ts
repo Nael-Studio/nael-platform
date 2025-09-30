@@ -7,6 +7,7 @@ import { Router } from './router/router';
 import type { MiddlewareHandler, HttpMethod, RequestContext } from './interfaces/http';
 import { getRouteDefinitions } from './decorators/routes';
 import { listHttpRouteRegistrars } from './registry';
+import { PUBLIC_ROUTE_METADATA_KEY } from './constants';
 
 export interface HttpServerOptions {
   host?: string;
@@ -103,9 +104,8 @@ export class HttpApplication {
     };
 
     if (options.public) {
-      const metadataKey = Symbol.for('nl:auth:http:public');
-      Reflect.defineMetadata(metadataKey, true, DynamicController.prototype, handlerName);
-      Reflect.defineMetadata(metadataKey, true, DynamicController, handlerName);
+      Reflect.defineMetadata(PUBLIC_ROUTE_METADATA_KEY, true, DynamicController.prototype, handlerName);
+      Reflect.defineMetadata(PUBLIC_ROUTE_METADATA_KEY, true, DynamicController, handlerName);
     }
 
     const controllerInstance = new DynamicController();

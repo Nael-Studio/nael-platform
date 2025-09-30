@@ -55,3 +55,4 @@ export {
   listAppliedGuards,
   HTTP_GUARDS_METADATA_KEY,
 } from './guards/metadata';
+export { PUBLIC_ROUTE_METADATA_KEY } from './constants';

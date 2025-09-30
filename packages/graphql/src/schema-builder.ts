@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { parse, type DocumentNode, GraphQLError } from 'graphql';
 import type { ClassType, Token } from '@nl-framework/core';
-import { listAppliedGuards } from '@nl-framework/http';
+import { listAppliedGuards, PUBLIC_ROUTE_METADATA_KEY } from '@nl-framework/http';
 import {
   GraphqlMetadataStorage,
   type FieldDefinition,
@@ -33,7 +33,6 @@ export interface GraphqlBuildArtifacts {
 }
 
 const BUILT_IN_TYPES = new Set(['String', 'Float', 'Int', 'Boolean', 'ID']);
-const PUBLIC_METADATA_KEY = Symbol.for('nl:auth:http:public');
 
 export interface GraphqlGuardRuntimeOptions {
   resolve<T>(token: Token<T>): Promise<T>;
@@ -55,11 +54,11 @@ const isPublicResolver = (target: ClassType, handlerName: string): boolean => {
       continue;
     }
 
-    if (Reflect.getMetadata(PUBLIC_METADATA_KEY, proto, handlerName)) {
+    if (Reflect.getMetadata(PUBLIC_ROUTE_METADATA_KEY, proto, handlerName)) {
       return true;
     }
 
-    if (Reflect.getMetadata(PUBLIC_METADATA_KEY, proto)) {
+    if (Reflect.getMetadata(PUBLIC_ROUTE_METADATA_KEY, proto)) {
       return true;
     }
   }

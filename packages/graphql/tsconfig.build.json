@@ -11,6 +11,7 @@
   "include": ["src/**/*"],
   "references": [
     { "path": "../core/tsconfig.build.json" },
-    { "path": "../logger/tsconfig.build.json" }
+    { "path": "../logger/tsconfig.build.json" },
+    { "path": "../http/tsconfig.build.json" }
   ]
 }

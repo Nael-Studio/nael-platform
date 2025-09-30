@@ -1,6 +1,7 @@
 import 'reflect-metadata';
+import { PUBLIC_ROUTE_METADATA_KEY } from '@nl-framework/http';
 
-const PUBLIC_METADATA_KEY = Symbol.for('nl:auth:http:public');
+const PUBLIC_METADATA_KEY = PUBLIC_ROUTE_METADATA_KEY;
 
 type Stage3MethodContext = {
   kind: 'method';
