@@ -110,7 +110,8 @@ const formatDescription = (description?: string): string => {
     return '';
   }
 
-  const escaped = description.replace(/"""/g, '\u0022\u0022\u0022');
+  // Escape any triple double-quotes by inserting a backslash before the last quote.
+  const escaped = description.replace(/"""/g, '\\"\\"\\"');
   return `"""\n${escaped}\n"""\n`;
 };
 
