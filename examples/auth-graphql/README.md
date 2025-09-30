@@ -57,6 +57,46 @@ The server boots a single HTTP listener that serves both Better Auth REST endpoi
 
    Copy the `Set-Cookie` values from the response and include them in subsequent requests (your HTTP client may track them automatically).
 
+## Creating a session over GraphQL (optional)
+
+The example now ships with `BetterAuthGraphqlModule`, exposing auth mutations directly on the `/graphql` endpoint. You can replace the REST calls above with the following GraphQL operations:
+
+```graphql
+mutation SignUp($input: SignUpEmailInput!) {
+  signUpWithEmail(input: $input) {
+    success
+    session {
+      token
+      user {
+        id
+        email
+        name
+        emailVerified
+      }
+    }
+  }
+}
+```
+
+```graphql
+mutation SignIn($input: SignInEmailInput!) {
+  signInWithEmail(input: $input) {
+    success
+    session {
+      token
+      user {
+        id
+        email
+        name
+        emailVerified
+      }
+    }
+  }
+}
+```
+
+Run the mutations with the same credentials as the REST examples (`rememberMe` defaults to `true`). The resolver automatically forwards Better Auth `Set-Cookie` headers to the HTTP response, so your GraphQL client can store the session cookie for subsequent guarded queries.
+
 ## Exercising the GraphQL API
 
 Open Apollo Sandbox or Postman at `http://127.0.0.1:4201/graphql` and run:

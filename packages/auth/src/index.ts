@@ -1,5 +1,13 @@
 export { BetterAuthModule } from './module';
 export { BetterAuthService, type BetterAuthSessionOptions } from './service';
+export { BetterAuthGraphqlModule } from './graphql/module';
+export {
+	AuthUser,
+	AuthSession,
+	AuthMutationResult,
+	SignInEmailInput,
+	SignUpEmailInput,
+} from './graphql/types';
 export {
 	BETTER_AUTH_INSTANCE,
 	BETTER_AUTH_OPTIONS,

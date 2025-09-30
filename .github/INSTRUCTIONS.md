@@ -34,6 +34,7 @@ scripts/             # Build/test/publish helpers
    - Capture requirements in the shared TODO tracker (GitHub issues, project board, or automation).
    - Each task should include acceptance criteria and cross-reference the relevant packages.
    - The logger package is the first deliverable for any new milestone—confirm `@nl-framework/logger` capabilities up front before expanding other surfaces.
+   - Cross-check the root roadmap in `README.md` so ongoing work reflects completed Better Auth + config milestones and focuses on the remaining targets.
 2. **Scaffold consistently**
    - Use Bun workspaces for every new package and keep TypeScript configs aligned with `tsconfig.base.json`.
    - Expose ESM builds with declaration files and mark publishable packages with `"publishConfig"`.
@@ -50,8 +51,9 @@ scripts/             # Build/test/publish helpers
    - Each service publishes a federated subgraph using the `@nl-framework/graphql` package.
    - Update the gateway service configuration when adding or removing subgraphs.
 6. **Auth integration**
-   - Use the Better Auth wrapper module for authentication/authorization.
+   - Use the Better Auth wrapper module (REST + `BetterAuthGraphqlModule`) for authentication/authorization.
    - Place reusable guards, decorators, and policies in the `auth` package.
+   - When exposing auth flows over GraphQL, rely on the shared proxy helpers instead of duplicating HTTP logic.
 7. **MongoDB ORM**
    - Entities must extend the base auditable model to inherit `createdAt`, `updatedAt`, and soft delete (`deletedAt`).
    - Provide migration or seed scripts when introducing new collections.
@@ -62,6 +64,9 @@ scripts/             # Build/test/publish helpers
 9. **Documentation**
    - Update the root README and package-level docs after any notable change.
    - Maintain changelogs if publishing to npm.
+10. **Exception handling (upcoming focus)**
+   - Track work toward unified HTTP/GraphQL exception filters, logging integration, and interceptor support.
+   - Prefer incremental contributions that move toward the shared exception primitives listed in the roadmap.
 
 ## Pull request template
 Include the following in every PR:
