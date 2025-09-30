@@ -216,14 +216,17 @@ export class Router {
     return null;
   }
 
-  private isClassGuardToken(token: GuardToken): token is ClassType<CanActivate> {
+  // Helper to check if a value is a class constructor with a canActivate method on its prototype
+  private static hasCanActivatePrototype(token: unknown): boolean {
     return (
       typeof token === 'function' &&
-      Object.prototype.hasOwnProperty.call(token, 'prototype') &&
       typeof (token as { prototype?: { canActivate?: unknown } }).prototype?.canActivate === 'function'
     );
   }
 
+  private isClassGuardToken(token: GuardToken): token is ClassType<CanActivate> {
+    return Router.hasCanActivatePrototype(token);
+  }
   private isGuardFunction(token: GuardToken): token is GuardFunction {
     return typeof token === 'function' && !this.isClassGuardToken(token);
   }
