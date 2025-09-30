@@ -36,6 +36,8 @@ describe('normalizeBetterAuthHttpOptions', () => {
     const normalized = normalizeBetterAuthHttpOptions();
     expect(normalized.prefix).toBe('/api/auth');
     expect(normalized.handleOptions).toBe(true);
+    expect(normalized.trustedProxy.protocols).toEqual(['http']);
+    expect(normalized.trustedProxy.hosts).toBeNull();
 
     const context = createContext({
       origin: 'https://example.com',
@@ -63,6 +65,10 @@ describe('normalizeBetterAuthHttpOptions', () => {
         exposeHeaders: ['X-Foo'],
         maxAge: 600,
       },
+      trustedProxy: {
+        protocols: ['https', 'ws'],
+        hosts: ['App.local:3000', 'invalid host', '127.0.0.1'],
+      },
     });
 
     expect(normalized.prefix).toBe('/auth/v1');
@@ -76,6 +82,8 @@ describe('normalizeBetterAuthHttpOptions', () => {
     expect(normalized.cors.allowCredentials).toBe(false);
     expect(normalized.cors.exposeHeaders).toBe('X-Foo');
     expect(normalized.cors.maxAge).toBe(600);
+    expect(normalized.trustedProxy.protocols).toEqual(['https']);
+    expect(normalized.trustedProxy.hosts).toEqual(['app.local:3000', '127.0.0.1']);
   });
 
   it('supports functional cors overrides', () => {
@@ -91,5 +99,16 @@ describe('normalizeBetterAuthHttpOptions', () => {
     expect(normalized.cors.allowOrigin(context)).toBe('https://fallback.local');
     expect(normalized.cors.allowHeaders(context)).toBe('Content-Type,X-Trace-Id');
     expect(normalized.cors.allowMethods(context)).toBe('PUT');
+  });
+
+  it('returns null when trusted proxy host list sanitizes to empty', () => {
+    const normalized = normalizeBetterAuthHttpOptions({
+      trustedProxy: {
+        hosts: ['   ', 'bad/host'],
+      },
+    });
+
+    expect(normalized.trustedProxy.hosts).toBeNull();
+    expect(normalized.trustedProxy.protocols).toEqual(['http']);
   });
 });

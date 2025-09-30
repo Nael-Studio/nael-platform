@@ -12,11 +12,17 @@ import { normalizeBetterAuthHttpOptions } from '../src/http/options';
 import { BetterAuthService } from '../src/service';
 import type { BetterAuthSessionPayload } from '../src/types';
 import { BETTER_AUTH_HTTP_OPTIONS } from '../src/http/constants';
+import type { GraphqlExecutionContext, GraphqlContext } from '@nl-framework/graphql';
+import type { GraphQLResolveInfo } from 'graphql';
+import type { LoggerFactory } from '@nl-framework/logger';
+import type { IncomingMessage } from 'node:http';
 
 class GuardStubService {
   public readonly instance = {};
+  public lastRequest: Request | null = null;
 
   async getSessionOrNull(request: Request): Promise<BetterAuthSessionPayload | null> {
+    this.lastRequest = request;
     if (request.headers.get('x-auth') === 'allow') {
       return {
         session: {
@@ -60,6 +66,22 @@ class PublicController {
 
 const guardStub = new GuardStubService();
 const guardOptions = normalizeBetterAuthHttpOptions();
+const loggerFactoryStub = {
+  create: () => ({
+    debug() {
+      /* noop */
+    },
+    info() {
+      /* noop */
+    },
+    warn() {
+      /* noop */
+    },
+    error() {
+      /* noop */
+    },
+  }),
+} as unknown as LoggerFactory;
 
 @Module({
   controllers: [SecureController, PublicController],
@@ -78,6 +100,7 @@ describe('Auth guard', () => {
     clearHttpRouteRegistrars();
     resetAuthGuard();
     registerAuthGuard();
+    guardStub.lastRequest = null;
   });
 
   afterEach(async () => {
@@ -130,5 +153,104 @@ describe('Auth guard', () => {
     } finally {
       await app.close();
     }
+  });
+});
+
+const createGraphqlExecutionContext = (
+  req: IncomingMessage,
+  contextOverrides: Partial<GraphqlContext> = {},
+): GraphqlExecutionContext => {
+  const graphqlContext = {
+    req,
+    res: undefined,
+    ...contextOverrides,
+  } as GraphqlContext;
+
+  const info = {
+    fieldName: 'sampleField',
+    parentType: { name: 'Query' },
+  } as unknown as GraphQLResolveInfo;
+
+  const resolverClass = class TestResolver {};
+
+  return {
+    details: {
+      parent: null,
+      args: {},
+      context: graphqlContext,
+      info,
+      resolverClass,
+      resolverHandlerName: 'sampleField',
+    },
+    getContext: <T extends GraphqlContext = GraphqlContext>() => graphqlContext as T,
+    getArgs: <TArgs extends Record<string, unknown> = Record<string, unknown>>() => ({} as TArgs),
+    getInfo: () => info,
+    getParent: <TParent = unknown>() => null as TParent,
+    getResolverClass: () => resolverClass,
+    getResolverHandlerName: () => 'sampleField',
+    resolve: async () => {
+      throw new Error('Not implemented');
+    },
+  } satisfies GraphqlExecutionContext;
+};
+
+const createIncomingMessage = (
+  headers: Record<string, string | string[]>,
+  url = '/graphql',
+): IncomingMessage =>
+  ({
+    headers,
+    url,
+    method: 'POST',
+  } as unknown as IncomingMessage);
+
+describe('Auth guard forwarded header handling', () => {
+  it('falls back to request host when forwarded host is not trusted', async () => {
+    const service = new GuardStubService();
+    const guard = new AuthGuard(
+      service as unknown as BetterAuthService,
+      loggerFactoryStub,
+      normalizeBetterAuthHttpOptions(),
+    );
+
+    const context = createGraphqlExecutionContext(
+      createIncomingMessage({
+        host: 'internal.example:4000',
+        'x-forwarded-host': 'attacker.example',
+        'x-forwarded-proto': 'https',
+      }),
+    );
+
+    const result = await guard.canActivate(context);
+
+    expect(result instanceof Response).toBe(true);
+    expect(service.lastRequest?.url).toBe('http://internal.example:4000/graphql');
+  });
+
+  it('honors trusted forwarded protocol and host overrides', async () => {
+    const service = new GuardStubService();
+    const guard = new AuthGuard(
+      service as unknown as BetterAuthService,
+      loggerFactoryStub,
+      normalizeBetterAuthHttpOptions({
+        trustedProxy: {
+          hosts: ['app.example.com'],
+          protocols: ['https'],
+        },
+      }),
+    );
+
+    const context = createGraphqlExecutionContext(
+      createIncomingMessage({
+        host: 'internal.example:4000',
+        'x-forwarded-host': 'app.example.com',
+        'x-forwarded-proto': 'https',
+      }),
+    );
+
+    const result = await guard.canActivate(context);
+
+    expect(result instanceof Response).toBe(true);
+    expect(service.lastRequest?.url).toBe('https://app.example.com/graphql');
   });
 });

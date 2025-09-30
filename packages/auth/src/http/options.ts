@@ -1,5 +1,10 @@
 import type { RequestContext } from '@nl-framework/http';
 
+export interface BetterAuthHttpTrustedProxyOptions {
+  hosts?: string | string[];
+  protocols?: string | string[];
+}
+
 export interface BetterAuthHttpCorsOptions {
   allowOrigin?: string | ((context: RequestContext) => string | null | undefined);
   allowHeaders?:
@@ -19,6 +24,7 @@ export interface BetterAuthHttpOptions {
   prefix?: string;
   handleOptions?: boolean;
   cors?: BetterAuthHttpCorsOptions;
+  trustedProxy?: BetterAuthHttpTrustedProxyOptions;
 }
 
 export interface NormalizedBetterAuthHttpOptions {
@@ -32,7 +38,15 @@ export interface NormalizedBetterAuthHttpOptions {
     exposeHeaders?: string;
     maxAge?: number;
   };
+  trustedProxy: {
+    protocols: ('http' | 'https')[];
+    hosts: string[] | null;
+  };
 }
+
+const CONTROL_CHAR_PATTERN = /[\u0000-\u001F\s]/u;
+const INVALID_HOST_CHAR_PATTERN = /[\/#?]/;
+const DEFAULT_TRUSTED_PROTOCOLS: ('http' | 'https')[] = ['http'];
 
 const normalizePrefix = (value?: string): string => {
   if (!value) {
@@ -96,6 +110,57 @@ const normalizeExposeHeaders = (value?: string | string[]): string | undefined =
   return value;
 };
 
+const ensureArray = (value?: string | string[]): string[] => {
+  if (!value) {
+    return [];
+  }
+  return Array.isArray(value) ? value : [value];
+};
+
+const sanitizeProtocol = (value: string): 'http' | 'https' | undefined => {
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'http' || normalized === 'https') {
+    return normalized;
+  }
+  return undefined;
+};
+
+const sanitizeHost = (value: string): string | undefined => {
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.length > 255) {
+    return undefined;
+  }
+  if (CONTROL_CHAR_PATTERN.test(trimmed) || INVALID_HOST_CHAR_PATTERN.test(trimmed)) {
+    return undefined;
+  }
+
+  try {
+    const url = new URL(`http://${trimmed}`);
+    const host = url.host;
+    return host ? host.toLowerCase() : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+const normalizeTrustedProxyProtocols = (
+  value?: string | string[],
+): ('http' | 'https')[] => {
+  const normalized = ensureArray(value)
+    .map(sanitizeProtocol)
+    .filter((protocol): protocol is 'http' | 'https' => Boolean(protocol));
+  const unique = Array.from(new Set(normalized));
+  return unique.length ? unique : DEFAULT_TRUSTED_PROTOCOLS;
+};
+
+const normalizeTrustedProxyHosts = (value?: string | string[]): string[] | null => {
+  const normalized = ensureArray(value)
+    .map(sanitizeHost)
+    .filter((host): host is string => Boolean(host));
+  const unique = Array.from(new Set(normalized));
+  return unique.length ? unique : null;
+};
+
 export const normalizeBetterAuthHttpOptions = (
   options: BetterAuthHttpOptions = {},
 ): NormalizedBetterAuthHttpOptions => {
@@ -128,6 +193,10 @@ export const normalizeBetterAuthHttpOptions = (
       allowCredentials: cors.allowCredentials ?? true,
       exposeHeaders: normalizeExposeHeaders(cors.exposeHeaders),
       maxAge: cors.maxAge,
+    },
+    trustedProxy: {
+      protocols: normalizeTrustedProxyProtocols(options.trustedProxy?.protocols),
+      hosts: normalizeTrustedProxyHosts(options.trustedProxy?.hosts),
     },
   };
 };

@@ -97,11 +97,21 @@ export class HttpApplication {
       handlerName,
     } as const;
 
-    const DynamicController = class {
-      [handlerName](context: RequestContext) {
-        return handler(context);
-      }
-    };
+    const className = `CustomRouteController_${this.customRouteCounter}`;
+    const DynamicController = (
+      new Function(
+        'handlerName',
+        'handler',
+        `return class ${className} {
+          [handlerName](context) {
+            return handler(context);
+          }
+        };`,
+      ) as (
+        dynamicHandlerName: string,
+        dynamicHandler: (context: RequestContext) => unknown | Promise<unknown>,
+      ) => ClassType
+    )(handlerName, handler);
 
     if (options.public) {
       Reflect.defineMetadata(PUBLIC_ROUTE_METADATA_KEY, true, DynamicController.prototype, handlerName);

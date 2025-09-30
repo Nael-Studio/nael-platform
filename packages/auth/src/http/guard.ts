@@ -45,12 +45,81 @@ const setGraphqlAuth = (context: GraphqlContext, payload: BetterAuthSessionPaylo
   (context as { auth?: BetterAuthSessionPayload | null }).auth = payload;
 };
 
-const createRequestFromIncomingMessage = (req: IncomingMessage): Request => {
-  const protoHeader = req.headers['x-forwarded-proto'];
-  const protocol = Array.isArray(protoHeader) ? protoHeader[0] : protoHeader ?? 'http';
+const pickHeaderValue = (value: string | string[] | undefined): string | undefined =>
+  Array.isArray(value) ? value[0] : value;
 
-  const hostHeader = req.headers['x-forwarded-host'] ?? req.headers.host ?? 'localhost';
-  const host = Array.isArray(hostHeader) ? hostHeader[0] : hostHeader;
+const FORWARDED_CONTROL_PATTERN = /[\u0000-\u001F\s]/u;
+const FORWARDED_INVALID_HOST_PATTERN = /[\/#?]/;
+
+const sanitizeForwardedProtocol = (
+  value: string | undefined,
+  allowed: ReadonlyArray<'http' | 'https'>,
+): 'http' | 'https' => {
+  const fallback = allowed[0] ?? 'http';
+  if (!value) {
+    return fallback;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'https' && allowed.includes('https')) {
+    return 'https';
+  }
+
+  if (normalized === 'http' && allowed.includes('http')) {
+    return 'http';
+  }
+
+  return fallback;
+};
+
+const sanitizeForwardedHost = (value: string | undefined): string | null => {
+  if (!value) {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.length > 255) {
+    return null;
+  }
+
+  if (FORWARDED_CONTROL_PATTERN.test(trimmed) || FORWARDED_INVALID_HOST_PATTERN.test(trimmed)) {
+    return null;
+  }
+
+  try {
+    const url = new URL(`http://${trimmed}`);
+    const host = url.host;
+    return host ? host.toLowerCase() : null;
+  } catch {
+    return null;
+  }
+};
+
+const resolveTrustedHost = (
+  forwardedHost: string | null,
+  fallbackHost: string,
+  allowedHosts: string[] | null,
+): string => {
+  if (forwardedHost && allowedHosts && allowedHosts.includes(forwardedHost)) {
+    return forwardedHost;
+  }
+
+  return fallbackHost;
+};
+
+const createRequestFromIncomingMessage = (
+  req: IncomingMessage,
+  options: NormalizedBetterAuthHttpOptions,
+): Request => {
+  const protoHeader = pickHeaderValue(req.headers['x-forwarded-proto']);
+  const protocol = sanitizeForwardedProtocol(protoHeader, options.trustedProxy.protocols);
+
+  const defaultHostHeader = pickHeaderValue(req.headers.host);
+  const fallbackHost = sanitizeForwardedHost(defaultHostHeader) ?? 'localhost';
+
+  const forwardedHostHeader = pickHeaderValue(req.headers['x-forwarded-host']);
+  const forwardedHost = sanitizeForwardedHost(forwardedHostHeader);
+  const host = resolveTrustedHost(forwardedHost, fallbackHost, options.trustedProxy.hosts);
 
   const url = req.url ?? '/graphql';
   const normalizedPath = url.startsWith('/') ? url : `/${url}`;
@@ -166,7 +235,7 @@ export class AuthGuard implements CanActivate {
       return this.unauthorizedResponse();
     }
 
-    const request = createRequestFromIncomingMessage(requestSource);
+    const request = createRequestFromIncomingMessage(requestSource, this.options);
     const resolved = await this.authService.getSessionOrNull(request);
     if (resolved) {
       setGraphqlAuth(gqlContext, resolved);
