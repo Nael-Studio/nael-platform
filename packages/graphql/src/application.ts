@@ -203,7 +203,10 @@ export class GraphqlApplication {
   private createServerResponseStub(): ServerResponse<IncomingMessage> {
     const headerStore = new Map<string, string>();
 
-    const stub: any = {
+    const stub: Partial<ServerResponse<IncomingMessage>> & {
+      statusCode: number;
+      statusMessage: string;
+    } = Object.assign(Object.create(null), {
       statusCode: 200,
       statusMessage: 'OK',
       setHeader(name: string, value: number | string | readonly string[]) {
@@ -235,7 +238,7 @@ export class GraphqlApplication {
       write() {
         return true;
       },
-    };
+    });
 
     return stub as ServerResponse<IncomingMessage>;
   }

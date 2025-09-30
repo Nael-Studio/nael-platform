@@ -177,4 +177,57 @@ describe('BetterAuth HTTP route registration', () => {
   const signupOptionsRoutes = registeredRoutes.filter((route) => route === 'OPTIONS /api/auth/sign-up/email');
   expect(signupOptionsRoutes).toHaveLength(1);
   });
+
+  it('returns 400 when request body cannot be serialized', async () => {
+    const service = new StubBetterAuthService();
+    const options = normalizeBetterAuthHttpOptions();
+
+    registerBetterAuthHttpRoutes(service as unknown as BetterAuthService, options);
+
+    const registrars = listHttpRouteRegistrars();
+    expect(registrars).toHaveLength(1);
+
+    const registeredRoutes: Array<{
+      method: string;
+      path: string;
+      handler: (context: RequestContext) => Promise<Response> | Response;
+    }> = [];
+
+    const api: HttpRouteRegistrationApi = {
+      logger: new Logger({ context: 'Test' }),
+      registerRoute: (
+        method,
+        path,
+        handler: (context: RequestContext) => Promise<Response> | Response,
+      ) => {
+        registeredRoutes.push({ method, path, handler });
+      },
+      resolve: async () => {
+        throw new Error('not implemented');
+      },
+    };
+
+    const registrar = registrars[0];
+    expect(registrar).toBeDefined();
+    await registrar!(api);
+
+    const postHandler = registeredRoutes.find((route) => route.method === 'POST');
+    expect(postHandler).toBeDefined();
+
+  const circular: any = {};
+    circular.self = circular;
+
+    const response = await postHandler!.handler(
+      createContext({
+        body: circular,
+        headers: new Headers({ origin: 'https://app.test' }),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(response.headers.get('Content-Type')).toBe('application/json');
+    expect(await response.json()).toEqual({ message: 'Invalid request payload' });
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.test');
+    expect(service.handled).toHaveLength(0);
+  });
 });

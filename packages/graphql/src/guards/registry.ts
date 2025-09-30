@@ -1,4 +1,5 @@
 import type { GraphqlGuardToken } from './types';
+import { markGuardToken } from '@nl-framework/http';
 
 const GLOBAL_GRAPHQL_GUARDS_KEY = Symbol.for('nl:graphql:guards');
 
@@ -9,6 +10,7 @@ type GraphqlGlobalRegistry = typeof globalThis & {
 const getRegistry = (): GraphqlGlobalRegistry => globalThis as GraphqlGlobalRegistry;
 
 export const registerGraphqlGuard = (guard: GraphqlGuardToken): void => {
+  markGuardToken(guard);
   const registry = getRegistry();
   const existing = registry[GLOBAL_GRAPHQL_GUARDS_KEY];
 

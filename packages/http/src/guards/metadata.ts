@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import type { GuardToken } from './types';
+import { markGuardToken } from './utils';
 
 const GUARDS_METADATA_KEY = Symbol.for('nl:http:guards:metadata');
 
@@ -56,6 +57,10 @@ const appendGuardMetadata = (
 
 export const UseGuards = (...guards: GuardToken[]): ClassDecorator & MethodDecorator =>
   ((targetOrValue: unknown, context?: unknown) => {
+    for (const guard of guards) {
+      markGuardToken(guard);
+    }
+
     if (isStage3MethodContext(context)) {
       context.addInitializer(function () {
         const container = context.static ? this : Object.getPrototypeOf(this);

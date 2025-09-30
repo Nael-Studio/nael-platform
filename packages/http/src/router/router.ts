@@ -16,6 +16,7 @@ import type {
   CanActivate,
   HttpExecutionContext,
 } from '../guards/types';
+import { isGuardClassToken, isGuardFunctionToken } from '../guards/utils';
 
 interface HandlerEntry {
   controllerInstance: unknown;
@@ -216,19 +217,11 @@ export class Router {
     return null;
   }
 
-  // Helper to check if a value is a class constructor with a canActivate method on its prototype
-  private static hasCanActivatePrototype(token: unknown): boolean {
-    return (
-      typeof token === 'function' &&
-      typeof (token as { prototype?: { canActivate?: unknown } }).prototype?.canActivate === 'function'
-    );
-  }
-
   private isClassGuardToken(token: GuardToken): token is ClassType<CanActivate> {
-    return Router.hasCanActivatePrototype(token);
+    return isGuardClassToken(token);
   }
   private isGuardFunction(token: GuardToken): token is GuardFunction {
-    return typeof token === 'function' && !this.isClassGuardToken(token);
+    return isGuardFunctionToken(token);
   }
 
   private async invokeGuard(

@@ -17,6 +17,22 @@ export interface HttpServerOptions {
 
 export interface HttpApplicationOptions extends ApplicationOptions, HttpServerOptions {}
 
+const createDynamicRouteController = (
+  className: string,
+  handlerName: string,
+  handler: (context: RequestContext) => unknown | Promise<unknown>,
+): ClassType => {
+  const controllerMap = {
+    [className]: class {
+      [handlerName](context: RequestContext) {
+        return handler(context);
+      }
+    },
+  };
+
+  return controllerMap[className] as ClassType;
+};
+
 export class HttpApplication {
   private readonly router = new Router();
   private server?: Server;
@@ -98,20 +114,7 @@ export class HttpApplication {
     } as const;
 
     const className = `CustomRouteController_${this.customRouteCounter}`;
-    const DynamicController = (
-      new Function(
-        'handlerName',
-        'handler',
-        `return class ${className} {
-          [handlerName](context) {
-            return handler(context);
-          }
-        };`,
-      ) as (
-        dynamicHandlerName: string,
-        dynamicHandler: (context: RequestContext) => unknown | Promise<unknown>,
-      ) => ClassType
-    )(handlerName, handler);
+    const DynamicController = createDynamicRouteController(className, handlerName, handler);
 
     if (options.public) {
       Reflect.defineMetadata(PUBLIC_ROUTE_METADATA_KEY, true, DynamicController.prototype, handlerName);

@@ -2,6 +2,7 @@ import type { Token } from '@nl-framework/core';
 import type { Logger } from '@nl-framework/logger';
 import type { HttpMethod, RequestContext } from './interfaces/http';
 import type { GuardToken } from './guards/types';
+import { markGuardToken } from './guards/utils';
 
 const GLOBAL_REGISTRARS_KEY = Symbol.for('nl:http:route-registrars');
 const GLOBAL_GUARDS_KEY = Symbol.for('nl:http:guards');
@@ -50,6 +51,7 @@ export const clearHttpRouteRegistrars = (): void => {
 };
 
 export const registerHttpGuard = (guard: GuardToken): void => {
+  markGuardToken(guard);
   const registry = getGlobalRegistrars();
   const existing = registry[GLOBAL_GUARDS_KEY];
 

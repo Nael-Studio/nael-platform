@@ -165,8 +165,6 @@ class NaelPlatformApplication implements NaelApplication {
       const url = `http://${displayHost}:${port}${this.graphqlIntegrationPath}`;
       results.graphql = { url };
       this.logger.info('GraphQL mounted within HTTP server', { url });
-    } else if (this.graphqlApp) {
-      this.logger.error('GraphQL application was created without HTTP integration.');
     }
 
     if (this.gatewayApp) {

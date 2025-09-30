@@ -1,7 +1,12 @@
 import 'reflect-metadata';
 import { parse, type DocumentNode, GraphQLError } from 'graphql';
 import type { ClassType, Token } from '@nl-framework/core';
-import { listAppliedGuards, PUBLIC_ROUTE_METADATA_KEY } from '@nl-framework/http';
+import {
+  listAppliedGuards,
+  PUBLIC_ROUTE_METADATA_KEY,
+  isGuardClassToken as isHttpGuardClassToken,
+  type GuardToken,
+} from '@nl-framework/http';
 import {
   GraphqlMetadataStorage,
   type FieldDefinition,
@@ -38,13 +43,10 @@ export interface GraphqlGuardRuntimeOptions {
   resolve<T>(token: Token<T>): Promise<T>;
 }
 
-const isClassGuardToken = (token: unknown): token is ClassType<{ canActivate?: unknown }> =>
-  typeof token === 'function' &&
-  Object.prototype.hasOwnProperty.call(token, 'prototype') &&
-  typeof (token as { prototype?: { canActivate?: unknown } }).prototype?.canActivate === 'function';
-
-const isGuardFunction = (token: unknown): token is (context: GraphqlExecutionContext) => unknown =>
-  typeof token === 'function' && !isClassGuardToken(token);
+const isGraphqlGuardFunction = (
+  token: unknown,
+): token is (context: GraphqlExecutionContext) => unknown =>
+  typeof token === 'function' && !isHttpGuardClassToken(token as GuardToken);
 
 const isPublicResolver = (target: ClassType, handlerName: string): boolean => {
   const prototypes: Array<object | undefined> = [target, (target as { prototype?: object }).prototype];
@@ -168,13 +170,13 @@ const invokeGraphqlGuard = async (
   executionContext: GraphqlExecutionContext,
   runtime: GraphqlGuardRuntimeOptions,
 ) => {
-  if (isGuardFunction(guard)) {
+  if (isGraphqlGuardFunction(guard)) {
     return (guard as (context: GraphqlExecutionContext) => unknown | Promise<unknown>)(
       executionContext,
     );
   }
 
-  if (isClassGuardToken(guard)) {
+  if (isHttpGuardClassToken(guard as GuardToken)) {
     const instance = await runtime.resolve(guard as Token<unknown>);
     if (!instance || typeof (instance as { canActivate?: unknown }).canActivate !== 'function') {
       throw new Error('Resolved GraphQL guard does not implement canActivate');

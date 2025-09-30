@@ -55,4 +55,9 @@ export {
   listAppliedGuards,
   HTTP_GUARDS_METADATA_KEY,
 } from './guards/metadata';
+export {
+  markGuardToken,
+  isGuardClassToken,
+  isGuardFunctionToken,
+} from './guards/utils';
 export { PUBLIC_ROUTE_METADATA_KEY } from './constants';

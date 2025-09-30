@@ -28,6 +28,13 @@ const normalizePath = (prefix: string, path?: string): string => {
   return sanitized || '/';
 };
 
+class RequestSerializationError extends Error {
+  constructor(message: string, readonly cause?: unknown) {
+    super(message);
+    this.name = 'RequestSerializationError';
+  }
+}
+
 const reconstructRequest = (context: RequestContext): Request => {
   const original = context.request;
   const method = original.method.toUpperCase();
@@ -45,7 +52,11 @@ const reconstructRequest = (context: RequestContext): Request => {
   } else if (typeof context.body === 'string') {
     body = context.body;
   } else if (context.body !== null && context.body !== undefined) {
-    body = JSON.stringify(context.body);
+    try {
+      body = JSON.stringify(context.body);
+    } catch (error) {
+      throw new RequestSerializationError('Failed to serialize request body', error);
+    }
   }
 
   const headers = new Headers(original.headers);
@@ -174,9 +185,33 @@ export const createBetterAuthRouteRegistrar = (
 
         registered.add(dedupeKey);
         registerRoute(normalizedMethod, fullPath, async (context) => {
-          const request = reconstructRequest(context);
-          const response = await service.handle(request);
-          return applyCorsHeaders(response, context, options.cors);
+          try {
+            const request = reconstructRequest(context);
+            const response = await service.handle(request);
+            return applyCorsHeaders(response, context, options.cors);
+          } catch (error) {
+            if (error instanceof RequestSerializationError) {
+              logger.error('Failed to forward Better Auth request due to serialization error.', {
+                method: normalizedMethod,
+                path: fullPath,
+                message: error.message,
+              });
+
+              const errorResponse = new Response(
+                JSON.stringify({ message: 'Invalid request payload' }),
+                {
+                  status: 400,
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                },
+              );
+
+              return applyCorsHeaders(errorResponse, context, options.cors);
+            }
+
+            throw error;
+          }
         });
       }
 
