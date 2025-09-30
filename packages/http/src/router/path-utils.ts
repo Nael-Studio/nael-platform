@@ -8,6 +8,7 @@ export interface RouteMatcher {
 export const createRouteMatcher = (path: string): RouteMatcher => {
   const paramNames: string[] = [];
   const pattern = path
+    .replace(/\\/g, '\\\\')
     .replace(/\//g, '\\/')
     .replace(paramPattern, (_, paramName: string) => {
       paramNames.push(paramName);
