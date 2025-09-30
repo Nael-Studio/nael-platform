@@ -15,6 +15,16 @@ const packages = [
 	'platform',
 ] as const;
 
+const examples = [
+	'basic-http',
+	'basic-graphql',
+	'federated-graphql',
+	'federation-gateway',
+	'mongo-orm',
+	'auth-http',
+	'auth-graphql',
+] as const;
+
 const getTsconfig = (pkg: (typeof packages)[number]): string => {
 	const buildPath = join('packages', pkg, 'tsconfig.build.json');
 	if (existsSync(buildPath)) {
@@ -32,4 +42,9 @@ for (const pkg of packages) {
 	await $`bunx tsc --build --pretty false --force ${tsconfigPath}`;
 }
 
-console.log('[check] All packages type-checked successfully.');
+for (const example of examples) {
+	console.log(`[check] Type-checking example ${example}...`);
+	await $`bun run --cwd examples/${example} check`;
+}
+
+console.log('[check] All packages and examples type-checked successfully.');
