@@ -79,6 +79,16 @@ export interface NaelFactoryOptions extends ApplicationOptions {
   gateway?: boolean | NaelFactoryGatewayOptions;
 }
 
+/**
+ * Options for listening to application servers.
+ *
+ * @deprecated The `graphql` option has been removed from `NaelListenOptions`.
+ * GraphQL is now integrated through HTTP. To expose GraphQL, configure the HTTP server
+ * and set the appropriate GraphQL options in `NaelFactoryOptions`.
+ * If you previously used `graphql?: number`, please migrate to using the HTTP server
+ * and set the GraphQL path as needed.
+ * See the migration guide for more details.
+ */
 export interface NaelListenOptions {
   http?: number;
   gateway?: number | FederationGatewayListenOptions;
