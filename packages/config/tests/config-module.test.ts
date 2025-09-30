@@ -14,7 +14,7 @@ import {
   ConfigService,
   getConfigFeatureToken,
   type ConfigModuleOptionsFactory,
-} from '../dist/src/index.js';
+} from '../src/index';
 
 type TestConfig = {
   app: {
