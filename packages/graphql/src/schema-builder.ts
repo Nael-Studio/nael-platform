@@ -1,6 +1,12 @@
 import 'reflect-metadata';
-import { parse, type DocumentNode } from 'graphql';
-import type { ClassType } from '@nl-framework/core';
+import { parse, type DocumentNode, GraphQLError } from 'graphql';
+import type { ClassType, Token } from '@nl-framework/core';
+import {
+  listAppliedGuards,
+  PUBLIC_ROUTE_METADATA_KEY,
+  isGuardClassToken as isHttpGuardClassToken,
+  type GuardToken,
+} from '@nl-framework/http';
 import {
   GraphqlMetadataStorage,
   type FieldDefinition,
@@ -10,6 +16,9 @@ import {
   type ResolverParamDefinition,
 } from './internal/metadata';
 import { resolveTypeReference, renderGraphqlType } from './internal/type-helpers';
+import { listGraphqlGuards } from './guards/registry';
+import { createGraphqlGuardExecutionContext } from './guards/execution-context';
+import type { GraphqlExecutionContext } from './guards/types';
 
 export interface FederationBuildOptions {
   enabled?: boolean;
@@ -18,6 +27,7 @@ export interface FederationBuildOptions {
 
 export interface GraphqlBuildOptions {
   federation?: FederationBuildOptions;
+  guards?: GraphqlGuardRuntimeOptions;
 }
 
 export interface GraphqlBuildArtifacts {
@@ -28,6 +38,72 @@ export interface GraphqlBuildArtifacts {
 }
 
 const BUILT_IN_TYPES = new Set(['String', 'Float', 'Int', 'Boolean', 'ID']);
+
+export interface GraphqlGuardRuntimeOptions {
+  resolve<T>(token: Token<T>): Promise<T>;
+}
+
+const isGraphqlGuardFunction = (
+  token: unknown,
+): token is (context: GraphqlExecutionContext) => unknown =>
+  typeof token === 'function' && !isHttpGuardClassToken(token as GuardToken);
+
+const isPublicResolver = (target: ClassType, handlerName: string): boolean => {
+  const prototypes: Array<object | undefined> = [target, (target as { prototype?: object }).prototype];
+
+  for (const proto of prototypes) {
+    if (!proto) {
+      continue;
+    }
+
+    if (Reflect.getMetadata(PUBLIC_ROUTE_METADATA_KEY, proto, handlerName)) {
+      return true;
+    }
+
+    if (Reflect.getMetadata(PUBLIC_ROUTE_METADATA_KEY, proto)) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
+const readResponseMessage = async (response: Response): Promise<string> => {
+  try {
+    const clone = response.clone();
+    const contentType = clone.headers.get('content-type') ?? '';
+    const payload = await clone.text();
+    if (!payload) {
+      return response.statusText || `HTTP ${response.status}`;
+    }
+
+    if (contentType.includes('application/json')) {
+      try {
+        const data = JSON.parse(payload) as { message?: string };
+        if (typeof data?.message === 'string' && data.message.length > 0) {
+          return data.message;
+        }
+      } catch {
+        // fall through to raw payload
+      }
+    }
+
+    return payload;
+  } catch {
+    return response.statusText || `HTTP ${response.status}`;
+  }
+};
+
+const responseToGraphQLError = async (response: Response): Promise<GraphQLError> => {
+  const message = await readResponseMessage(response);
+  return new GraphQLError(message || 'Unauthorized', {
+    extensions: {
+      http: {
+        status: response.status,
+      },
+    },
+  });
+};
 
 const formatDescription = (description?: string): string => {
   if (!description) {
@@ -89,10 +165,36 @@ const recordFederationDirective = (
   }
 };
 
+const invokeGraphqlGuard = async (
+  guard: unknown,
+  executionContext: GraphqlExecutionContext,
+  runtime: GraphqlGuardRuntimeOptions,
+) => {
+  if (isGraphqlGuardFunction(guard)) {
+    return (guard as (context: GraphqlExecutionContext) => unknown | Promise<unknown>)(
+      executionContext,
+    );
+  }
+
+  if (isHttpGuardClassToken(guard as GuardToken)) {
+    const instance = await runtime.resolve(guard as Token<unknown>);
+    if (!instance || typeof (instance as { canActivate?: unknown }).canActivate !== 'function') {
+      throw new Error('Resolved GraphQL guard does not implement canActivate');
+    }
+
+    return (instance as { canActivate: (context: GraphqlExecutionContext) => unknown | Promise<unknown> }).canActivate(
+      executionContext,
+    );
+  }
+
+  return undefined;
+};
+
 const createResolverInvoker = (
   resolver: unknown,
   method: ResolverMethodDefinition,
   params: ResolverParamDefinition[],
+  guardRuntime?: GraphqlGuardRuntimeOptions,
 ): ((parent: unknown, args: any, context: any, info: any) => unknown | Promise<unknown>) => {
   const instance = resolver as Record<string, any>;
   const handler = instance[method.methodName];
@@ -102,7 +204,7 @@ const createResolverInvoker = (
 
   const sortedParams = [...params].sort((a, b) => a.index - b.index);
 
-  return (parent: unknown, args: any, context: any, info: any) => {
+  const invokeHandler = (parent: unknown, args: any, context: any, info: any) => {
     if (!sortedParams.length) {
       const fallbackArgs = [parent, args, context, info];
       return handler.apply(instance, fallbackArgs.slice(0, handler.length));
@@ -139,6 +241,45 @@ const createResolverInvoker = (
     }
     return handler.apply(instance, actualArgs);
   };
+
+  return async (parent: unknown, args: any, context: any, info: any) => {
+    if (guardRuntime) {
+      const guardTokens = [
+        ...listGraphqlGuards(),
+        ...listAppliedGuards(method.target, method.methodName),
+      ];
+
+      if (guardTokens.length && !isPublicResolver(method.target, method.methodName)) {
+        const executionContext = createGraphqlGuardExecutionContext({
+          parent,
+          args: (args ?? {}) as Record<string, unknown>,
+          context,
+          info,
+          resolverClass: method.target,
+          resolverHandlerName: method.methodName,
+          resolve: guardRuntime.resolve,
+        });
+
+        for (const guard of guardTokens) {
+          const decision = await invokeGraphqlGuard(guard, executionContext, guardRuntime);
+          if (decision instanceof Response) {
+            throw await responseToGraphQLError(decision);
+          }
+          if (decision === false) {
+            throw new GraphQLError('Forbidden', {
+              extensions: {
+                http: {
+                  status: 403,
+                },
+              },
+            });
+          }
+        }
+      }
+    }
+
+    return invokeHandler(parent, args, context, info);
+  };
 };
 
 export class GraphqlSchemaBuilder {
@@ -152,6 +293,8 @@ export class GraphqlSchemaBuilder {
       }
       resolverMap.set((instance as any).constructor as ClassType, instance);
     }
+
+    const guardRuntime = options.guards;
 
     const objectTypes = this.storage.getObjectTypes();
     const inputTypes = this.storage.getInputTypes();
@@ -254,6 +397,7 @@ export class GraphqlSchemaBuilder {
           instance,
           method,
           this.storage.getResolverParams(resolver.target, method.methodName),
+          guardRuntime,
         );
       }
 
@@ -263,6 +407,7 @@ export class GraphqlSchemaBuilder {
           instance,
           method,
           this.storage.getResolverParams(resolver.target, method.methodName),
+          guardRuntime,
         );
       }
 
@@ -273,6 +418,7 @@ export class GraphqlSchemaBuilder {
             instance,
             method,
             this.storage.getResolverParams(resolver.target, method.methodName),
+            guardRuntime,
           );
         }
 
@@ -281,6 +427,7 @@ export class GraphqlSchemaBuilder {
             instance,
             resolver.resolveReference,
             this.storage.getResolverParams(resolver.target, resolver.resolveReference.methodName),
+            guardRuntime,
           );
           recordFederationDirective(federationDirectives, '@key', true);
         }

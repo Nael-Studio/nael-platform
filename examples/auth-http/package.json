@@ -1,0 +1,21 @@
+{
+  "name": "@nl-framework/example-auth-http",
+  "private": true,
+  "version": "0.1.0",
+  "description": "HTTP example demonstrating Better Auth integration with nl-framework and Mongo ORM.",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/main.ts",
+    "start": "bun run src/main.ts",
+    "check": "bunx tsc --noEmit"
+  },
+  "dependencies": {
+    "@nl-framework/core": "workspace:*",
+    "@nl-framework/config": "workspace:*",
+    "@nl-framework/http": "workspace:*",
+    "@nl-framework/platform": "workspace:*",
+    "@nl-framework/logger": "workspace:*",
+    "@nl-framework/orm": "workspace:*",
+    "@nl-framework/auth": "workspace:*"
+  }
+}

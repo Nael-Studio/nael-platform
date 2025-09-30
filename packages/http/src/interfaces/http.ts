@@ -14,6 +14,12 @@ export interface ControllerDefinition {
   routes: RouteDefinition[];
 }
 
+export interface ResolvedRouteInfo {
+  controller: ClassType;
+  handlerName: string;
+  definition: RouteDefinition;
+}
+
 export type MiddlewareHandler = (
   ctx: RequestContext,
   next: () => Promise<Response>,
@@ -25,6 +31,7 @@ export interface RequestContext {
   query: URLSearchParams;
   headers: Headers;
   body: unknown;
+  route: ResolvedRouteInfo;
   container: {
     resolve<T>(token: ClassType<T> | symbol | string): Promise<T>;
   };

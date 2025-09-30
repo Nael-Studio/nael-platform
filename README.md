@@ -10,10 +10,14 @@ Nael Platform is a [NestJS](https://nestjs.com/)-inspired application framework 
 - Federation gateway wrapper that embeds Apollo Gateway into the shared server
 - Structured logging with pluggable transports (console out-of-the-box)
 - Driver-based ORM module with TypeORM-style registration, MongoDB support, timestamps, and seeding hooks
+- Better Auth integration with shared session handling across REST and GraphQL (including the `BetterAuthGraphqlModule`)
+- Config module with layered YAML loading, async factories, and feature-scoped injection helpers
 
 Explore the `examples/` folder for runnable samples that demonstrate the current functionality:
 
 - `examples/basic-http` – minimal REST-style greeting controller
+- `examples/auth-http` – HTTP API with authentication flows, ORM-backed user persistence, and role-protected routes via `@nl-framework/auth`
+- `examples/auth-graphql` – unified REST + GraphQL auth example exposing the Better Auth APIs through GraphQL resolvers
 - `examples/basic-graphql` – standalone GraphQL server with resolver discovery
 - `examples/federated-graphql` – subgraph service suitable for Apollo Federation
 - `examples/federation-gateway` – single-port HTTP + GraphQL gateway using NaelFactory
@@ -30,17 +34,21 @@ The roadmap tracks both the pieces that already landed and the ones we still pla
 - [x] GraphQL module with schema-first resolver discovery and federation hooks
 - [x] NaelFactory-powered Apollo Federation gateway running alongside HTTP routes
 - [x] Structured logger with pluggable transports (console provided)
+- [x] Config module with file-based loaders, async options, and feature slicing helpers
 - [x] MongoDB ORM module with repositories, timestamps, soft delete, and seeding support
+- [x] Better Auth integration across HTTP and GraphQL, including session-aware proxy resolvers for the full Better Auth API
 
 ### Planned
 
 - [ ] Command-line tooling for project scaffolding and code generation
-- [ ] Production-ready configuration presets and environment management
-- [ ] Pluggable authentication & authorization module integrations
+- [ ] Advanced configuration presets (multi-environment secrets, validation, live reload)
+- [ ] Harden Better Auth integration (integration tests, social login guides, multi-tenant support)
+- [ ] Role/permission authorisation primitives layered on top of the auth module
 - [ ] Dapr sidecar helpers and event-driven microservice utilities
-- [ ] MongoDB (and additional database) ODM abstractions
+- [ ] Additional database connectors and ODM abstractions beyond MongoDB
 - [ ] Test harness utilities mirroring NestJS testing module APIs
 - [ ] Comprehensive documentation site
+- [ ] Unified exception-handling primitives (HTTP/GraphQL filters, logging integration, Nest-style interceptors)
 
 ## Getting Started
 
