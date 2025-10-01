@@ -1,0 +1,21 @@
+{
+  "name": "@nl-framework/example-microservices",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Microservices example showcasing NestJS-style message patterns, pub/sub with Dapr, and event-driven architecture.",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/main.ts",
+    "start": "bun run src/main.ts",
+    "check": "bunx tsc --noEmit",
+    "dapr": "dapr run --app-id orders-service --app-port 3000 --dapr-http-port 3500 --resources-path ./dapr -- bun run start"
+  },
+  "dependencies": {
+    "@nl-framework/core": "workspace:*",
+    "@nl-framework/config": "workspace:*",
+    "@nl-framework/http": "workspace:*",
+    "@nl-framework/microservices": "workspace:*",
+    "@nl-framework/platform": "workspace:*",
+    "@nl-framework/logger": "workspace:*"
+  }
+}
