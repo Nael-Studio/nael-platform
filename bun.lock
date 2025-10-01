@@ -16,6 +16,21 @@
         "yaml": "^2.4.2",
       },
     },
+    "examples/auth-graphql": {
+      "name": "@nl-framework/example-auth-graphql",
+      "version": "0.1.0",
+      "dependencies": {
+        "@nl-framework/auth": "workspace:*",
+        "@nl-framework/config": "workspace:*",
+        "@nl-framework/core": "workspace:*",
+        "@nl-framework/graphql": "workspace:*",
+        "@nl-framework/http": "workspace:*",
+        "@nl-framework/logger": "workspace:*",
+        "@nl-framework/orm": "workspace:*",
+        "@nl-framework/platform": "workspace:*",
+        "mongodb": "^6.8.0",
+      },
+    },
     "examples/auth-http": {
       "name": "@nl-framework/example-auth-http",
       "version": "0.1.0",
@@ -27,7 +42,6 @@
         "@nl-framework/logger": "workspace:*",
         "@nl-framework/orm": "workspace:*",
         "@nl-framework/platform": "workspace:*",
-        "better-auth": "^1.3.23",
       },
     },
     "examples/basic-graphql": {
@@ -74,6 +88,18 @@
         "graphql": "^16.8.1",
       },
     },
+    "examples/microservices": {
+      "name": "@nl-framework/example-microservices",
+      "version": "0.1.0",
+      "dependencies": {
+        "@nl-framework/config": "workspace:*",
+        "@nl-framework/core": "workspace:*",
+        "@nl-framework/http": "workspace:*",
+        "@nl-framework/logger": "workspace:*",
+        "@nl-framework/microservices": "workspace:*",
+        "@nl-framework/platform": "workspace:*",
+      },
+    },
     "examples/mongo-orm": {
       "name": "@nl-framework/example-mongo-orm",
       "version": "0.1.0",
@@ -89,14 +115,14 @@
       "name": "@nl-framework/auth",
       "version": "0.1.0",
       "dependencies": {
-        "@nl-framework/core": "workspace:*",
-        "@nl-framework/logger": "workspace:*",
-      },
-      "devDependencies": {
-        "better-auth": "*",
+        "better-auth": "^1.3.23",
       },
       "peerDependencies": {
-        "better-auth": "*",
+        "@nl-framework/core": "workspace:*",
+        "@nl-framework/graphql": "workspace:*",
+        "@nl-framework/http": "workspace:*",
+        "@nl-framework/logger": "workspace:*",
+        "@nl-framework/orm": "workspace:*",
       },
     },
     "packages/config": {
@@ -123,6 +149,7 @@
         "@apollo/server": "^5.0.0",
         "@apollo/subgraph": "^2.7.4",
         "@nl-framework/core": "workspace:*",
+        "@nl-framework/http": "workspace:*",
         "@nl-framework/logger": "workspace:*",
         "graphql": "^16.8.1",
       },
@@ -144,6 +171,18 @@
       },
       "peerDependencies": {
         "@nl-framework/core": "workspace:*",
+      },
+    },
+    "packages/microservices": {
+      "name": "@nl-framework/microservices",
+      "version": "0.1.0",
+      "dependencies": {
+        "@nl-framework/core": "workspace:*",
+        "@nl-framework/logger": "workspace:*",
+        "reflect-metadata": "^0.2.2",
+      },
+      "devDependencies": {
+        "@types/node": "^24.5.2",
       },
     },
     "packages/orm": {
@@ -274,6 +313,8 @@
 
     "@nl-framework/core": ["@nl-framework/core@workspace:packages/core"],
 
+    "@nl-framework/example-auth-graphql": ["@nl-framework/example-auth-graphql@workspace:examples/auth-graphql"],
+
     "@nl-framework/example-auth-http": ["@nl-framework/example-auth-http@workspace:examples/auth-http"],
 
     "@nl-framework/example-basic-graphql": ["@nl-framework/example-basic-graphql@workspace:examples/basic-graphql"],
@@ -284,6 +325,8 @@
 
     "@nl-framework/example-federation-gateway": ["@nl-framework/example-federation-gateway@workspace:examples/federation-gateway"],
 
+    "@nl-framework/example-microservices": ["@nl-framework/example-microservices@workspace:examples/microservices"],
+
     "@nl-framework/example-mongo-orm": ["@nl-framework/example-mongo-orm@workspace:examples/mongo-orm"],
 
     "@nl-framework/graphql": ["@nl-framework/graphql@workspace:packages/graphql"],
@@ -291,6 +334,8 @@
     "@nl-framework/http": ["@nl-framework/http@workspace:packages/http"],
 
     "@nl-framework/logger": ["@nl-framework/logger@workspace:packages/logger"],
+
+    "@nl-framework/microservices": ["@nl-framework/microservices@workspace:packages/microservices"],
 
     "@nl-framework/orm": ["@nl-framework/orm@workspace:packages/orm"],
 
@@ -904,7 +949,7 @@
 
     "toidentifier": ["toidentifier@1.0.1", "", {}, "sha512-o5sSPKEkg/DIQNmH43V0/uerLrpzVedkUh8tGNvaeXpfpuwjKenlSox/2O/BTlZUtEe+JG7s5YhEz608PlAHRA=="],
 
-    "tr46": ["tr46@0.0.3", "", {}, "sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw=="],
+    "tr46": ["tr46@5.1.1", "", { "dependencies": { "punycode": "^2.3.1" } }, "sha512-hdF5ZgjTqgAntKkklYw0R03MG2x/bSzTtkxmIRw/sTNV8YXsCJ1tfLAX23lhxhHJlEf3CRCOCGGWw3vI3GaSPw=="],
 
     "ts-api-utils": ["ts-api-utils@2.1.0", "", { "peerDependencies": { "typescript": ">=4.8.4" } }, "sha512-CUgTZL1irw8u29bzrOD/nH85jqyc74D6SshFgujOIA7osm2Rz7dYH77agkx7H4FBNxDq7Cjf+IjaX/8zwFW+ZQ=="],
 
@@ -938,11 +983,11 @@
 
     "vary": ["vary@1.1.2", "", {}, "sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg=="],
 
-    "webidl-conversions": ["webidl-conversions@3.0.1", "", {}, "sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ=="],
+    "webidl-conversions": ["webidl-conversions@7.0.0", "", {}, "sha512-VwddBukDzu71offAQR975unBIGqfKZpM+8ZX6ySk8nYhVoo5CYaZyzt3YBvYtRtO+aoGlqxPg/B87NGVZ/fu6g=="],
 
     "whatwg-mimetype": ["whatwg-mimetype@4.0.0", "", {}, "sha512-QaKxh0eNIi2mE9p2vEdzfagOKHCcj1pJ56EEHGQOVxp8r9/iszLUUV7v89x9O1p/T+NlTM5W7jW6+cz4Fq1YVg=="],
 
-    "whatwg-url": ["whatwg-url@5.0.0", "", { "dependencies": { "tr46": "~0.0.3", "webidl-conversions": "^3.0.0" } }, "sha512-saE57nupxk6v3HY35+jzBwYa0rKSy0XR8JSxZPwgLr7ys0IBzhGviA1/TUGJLmSVqs8pb9AnvICXEuOHLprYTw=="],
+    "whatwg-url": ["whatwg-url@14.2.0", "", { "dependencies": { "tr46": "^5.1.0", "webidl-conversions": "^7.0.0" } }, "sha512-De72GdQZzNTUBBChsXueQUnPKDkg/5A5zp7pFDuQAj5UFoENpiACU0wlCvzpAGnTkj++ihpKwKyYewn/XNUbKw=="],
 
     "which": ["which@2.0.2", "", { "dependencies": { "isexe": "^2.0.0" }, "bin": { "node-which": "./bin/node-which" } }, "sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA=="],
 
@@ -1024,7 +1069,7 @@
 
     "minizlib/minipass": ["minipass@3.3.6", "", { "dependencies": { "yallist": "^4.0.0" } }, "sha512-DxiNidxSEK+tHG6zOIklvNOwm3hvCrbUrdtzY74U6HKTJxvIDfOUL5W5P2Ghd3DTkhhKPYGqeNUIh5qcM4YBfw=="],
 
-    "mongodb-connection-string-url/whatwg-url": ["whatwg-url@14.2.0", "", { "dependencies": { "tr46": "^5.1.0", "webidl-conversions": "^7.0.0" } }, "sha512-De72GdQZzNTUBBChsXueQUnPKDkg/5A5zp7pFDuQAj5UFoENpiACU0wlCvzpAGnTkj++ihpKwKyYewn/XNUbKw=="],
+    "node-fetch/whatwg-url": ["whatwg-url@5.0.0", "", { "dependencies": { "tr46": "~0.0.3", "webidl-conversions": "^3.0.0" } }, "sha512-saE57nupxk6v3HY35+jzBwYa0rKSy0XR8JSxZPwgLr7ys0IBzhGviA1/TUGJLmSVqs8pb9AnvICXEuOHLprYTw=="],
 
     "path-scurry/lru-cache": ["lru-cache@10.4.3", "", {}, "sha512-JNAzZcXrCt42VGLuYz0zfAzDfAvJWW6AfYlDBQyDV5DClI2m5sAmK+OIO7s59XfsRsWHp02jAJrRadPRGTt6SQ=="],
 
@@ -1064,9 +1109,9 @@
 
     "glob/minimatch/brace-expansion": ["brace-expansion@2.0.2", "", { "dependencies": { "balanced-match": "^1.0.0" } }, "sha512-Jt0vHyM+jmUBqojB7E1NIYadt0vI0Qxjxd2TErW94wDz+E2LAm5vKMXXwg6ZZBTHPuUlDgQHKXvjGBdfcF1ZDQ=="],
 
-    "mongodb-connection-string-url/whatwg-url/tr46": ["tr46@5.1.1", "", { "dependencies": { "punycode": "^2.3.1" } }, "sha512-hdF5ZgjTqgAntKkklYw0R03MG2x/bSzTtkxmIRw/sTNV8YXsCJ1tfLAX23lhxhHJlEf3CRCOCGGWw3vI3GaSPw=="],
+    "node-fetch/whatwg-url/tr46": ["tr46@0.0.3", "", {}, "sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw=="],
 
-    "mongodb-connection-string-url/whatwg-url/webidl-conversions": ["webidl-conversions@7.0.0", "", {}, "sha512-VwddBukDzu71offAQR975unBIGqfKZpM+8ZX6ySk8nYhVoo5CYaZyzt3YBvYtRtO+aoGlqxPg/B87NGVZ/fu6g=="],
+    "node-fetch/whatwg-url/webidl-conversions": ["webidl-conversions@3.0.1", "", {}, "sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ=="],
 
     "string-width-cjs/strip-ansi/ansi-regex": ["ansi-regex@5.0.1", "", {}, "sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ=="],
 

@@ -12,6 +12,7 @@ const packages = [
 	'http',
 	'graphql',
 	'auth',
+	'microservices',
 	'platform',
 ] as const;
 
@@ -23,6 +24,7 @@ const examples = [
 	'mongo-orm',
 	'auth-http',
 	'auth-graphql',
+	'microservices',
 ] as const;
 
 const getTsconfig = (pkg: (typeof packages)[number]): string => {
