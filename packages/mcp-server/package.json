@@ -1,0 +1,48 @@
+{
+  "name": "@nl-framework/mcp-server",
+  "version": "0.1.0",
+  "description": "Model Context Protocol server providing Nael Framework documentation and examples to AI assistants",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "nl-mcp-server": "./dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "bunx tsc --build tsconfig.build.json",
+    "dev": "bun run src/index.ts",
+    "test": "bun test",
+    "lint": "bunx tsc --noEmit"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "nael-framework",
+    "documentation",
+    "ai-assistant",
+    "claude",
+    "cursor"
+  ],
+  "author": "Nael Studio",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.6.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
