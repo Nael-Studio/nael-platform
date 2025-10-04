@@ -124,6 +124,77 @@ AI: [Calls get-package-docs with packageName: "http"]
 AI: "Here's how to use @nl-framework/http..."
 ```
 
+### `search-api`
+Search for decorators, classes, methods, or interfaces across all packages.
+
+**Parameters:**
+- `query` (required): Search term (e.g., "Injectable", "Controller", "GraphQL")
+- `type` (optional): Filter by type - `decorator`, `class`, `method`, `interface`, or `all` (default)
+- `package` (optional): Filter by package name
+
+**Example:**
+```
+User: "Find all decorators for HTTP routing"
+AI: [Calls search-api with query: "HTTP routing", type: "decorator"]
+AI: "Here are the HTTP routing decorators: @Get, @Post, @Put, @Delete..."
+```
+
+### `get-example`
+Get complete code examples for specific use cases with explanations.
+
+**Parameters:**
+- `useCase` (required): Use case description (e.g., "create REST API", "setup authentication")
+- `package` (optional): Filter examples by package
+
+**Example:**
+```
+User: "Show me an example of creating a GraphQL resolver"
+AI: [Calls get-example with useCase: "GraphQL resolver"]
+AI: "Here's a complete example of a GraphQL resolver in Nael Framework..."
+```
+
+### `get-decorator-info`
+Get detailed information about a specific decorator including signature, parameters, and usage.
+
+**Parameters:**
+- `decorator` (required): Decorator name (e.g., "@Controller", "@Injectable", "@Get")
+- `package` (optional): Filter by package
+
+**Example:**
+```
+User: "What parameters does @Injectable accept?"
+AI: [Calls get-decorator-info with decorator: "@Injectable"]
+AI: "The @Injectable decorator accepts these parameters..."
+```
+
+### `get-best-practices`
+Get best practices and patterns for a specific topic or package.
+
+**Parameters:**
+- `topic` (required): Topic or concern (e.g., "testing", "error handling", "performance")
+- `package` (optional): Filter by package
+
+**Example:**
+```
+User: "What are the best practices for error handling?"
+AI: [Calls get-best-practices with topic: "error handling"]
+AI: "Here are error handling best practices for Nael Framework..."
+```
+
+### `troubleshoot`
+Find solutions to common issues and error messages.
+
+**Parameters:**
+- `issue` (required): Error message, symptom, or problem description
+- `package` (optional): Filter by package where the issue occurs
+
+**Example:**
+```
+User: "I'm getting a 'dependency not found' error"
+AI: [Calls troubleshoot with issue: "dependency not found"]
+AI: "This error typically occurs when... Here's how to fix it..."
+```
+
 ## Usage Examples
 
 ### With Claude Desktop
@@ -184,8 +255,13 @@ packages/mcp-server/
 │   ├── server.ts                   # MCP server implementation
 │   ├── types.ts                    # Type definitions
 │   ├── tools/                      # MCP tool handlers
-│   │   ├── list-packages.ts
-│   │   └── get-package-docs.ts
+│   │   ├── list-packages.ts        # List all packages
+│   │   ├── get-package-docs.ts     # Get package documentation
+│   │   ├── search-api.ts           # Search APIs/decorators/classes
+│   │   ├── get-example.ts          # Get code examples by use case
+│   │   ├── get-decorator-info.ts   # Get decorator details
+│   │   ├── get-best-practices.ts   # Get best practices by topic
+│   │   └── troubleshoot.ts         # Find solutions to issues
 │   └── docs/                       # Documentation data
 │       └── packages/               # Per-package docs
 │           ├── index.ts
@@ -250,12 +326,12 @@ export async function handleSearchApi(args: { query: string }) {
 - [ ] Microservices package documentation
 - [ ] 20+ comprehensive code examples
 
-### Phase 3: Advanced Tools (Planned)
-- [ ] `search-api` - Search decorators, classes, methods
-- [ ] `get-example` - Get code examples by use case
-- [ ] `get-decorator-info` - Detailed decorator information
-- [ ] `get-best-practices` - Best practices by topic
-- [ ] `troubleshoot` - Common issues and solutions
+### Phase 3: Advanced Tools ✅
+- [x] `search-api` - Search decorators, classes, methods
+- [x] `get-example` - Get code examples by use case
+- [x] `get-decorator-info` - Detailed decorator information
+- [x] `get-best-practices` - Best practices by topic
+- [x] `troubleshoot` - Common issues and solutions
 - [ ] MCP resources (browsable docs via URI)
 
 ### Phase 4: Prompts & Templates (Planned)
