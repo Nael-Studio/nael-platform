@@ -13,6 +13,7 @@ const packages = [
 	'graphql',
 	'auth',
 	'microservices',
+	'mcp-server',
 	'platform',
 ] as const;
 
