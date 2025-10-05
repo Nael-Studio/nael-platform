@@ -3,7 +3,7 @@ name: Publish Workspace Packages
 on:
   push:
     tags:
-      - '[0-9]*.[0-9]*.[0-9]*'
+      - '[0-9]+.[0-9]+.[0-9]+'
 
 env:
   BUN_VERSION: 1.1.22
