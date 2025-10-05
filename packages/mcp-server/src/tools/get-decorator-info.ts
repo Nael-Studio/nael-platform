@@ -29,13 +29,27 @@ export async function handleGetDecoratorInfo(args: { decorator: string; package?
   const searchTerm = decoratorName.toLowerCase();
 
   // Search through all or specific package
-  const packagesToSearch: [string, PackageDocumentation][] = pkgFilter 
-    ? [[pkgFilter, packageDocs.get(pkgFilter)!]] 
-    : Object.entries(packageDocs);
+  const packagesToSearch: Array<[PackageName, PackageDocumentation]> = (() => {
+    if (pkgFilter) {
+      const docs = packageDocs[pkgFilter];
+      return docs ? [[pkgFilter, docs]] : [];
+    }
+    return Object.entries(packageDocs) as Array<[PackageName, PackageDocumentation]>;
+  })();
+
+  if (pkgFilter && packagesToSearch.length === 0) {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Package "${pkgFilter}" not found. Available packages: ${Object.keys(packageDocs).join(', ')}`
+        }
+      ],
+      isError: true
+    };
+  }
 
   for (const [_packageName, docs] of packagesToSearch) {
-    if (typeof docs === 'string') continue; // Skip if string type
-    
     const decoratorDoc = docs.api.decorators?.find(
       (dec: DecoratorDoc) => dec.name.toLowerCase() === searchTerm
     );

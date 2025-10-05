@@ -43,9 +43,18 @@ export class NaelMCPServer {
       },
       {
         capabilities: {
-          tools: {},
-          prompts: {},
-          resources: {},
+          tools: {
+            list: true,
+            call: true,
+          },
+          prompts: {
+            list: true,
+            call: true,
+          },
+          resources: {
+            list: true,
+            read: true,
+          },
         },
       }
     );
@@ -204,4 +213,12 @@ export class NaelMCPServer {
     // Log to stderr (stdout is used for MCP protocol)
     console.error('Nael Framework MCP Server running on stdio');
   }
+}
+
+if (import.meta.main) {
+  const server = new NaelMCPServer();
+  server.run().catch((error) => {
+    console.error('Fatal error in MCP server:', error);
+    process.exit(1);
+  });
 }

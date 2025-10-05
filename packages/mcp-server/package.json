@@ -21,7 +21,7 @@
   "scripts": {
     "build": "bunx tsc --build tsconfig.build.json",
     "dev": "bun run src/index.ts",
-    "inspector": "bunx @modelcontextprotocol/inspector bun run ./src/server.ts",
+  "inspector": "bunx @modelcontextprotocol/inspector bun run ./src/index.ts",
     "test": "bun test",
     "lint": "bunx tsc --noEmit"
   },

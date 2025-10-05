@@ -12,19 +12,20 @@ import { microservicesPackageDocs } from './microservices.js';
 /**
  * Central registry of all package documentation
  */
-export const packageDocs = new Map<string, PackageDocumentation>([
-  ['http', httpPackageDocs],
-  ['graphql', graphqlPackageDocs],
-  ['platform', platformPackageDocs],
-  ['config', configPackageDocs],
-  ['logger', loggerPackageDocs],
-  ['orm', ormPackageDocs],
-  ['auth', authPackageDocs],
-  ['microservices', microservicesPackageDocs],
-]);
+export const packageDocs: Record<PackageName, PackageDocumentation> = {
+  core: corePackageDocs,
+  http: httpPackageDocs,
+  graphql: graphqlPackageDocs,
+  platform: platformPackageDocs,
+  config: configPackageDocs,
+  logger: loggerPackageDocs,
+  orm: ormPackageDocs,
+  auth: authPackageDocs,
+  microservices: microservicesPackageDocs,
+};
 
-export function getPackageDocumentation(packageName: PackageName): PackageDocumentation {
-  return packageDocs.get(packageName)!;
+export function getPackageDocumentation(packageName: PackageName): PackageDocumentation | undefined {
+  return packageDocs[packageName];
 }
 
 export function listAllPackages(): Array<{ name: string; description: string }> {

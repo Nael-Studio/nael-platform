@@ -37,13 +37,27 @@ export async function handleGetExample(args: { useCase: string; package?: Packag
   const examples: ExampleResult[] = [];
 
   // Search through all or specific package
-  const packagesToSearch: [string, PackageDocumentation][] = pkgFilter 
-    ? [[pkgFilter, packageDocs.get(pkgFilter)!]] 
-    : Object.entries(packageDocs);
+  const packagesToSearch: Array<[PackageName, PackageDocumentation]> = (() => {
+    if (pkgFilter) {
+      const docs = packageDocs[pkgFilter];
+      return docs ? [[pkgFilter, docs]] : [];
+    }
+    return Object.entries(packageDocs) as Array<[PackageName, PackageDocumentation]>;
+  })();
+
+  if (pkgFilter && packagesToSearch.length === 0) {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Package "${pkgFilter}" not found. Available packages: ${Object.keys(packageDocs).join(', ')}`
+        }
+      ],
+      isError: true
+    };
+  }
 
   for (const [_packageName, docs] of packagesToSearch) {
-    if (typeof docs === 'string') continue; // Skip if string type
-    
     docs.examples.forEach((example: CodeExample) => {
       // Match against title, description, or tags
       const matchesTitle = example.title.toLowerCase().includes(searchTerm);

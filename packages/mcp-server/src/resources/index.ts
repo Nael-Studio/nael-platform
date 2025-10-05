@@ -109,8 +109,20 @@ export const resources: Resource[] = [
 
 // Handler for package documentation resources
 export async function handlePackageDocsResource(packageName: PackageName) {
-  const docs = packageDocs.get(packageName);
-  
+  const docs = packageDocs[packageName];
+
+  if (!docs) {
+    return {
+      contents: [
+        {
+          uri: `nael://docs/${packageName}`,
+          mimeType: 'application/json',
+          text: JSON.stringify({ error: `Package \"${packageName}\" not found.` }, null, 2)
+        }
+      ]
+    };
+  }
+
   return {
     contents: [
       {
@@ -128,8 +140,6 @@ export async function handleExampleCategoryResource(category: string) {
   
   // Collect examples from all packages that match the category
   for (const [packageName, docs] of Object.entries(packageDocs)) {
-    if (typeof docs === 'string') continue;
-    
     const matchingExamples = docs.examples.filter((ex: any) =>
       ex.tags.some((tag: string) => tag.toLowerCase().includes(category.toLowerCase()))
     );
@@ -436,8 +446,8 @@ export async function handleResourceRead(uri: string) {
   }
   
   const pathParts = url.pathname.split('/').filter(Boolean);
-  const resourceType = pathParts[0]; // 'docs', 'examples', or 'guides'
-  const resourceId = pathParts[1]; // package name, category, or guide name
+  const resourceType = url.hostname || pathParts.shift(); // 'docs', 'examples', or 'guides'
+  const resourceId = pathParts[0]; // package name, category, or guide name
   
   switch (resourceType) {
     case 'docs':
