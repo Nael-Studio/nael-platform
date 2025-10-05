@@ -136,6 +136,16 @@ docker run --rm -e PORT=8080 -p 8080:8080 nael-mcp-server
 
 The Dockerfile uses a Bun-based builder stage to compile TypeScript and a minimal Node.js runtime stage (`node:20-alpine`). Only production dependencies are installed in the final image for smaller size and faster startup.
 
+#### Publish to GitHub Container Registry
+
+When you create a GitHub release (for example, tag `0.1.0`), the `publish-mcp-server` workflow automatically:
+
+1. Builds the Docker image using `packages/mcp-server/Dockerfile`.
+2. Tags it as `ghcr.io/<owner>/nael-mcp-server:0.1.0` and `:latest`.
+3. Pushes both tags to GitHub Container Registry.
+
+The workflow uses the built-in `${{ secrets.GITHUB_TOKEN }}` with `packages:write` permission—no extra secrets required.
+
 ## Available Tools
 
 The MCP server exposes these tools that AI assistants can call:
