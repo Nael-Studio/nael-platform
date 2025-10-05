@@ -104,7 +104,7 @@ jobs:
 
             echo "::group::Publishing ${PACKAGE_NAME}@${VERSION}"
 
-            if npm view "${PACKAGE_NAME}@${VERSION}" >/dev/null 2>&1; then
+            if npm info "${PACKAGE_NAME}@${VERSION}" version >/dev/null 2>&1; then
               echo "Version ${VERSION} already exists on npm for ${PACKAGE_NAME}. Skipping publish."
               echo "::endgroup::"
               continue
