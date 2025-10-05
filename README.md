@@ -17,6 +17,7 @@ Nael Platform is a [NestJS](https://nestjs.com/)-inspired application framework 
   - [Auth Module](#auth-module-nl-frameworkauth)
   - [Microservices Module](#microservices-architecture)
 - [Getting Started](#getting-started)
+- [Releasing to npm](#releasing-to-npm)
 - [Contributing](#contributing)
 
 ## Current Capabilities
@@ -734,6 +735,45 @@ Nael Platform follows these core architectural principles:
 5. **Developer Experience**: Fast feedback loops, clear error messages, minimal boilerplate
 6. **Production Ready**: Structured logging, configuration management, and lifecycle hooks
 7. **Extensibility**: Plugin architecture for custom transports, guards, and middleware
+
+## Releasing to npm
+
+Workspace packages are published automatically when you push a semantic version tag (for example `0.1.0`) to GitHub. The workflow treats that tag as the release version for every first-party package:
+
+- `@nl-framework/auth`
+- `@nl-framework/config`
+- `@nl-framework/core`
+- `@nl-framework/graphql`
+- `@nl-framework/http`
+- `@nl-framework/logger`
+- `@nl-framework/microservices`
+- `@nl-framework/orm`
+- `@nl-framework/platform`
+
+When the tag lands:
+
+1. Dependencies are installed with Bun and the full workspace build (`bun run scripts/build-all.ts`) runs to emit fresh `dist/` artifacts for each package.
+2. The workflow verifies that the `version` in every `packages/<slug>/package.json` equals the tag value.
+3. Each package is published to npm with `npm publish --access public`. If a package already exposes that version on npm, the step is skipped and the release continues.
+
+### Release checklist
+
+1. Update the `version` field in each package that should be part of the release (all nine packages normally share the same version).
+2. Commit the changes so the new versions are on the branch you want to release.
+3. Create and push the tag:
+
+  ```bash
+  git tag 0.2.0
+  git push origin 0.2.0
+  ```
+
+  The tag value must match the `MAJOR.MINOR.PATCH` format; the workflow will fail fast if it does not.
+
+### Required Secrets
+
+- `NPM_TOKEN` – Scoped publish token for the `npmjs.com` registry with access to the `@nl-framework/*` packages.
+
+Add the secret to the repository (or organization) settings before pushing tags; runs without the token will fail at the publish step.
 
 ## Contributing
 

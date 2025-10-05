@@ -1,0 +1,115 @@
+name: Publish Workspace Packages
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+env:
+  BUN_VERSION: 1.1.22
+  NODE_VERSION: 20
+  NPM_REGISTRY_URL: https://registry.npmjs.org/
+  PACKAGE_SLUGS: |
+    auth
+    config
+    core
+    graphql
+    http
+    logger
+    microservices
+    orm
+    platform
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: ${{ env.NPM_REGISTRY_URL }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Determine release version
+        id: release
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+          if ! echo "${VERSION}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Tag ${VERSION} is not a valid semantic version (expected MAJOR.MINOR.PATCH)" >&2
+            exit 1
+          fi
+
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+
+      - name: Validate package versions
+        run: |
+          VERSION="${{ steps.release.outputs.version }}"
+
+          while read -r slug; do
+            [ -z "${slug}" ] && continue
+
+            PACKAGE_DIR="packages/${slug}"
+            if [ ! -d "${PACKAGE_DIR}" ]; then
+              echo "::error::Missing package directory ${PACKAGE_DIR}" >&2
+              exit 1
+            fi
+
+            PACKAGE_NAME=$(jq -r '.name' "${PACKAGE_DIR}/package.json")
+            PACKAGE_JSON_VERSION=$(jq -r '.version' "${PACKAGE_DIR}/package.json")
+
+            if [ "${PACKAGE_JSON_VERSION}" != "${VERSION}" ]; then
+              echo "::error::Version mismatch for ${PACKAGE_NAME}: tag ${VERSION} but package.json has ${PACKAGE_JSON_VERSION}" >&2
+              exit 1
+            fi
+
+            echo "✔ ${PACKAGE_NAME}@${PACKAGE_JSON_VERSION}"
+          done <<< "${PACKAGE_SLUGS}"
+
+      - name: Build workspace packages
+        run: bun run scripts/build-all.ts
+
+      - name: Publish packages to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "${NODE_AUTH_TOKEN}" ]; then
+            echo "::error::Missing npm token. Configure NPM_TOKEN secret." >&2
+            exit 1
+          fi
+
+          VERSION="${{ steps.release.outputs.version }}"
+
+          while read -r slug; do
+            [ -z "${slug}" ] && continue
+
+            PACKAGE_DIR="packages/${slug}"
+            PACKAGE_NAME=$(jq -r '.name' "${PACKAGE_DIR}/package.json")
+
+            echo "::group::Publishing ${PACKAGE_NAME}@${VERSION}"
+
+            if npm info "${PACKAGE_NAME}@${VERSION}" version >/dev/null 2>&1; then
+              echo "Version ${VERSION} already exists on npm for ${PACKAGE_NAME}. Skipping publish."
+              echo "::endgroup::"
+              continue
+            fi
+
+            (cd "${PACKAGE_DIR}" && npm publish --access public)
+            echo "::endgroup::"
+          done <<< "${PACKAGE_SLUGS}"
