@@ -5,7 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { NaelMCPServer } from './server.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
-import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
+import { DEFAULT_NEGOTIATED_PROTOCOL_VERSION, isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 
 const DEFAULT_PORT = 3333;
 
@@ -39,6 +39,39 @@ type SessionEntry = {
 };
 
 const sessions = new Map<string, SessionEntry>();
+
+function normalizeInitializeBody(body: unknown) {
+  if (!body || typeof body !== 'object') {
+    return null;
+  }
+
+  const request = body as Record<string, any>;
+
+  if (request.method !== 'initialize') {
+    return null;
+  }
+
+  const params = (typeof request.params === 'object' && request.params) || {};
+  const clientInfo = (typeof params.clientInfo === 'object' && params.clientInfo) || {};
+
+  return {
+    jsonrpc: typeof request.jsonrpc === 'string' ? request.jsonrpc : '2.0',
+    id: request.id,
+    method: 'initialize',
+    params: {
+      protocolVersion: typeof params.protocolVersion === 'string'
+        ? params.protocolVersion
+        : DEFAULT_NEGOTIATED_PROTOCOL_VERSION,
+      capabilities: params.capabilities ?? {},
+      clientInfo: {
+        name: typeof clientInfo.name === 'string' ? clientInfo.name : 'unknown-client',
+        version: typeof clientInfo.version === 'string' ? clientInfo.version : '0.0.0',
+        ...clientInfo,
+      },
+      ...params,
+    },
+  };
+}
 
 function setCorsHeaders(res: ServerResponse) {
   res.setHeader('Access-Control-Allow-Origin', process.env.MCP_ALLOWED_ORIGIN ?? '*');
@@ -142,7 +175,9 @@ async function handleStreamableHttp(
     return;
   }
 
-  if (req.method === 'POST' && isInitializeRequest(parsedBody)) {
+  const normalizedInitialize = normalizeInitializeBody(parsedBody);
+
+  if (req.method === 'POST' && normalizedInitialize && isInitializeRequest(normalizedInitialize)) {
     const naelServer = new NaelMCPServer();
 
     const transport = new StreamableHTTPServerTransport({
@@ -167,7 +202,7 @@ async function handleStreamableHttp(
 
     try {
       await naelServer.connect(transport);
-      await transport.handleRequest(req as any, res, parsedBody);
+      await transport.handleRequest(req as any, res, normalizedInitialize);
     } catch (error) {
       console.error('Error initializing streamable HTTP session:', error);
       if (!res.headersSent) {
