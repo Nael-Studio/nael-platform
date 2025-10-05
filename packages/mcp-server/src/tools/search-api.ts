@@ -30,7 +30,7 @@ export async function handleSearchApi(args: { query: string; type?: string }) {
   for (const [packageName, docs] of Object.entries(packageDocs)) {
     // Search decorators
     if (type === 'all' || type === 'decorator') {
-      docs.api.decorators?.forEach(decorator => {
+      docs.api.decorators?.forEach((decorator: any) => {
         if (
           decorator.name.toLowerCase().includes(searchTerm) ||
           decorator.description.toLowerCase().includes(searchTerm)
@@ -49,7 +49,7 @@ export async function handleSearchApi(args: { query: string; type?: string }) {
 
     // Search classes
     if (type === 'all' || type === 'class') {
-      docs.api.classes?.forEach(cls => {
+      docs.api.classes?.forEach((cls: any) => {
         if (
           cls.name.toLowerCase().includes(searchTerm) ||
           cls.description.toLowerCase().includes(searchTerm)
@@ -59,7 +59,7 @@ export async function handleSearchApi(args: { query: string; type?: string }) {
             package: docs.name,
             name: cls.name,
             description: cls.description,
-            methods: cls.methods.map(m => m.name),
+            methods: cls.methods.map((m: any) => m.name),
             example: cls.examples[0] || null
           });
         }
@@ -68,8 +68,8 @@ export async function handleSearchApi(args: { query: string; type?: string }) {
 
     // Search methods
     if (type === 'all' || type === 'method') {
-      docs.api.classes?.forEach(cls => {
-        cls.methods.forEach(method => {
+      docs.api.classes?.forEach((cls: any) => {
+        cls.methods.forEach((method: any) => {
           if (
             method.name.toLowerCase().includes(searchTerm) ||
             method.description.toLowerCase().includes(searchTerm)
@@ -89,7 +89,7 @@ export async function handleSearchApi(args: { query: string; type?: string }) {
 
     // Search interfaces
     if (type === 'all' || type === 'interface') {
-      docs.api.interfaces?.forEach(iface => {
+      docs.api.interfaces?.forEach((iface: any) => {
         if (
           iface.name.toLowerCase().includes(searchTerm) ||
           iface.description.toLowerCase().includes(searchTerm)
@@ -99,7 +99,7 @@ export async function handleSearchApi(args: { query: string; type?: string }) {
             package: docs.name,
             name: iface.name,
             description: iface.description,
-            properties: iface.properties.map(p => ({ name: p.name, type: p.type }))
+            properties: iface.properties.map((p: any) => ({ name: p.name, type: p.type }))
           });
         }
       });

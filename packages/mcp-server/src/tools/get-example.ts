@@ -38,7 +38,7 @@ export async function handleGetExample(args: { useCase: string; package?: Packag
 
   // Search through all or specific package
   const packagesToSearch: [string, PackageDocumentation][] = pkgFilter 
-    ? [[pkgFilter, packageDocs[pkgFilter]]] 
+    ? [[pkgFilter, packageDocs.get(pkgFilter)!]] 
     : Object.entries(packageDocs);
 
   for (const [_packageName, docs] of packagesToSearch) {

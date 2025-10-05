@@ -3,6 +3,10 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  ListPromptsRequestSchema,
+  GetPromptRequestSchema,
+  ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 
 import { listPackagesTool, handleListPackages } from './tools/list-packages.js';
@@ -12,6 +16,17 @@ import { getExampleTool, handleGetExample } from './tools/get-example.js';
 import { getDecoratorInfoTool, handleGetDecoratorInfo } from './tools/get-decorator-info.js';
 import { getBestPracticesTool, handleGetBestPractices } from './tools/get-best-practices.js';
 import { troubleshootTool, handleTroubleshoot } from './tools/troubleshoot.js';
+import {
+  createHttpControllerPrompt,
+  handleCreateHttpController,
+  createGraphqlResolverPrompt,
+  handleCreateGraphqlResolver,
+  setupMicroservicePrompt,
+  handleSetupMicroservice,
+  setupAuthPrompt,
+  handleSetupAuth,
+} from './prompts/index.js';
+import { resources, handleResourceRead } from './resources/index.js';
 
 /**
  * Nael Framework MCP Server
@@ -29,6 +44,8 @@ export class NaelMCPServer {
       {
         capabilities: {
           tools: {},
+          prompts: {},
+          resources: {},
         },
       }
     );
@@ -100,6 +117,82 @@ export class NaelMCPServer {
           ],
           isError: true,
         };
+      }
+    });
+
+    // List available prompts
+    this.server.setRequestHandler(ListPromptsRequestSchema, async () => {
+      return {
+        prompts: [
+          createHttpControllerPrompt,
+          createGraphqlResolverPrompt,
+          setupMicroservicePrompt,
+          setupAuthPrompt,
+        ],
+      };
+    });
+
+    // Handle prompt requests
+    this.server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+      const { name, arguments: args } = request.params;
+
+      try {
+        switch (name) {
+          case 'create-http-controller':
+            return await handleCreateHttpController(args || {});
+          
+          case 'create-graphql-resolver':
+            return await handleCreateGraphqlResolver(args || {});
+          
+          case 'setup-microservice':
+            return await handleSetupMicroservice(args || {});
+          
+          case 'setup-auth':
+            return await handleSetupAuth(args || {});
+          
+          default:
+            return {
+              messages: [
+                {
+                  role: 'assistant',
+                  content: {
+                    type: 'text',
+                    text: `Unknown prompt: ${name}`,
+                  },
+                },
+              ],
+            };
+        }
+      } catch (error) {
+        return {
+          messages: [
+            {
+              role: 'assistant',
+              content: {
+                type: 'text',
+                text: `Error executing prompt ${name}: ${error instanceof Error ? error.message : String(error)}`,
+              },
+            },
+          ],
+        };
+      }
+    });
+
+    // List available resources
+    this.server.setRequestHandler(ListResourcesRequestSchema, async () => {
+      return {
+        resources
+      };
+    });
+
+    // Handle resource reads
+    this.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+      const { uri } = request.params;
+
+      try {
+        return await handleResourceRead(uri);
+      } catch (error) {
+        throw new Error(`Error reading resource ${uri}: ${error instanceof Error ? error.message : String(error)}`);
       }
     });
   }

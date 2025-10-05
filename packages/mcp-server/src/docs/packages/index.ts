@@ -1,20 +1,30 @@
-import type { PackageDocumentation, PackageName } from '../../types';
-import { corePackageDocs } from './core';
+import type { PackageDocumentation, PackageName } from '../../types.js';
+import { corePackageDocs } from './core.js';
+import { httpPackageDocs } from './http.js';
+import { graphqlPackageDocs } from './graphql.js';
+import { platformPackageDocs } from './platform.js';
+import { configPackageDocs } from './config.js';
+import { loggerPackageDocs } from './logger.js';
+import { ormPackageDocs } from './orm.js';
+import { authPackageDocs } from './auth.js';
+import { microservicesPackageDocs } from './microservices.js';
 
-export const packageDocs: Record<PackageName, PackageDocumentation> = {
-  core: corePackageDocs,
-  http: corePackageDocs, // Placeholder - will implement next
-  graphql: corePackageDocs, // Placeholder
-  platform: corePackageDocs, // Placeholder
-  config: corePackageDocs, // Placeholder
-  logger: corePackageDocs, // Placeholder
-  orm: corePackageDocs, // Placeholder
-  auth: corePackageDocs, // Placeholder
-  microservices: corePackageDocs, // Placeholder
-};
+/**
+ * Central registry of all package documentation
+ */
+export const packageDocs = new Map<string, PackageDocumentation>([
+  ['http', httpPackageDocs],
+  ['graphql', graphqlPackageDocs],
+  ['platform', platformPackageDocs],
+  ['config', configPackageDocs],
+  ['logger', loggerPackageDocs],
+  ['orm', ormPackageDocs],
+  ['auth', authPackageDocs],
+  ['microservices', microservicesPackageDocs],
+]);
 
-export function getPackageDocumentation(packageName: PackageName): PackageDocumentation | null {
-  return packageDocs[packageName] || null;
+export function getPackageDocumentation(packageName: PackageName): PackageDocumentation {
+  return packageDocs.get(packageName)!;
 }
 
 export function listAllPackages(): Array<{ name: string; description: string }> {

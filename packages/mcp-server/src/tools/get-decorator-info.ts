@@ -30,7 +30,7 @@ export async function handleGetDecoratorInfo(args: { decorator: string; package?
 
   // Search through all or specific package
   const packagesToSearch: [string, PackageDocumentation][] = pkgFilter 
-    ? [[pkgFilter, packageDocs[pkgFilter]]] 
+    ? [[pkgFilter, packageDocs.get(pkgFilter)!]] 
     : Object.entries(packageDocs);
 
   for (const [_packageName, docs] of packagesToSearch) {

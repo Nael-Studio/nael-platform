@@ -195,6 +195,111 @@ AI: [Calls troubleshoot with issue: "dependency not found"]
 AI: "This error typically occurs when... Here's how to fix it..."
 ```
 
+## Available Prompts
+
+The MCP server provides interactive step-by-step guides through prompts:
+
+### `create-http-controller`
+Guides you through creating a REST API controller with all necessary components.
+
+**Parameters:**
+- `controllerName` (required): Name of the controller (e.g., "User", "Product")
+- `endpoints` (optional): Comma-separated endpoints (e.g., "GET /users, POST /users")
+- `withAuth` (optional): Include authentication (true/false)
+
+**Example:**
+```
+User: "Help me create a Product REST API with authentication"
+AI: [Uses create-http-controller prompt]
+AI: [Provides step-by-step guide with complete code examples]
+```
+
+### `create-graphql-resolver`
+Guides you through creating a GraphQL resolver with queries, mutations, and subscriptions.
+
+**Parameters:**
+- `typeName` (required): Name of the GraphQL type (e.g., "User", "Product")
+- `fields` (optional): Comma-separated fields (e.g., "id:ID, name:String, price:Float")
+- `withSubscriptions` (optional): Include subscriptions (true/false)
+
+**Example:**
+```
+User: "Help me create a Product GraphQL API with real-time updates"
+AI: [Uses create-graphql-resolver prompt with withSubscriptions: true]
+AI: [Provides complete resolver implementation with subscriptions]
+```
+
+### `setup-microservice`
+Guides you through setting up an event-driven microservice with Dapr.
+
+**Parameters:**
+- `serviceName` (required): Name of the microservice (e.g., "orders", "payments")
+- `pubsubTopics` (optional): Comma-separated topics (e.g., "order.created, order.completed")
+- `withStateStore` (optional): Include state store integration (true/false)
+
+**Example:**
+```
+User: "Help me set up an orders microservice with state management"
+AI: [Uses setup-microservice prompt]
+AI: [Provides Dapr configuration, event handlers, and deployment guide]
+```
+
+### `setup-auth`
+Guides you through setting up authentication with Better Auth.
+
+**Parameters:**
+- `providers` (optional): Comma-separated providers (e.g., "email, google, github")
+- `withRBAC` (optional): Include role-based access control (true/false)
+- `database` (optional): Database type (mongodb, postgresql, mysql, sqlite)
+
+**Example:**
+```
+User: "Help me add authentication with Google OAuth and role-based permissions"
+AI: [Uses setup-auth prompt with providers: "email,google", withRBAC: true]
+AI: [Provides complete auth setup with OAuth and RBAC]
+```
+
+## Available Resources
+
+The MCP server exposes browsable documentation through URI resources:
+
+### Package Documentation
+Access complete package documentation via URIs:
+- `nael://docs/core` - Core package documentation
+- `nael://docs/http` - HTTP package documentation  
+- `nael://docs/graphql` - GraphQL package documentation
+- `nael://docs/platform` - Platform package documentation
+- `nael://docs/config` - Config package documentation
+- `nael://docs/logger` - Logger package documentation
+- `nael://docs/orm` - ORM package documentation
+- `nael://docs/auth` - Auth package documentation
+- `nael://docs/microservices` - Microservices package documentation
+
+### Example Categories
+Browse examples by category:
+- `nael://examples/crud` - CRUD operation examples
+- `nael://examples/authentication` - Auth examples
+- `nael://examples/graphql` - GraphQL examples
+- `nael://examples/microservices` - Microservice examples
+
+### Guides
+Access comprehensive guides:
+- `nael://guides/getting-started` - Getting started guide
+- `nael://guides/best-practices` - Best practices guide
+- `nael://guides/troubleshooting` - Troubleshooting guide
+
+**Example Usage:**
+```
+AI: [Reads resource nael://docs/http]
+AI: "Here's the complete HTTP package documentation..."
+
+AI: [Reads resource nael://examples/crud]
+AI: "Here are all CRUD examples from the framework..."
+
+AI: [Reads resource nael://guides/getting-started]
+AI: [Provides step-by-step getting started guide]
+```
+
 ## Usage Examples
 
 ### With Claude Desktop
@@ -262,10 +367,18 @@ packages/mcp-server/
 │   │   ├── get-decorator-info.ts   # Get decorator details
 │   │   ├── get-best-practices.ts   # Get best practices by topic
 │   │   └── troubleshoot.ts         # Find solutions to issues
+│   ├── prompts/                    # MCP prompt templates
+│   │   ├── create-http-controller.ts   # REST API guide
+│   │   ├── create-graphql-resolver.ts  # GraphQL guide
+│   │   ├── setup-microservice.ts       # Microservice guide
+│   │   └── setup-auth.ts               # Authentication guide
+│   ├── resources/                  # MCP resources (URI handlers)
+│   │   └── index.ts                # Resource handlers for nael:// URIs
 │   └── docs/                       # Documentation data
 │       └── packages/               # Per-package docs
 │           ├── index.ts
-│           └── core.ts             # Core package docs
+│           ├── core.ts             # Core package docs
+│           └── http.ts             # HTTP package docs
 ├── package.json
 └── README.md
 ```
@@ -315,16 +428,16 @@ export async function handleSearchApi(args: { query: string }) {
 - [x] `get-package-docs` tool
 - [x] Core package documentation
 
-### Phase 2: Documentation Content (In Progress)
-- [ ] HTTP package documentation
-- [ ] GraphQL package documentation
-- [ ] Platform package documentation
-- [ ] Config package documentation
-- [ ] Logger package documentation
-- [ ] ORM package documentation
-- [ ] Auth package documentation
-- [ ] Microservices package documentation
-- [ ] 20+ comprehensive code examples
+### Phase 2: Documentation Content ✅ COMPLETE (8/8 - 100%)
+- [x] HTTP package documentation
+- [x] GraphQL package documentation
+- [x] Platform package documentation
+- [x] Config package documentation
+- [x] Logger package documentation
+- [x] ORM package documentation
+- [x] Auth package documentation
+- [x] Microservices package documentation
+- [x] 35+ comprehensive code examples (5 per package)
 
 ### Phase 3: Advanced Tools ✅
 - [x] `search-api` - Search decorators, classes, methods
@@ -332,13 +445,13 @@ export async function handleSearchApi(args: { query: string }) {
 - [x] `get-decorator-info` - Detailed decorator information
 - [x] `get-best-practices` - Best practices by topic
 - [x] `troubleshoot` - Common issues and solutions
-- [ ] MCP resources (browsable docs via URI)
+- [x] MCP resources (browsable docs via URI)
 
-### Phase 4: Prompts & Templates (Planned)
-- [ ] `create-http-controller` prompt
-- [ ] `create-graphql-resolver` prompt
-- [ ] `setup-microservice` prompt
-- [ ] `setup-auth` prompt
+### Phase 4: Prompts & Templates ✅
+- [x] `create-http-controller` prompt
+- [x] `create-graphql-resolver` prompt
+- [x] `setup-microservice` prompt
+- [x] `setup-auth` prompt
 - [ ] Integration testing with Claude/Cursor
 
 ## Contributing
