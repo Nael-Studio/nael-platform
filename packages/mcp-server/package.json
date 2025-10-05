@@ -21,7 +21,8 @@
   "scripts": {
     "build": "bunx tsc --build tsconfig.build.json",
     "dev": "bun run src/index.ts",
-  "inspector": "bunx @modelcontextprotocol/inspector bun run ./src/index.ts",
+    "serve:http": "bun run src/http-server.ts",
+    "inspector": "bunx @modelcontextprotocol/inspector bun run ./src/index.ts",
     "test": "bun test",
     "lint": "bunx tsc --noEmit"
   },
@@ -41,6 +42,7 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/node": "^22.7.5",
     "typescript": "^5.6.3"
   },
   "publishConfig": {

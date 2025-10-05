@@ -23,6 +23,11 @@ import { NaelMCPServer } from './server.js';
  */
 
 async function main() {
+  if (process.argv.includes('--http')) {
+    await import('./http-server.js');
+    return;
+  }
+
   const server = new NaelMCPServer();
   await server.run();
 }

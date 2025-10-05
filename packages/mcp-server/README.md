@@ -97,6 +97,45 @@ Add to Continue's `config.json`:
 }
 ```
 
+## Deployment
+
+### HTTP/SSE service
+
+Run the HTTP transport locally (or on a server) using Bun:
+
+```bash
+# From the repository root
+bun install
+bun run build
+PORT=3333 bun run src/http-server.ts
+```
+
+The server listens on `PORT` (defaults to `3333`) and exposes:
+
+- `POST /mcp` for initialization and follow-up JSON-RPC requests (Streamable HTTP, protocol `2025-03-26`).
+- `GET /mcp` for the SSE stream associated with a session (use the `Mcp-Session-Id` header from the initialize response).
+- `DELETE /mcp` to terminate a session.
+- Legacy endpoints `GET /sse` and `POST /messages` for older clients (protocol `2024-11-05`).
+
+Set `MCP_ALLOWED_ORIGIN`, `MCP_ALLOWED_HOSTS`, `MCP_ALLOWED_ORIGINS`, and `MCP_ENABLE_DNS_PROTECTION=true` to enable optional origin/host validation when deploying behind a proxy.
+
+### Docker deployment
+
+Build and run the container image:
+
+```bash
+# Build from the repository root
+docker build -f packages/mcp-server/Dockerfile -t nael-mcp-server .
+
+# Run on the default port
+docker run --rm -p 3333:3333 nael-mcp-server
+
+# Override the port if required
+docker run --rm -e PORT=8080 -p 8080:8080 nael-mcp-server
+```
+
+The Dockerfile uses a Bun-based builder stage to compile TypeScript and a minimal Node.js runtime stage (`node:20-alpine`). Only production dependencies are installed in the final image for smaller size and faster startup.
+
 ## Available Tools
 
 The MCP server exposes these tools that AI assistants can call:
@@ -113,8 +152,6 @@ AI: "Nael Framework has 9 packages: core, http, graphql..."
 
 ### `get-package-docs`
 Get comprehensive documentation for a specific package.
-
-**Parameters:**
 - `packageName` (required): One of: `core`, `http`, `graphql`, `platform`, `config`, `logger`, `orm`, `auth`, `microservices`
 
 **Example:**
@@ -261,15 +298,6 @@ AI: [Provides complete auth setup with OAuth and RBAC]
 
 ## Available Resources
 
-The MCP server exposes browsable documentation through URI resources:
-
-### Package Documentation
-Access complete package documentation via URIs:
-- `nael://docs/core` - Core package documentation
-- `nael://docs/http` - HTTP package documentation  
-- `nael://docs/graphql` - GraphQL package documentation
-- `nael://docs/platform` - Platform package documentation
-- `nael://docs/config` - Config package documentation
 - `nael://docs/logger` - Logger package documentation
 - `nael://docs/orm` - ORM package documentation
 - `nael://docs/auth` - Auth package documentation

@@ -1,5 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -206,9 +207,13 @@ export class NaelMCPServer {
     });
   }
 
+  async connect(transport: Transport) {
+    await this.server.connect(transport);
+  }
+
   async run() {
     const transport = new StdioServerTransport();
-    await this.server.connect(transport);
+    await this.connect(transport);
     
     // Log to stderr (stdout is used for MCP protocol)
     console.error('Nael Framework MCP Server running on stdio');

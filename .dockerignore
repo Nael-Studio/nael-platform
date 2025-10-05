@@ -1,0 +1,26 @@
+# Version control
+.git
+.git/**
+
+# OS / editor noise
+.DS_Store
+.vscode
+.idea
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Dependency directories
+node_modules
+**/node_modules
+
+# Build artifacts
+**/dist
+**/*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-error.log*
