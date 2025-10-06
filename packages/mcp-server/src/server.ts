@@ -6,7 +6,7 @@ import {
   type GetPromptResult,
 } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
-import type { ZodRawShape } from 'zod';
+import type { AnyZodObject, ZodRawShape } from 'zod';
 import { docs } from './docs';
 import { exampleCatalog } from './docs/examples';
 import { guides } from './docs/guides';
@@ -39,11 +39,11 @@ export function createNaelMcpServer(): McpServer {
   return server;
 }
 
-function registerTools(server: McpServer, mcpTools: McpTool[]): void {
+function registerTools(server: McpServer, mcpTools: McpTool<any>[]): void {
   for (const tool of mcpTools) {
     if (tool.inputSchema) {
       const toolInputSchema = tool.inputSchema;
-      const inputShape = toolInputSchema.shape as ZodRawShape;
+      const inputShape = (toolInputSchema as AnyZodObject).shape as ZodRawShape;
       server.registerTool(
         tool.name,
         {
@@ -65,7 +65,7 @@ function registerTools(server: McpServer, mcpTools: McpTool[]): void {
           description: tool.description,
         },
         async () => {
-          const result = await tool.handler({} as Record<string, unknown>);
+          const result = await tool.handler({} as ToolHandlerArgs<undefined>);
           return toCallToolResult(result);
         },
       );

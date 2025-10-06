@@ -8,7 +8,7 @@ import { searchApiTool } from './search-api';
 import { troubleshootTool } from './troubleshoot';
 import type { McpTool } from './types';
 
-export const tools: McpTool[] = [
+export const tools: McpTool<any>[] = [
   listPackagesTool,
   getPackageDocsTool,
   searchApiTool,

@@ -13,14 +13,14 @@ export interface ToolResult {
   metadata?: Record<string, unknown>;
 }
 
-export type ToolHandlerArgs<TSchema extends AnyZodObject = z.ZodObject<any>> = z.infer<TSchema>;
+export type ToolHandlerArgs<TSchema extends AnyZodObject | undefined = undefined> =
+  TSchema extends AnyZodObject ? z.infer<TSchema> : Record<string, unknown>;
 
-
-export interface McpTool<TSchema extends AnyZodObject = z.ZodObject<any>> {
+export interface McpTool<TSchema extends AnyZodObject | undefined = undefined> {
   name: string;
   description: string;
   inputSchema?: TSchema;
-  handler: (args: ToolHandlerArgs<TSchema>) => Promise<ToolResult>;
+  handler(args: ToolHandlerArgs<TSchema>): Promise<ToolResult>;
 }
 
 export function asTextContent(message: string): ToolContent {
