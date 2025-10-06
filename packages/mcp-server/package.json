@@ -1,51 +1,39 @@
 {
   "name": "@nl-framework/mcp-server",
-  "version": "0.1.0",
-  "description": "Model Context Protocol server providing Nael Framework documentation and examples to AI assistants",
+  "version": "0.1.2",
+  "description": "Model Context Protocol server for the Nael Framework. Provides interactive documentation, scaffolding prompts, and project bootstrap helpers for AI assistants.",
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
   "bin": {
-    "nl-mcp-server": "./dist/index.js"
-  },
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    }
+    "@nl-framework/mcp-server": "dist/index.js"
   },
   "files": [
-    "dist",
-    "README.md"
+    "dist"
   ],
   "scripts": {
     "build": "bunx tsc --build tsconfig.build.json",
+    "clean": "rm -rf dist tsconfig.build.tsbuildinfo",
     "dev": "bun run src/index.ts",
-    "serve:http": "bun run src/http-server.ts",
-    "inspector": "bunx @modelcontextprotocol/inspector bun run ./src/index.ts",
+    "dev:sse": "bun run src/sse-server.ts",
+    "dev:http": "bun run src/streamable-server.ts",
     "test": "bun test",
-    "lint": "bunx tsc --noEmit"
+    "docker:build": "docker build -f packages/mcp-server/Dockerfile -t nl-framework/mcp-server .",
+    "docker:run": "docker run --rm -p 3000:3000 nl-framework/mcp-server"
   },
-  "keywords": [
-    "mcp",
-    "model-context-protocol",
-    "nael-framework",
-    "documentation",
-    "ai-assistant",
-    "claude",
-    "cursor"
-  ],
-  "author": "Nael Studio",
-  "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.4"
-  },
-  "devDependencies": {
-    "@types/bun": "latest",
-    "@types/node": "^22.7.5",
-    "typescript": "^5.6.3"
-  },
-  "publishConfig": {
-    "access": "public"
+    "@modelcontextprotocol/sdk": "^1.19.1",
+    "@nl-framework/core": "^0.1.2",
+    "@nl-framework/http": "^0.1.2",
+    "@nl-framework/graphql": "^0.1.2",
+    "@nl-framework/auth": "^0.1.2",
+    "@nl-framework/microservices": "^0.1.2",
+    "@nl-framework/platform": "^0.1.2",
+    "@nl-framework/config": "^0.1.2",
+    "@nl-framework/logger": "^0.1.2",
+    "@nl-framework/orm": "^0.1.2",
+    "yaml": "^2.8.0",
+    "zod": "^3.23.8"
   }
 }

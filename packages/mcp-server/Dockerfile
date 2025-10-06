@@ -1,29 +1,28 @@
-FROM oven/bun:1.2.23 AS builder
+# syntax=docker/dockerfile:1.7
+
+FROM oven/bun:latest AS builder
+
 WORKDIR /app
 
-COPY tsconfig.base.json ./tsconfig.base.json
-COPY packages/mcp-server/package.json ./packages/mcp-server/package.json
-COPY packages/mcp-server/tsconfig.json ./packages/mcp-server/tsconfig.json
-COPY packages/mcp-server/tsconfig.build.json ./packages/mcp-server/tsconfig.build.json
-COPY packages/mcp-server/src ./packages/mcp-server/src
+# Copy repository source
+COPY . .
 
-WORKDIR /app/packages/mcp-server
-RUN bun install
-RUN bun run build
+# Install dependencies and build the MCP server
+RUN bun install --frozen-lockfile \
+  && bun run --cwd packages/mcp-server build \
+  && bun install --cwd packages/mcp-server --frozen-lockfile --production
 
-FROM oven/bun:1.2.23 AS runner
-WORKDIR /app/packages/mcp-server
+FROM oven/bun:latest AS runner
+
+WORKDIR /app
 ENV NODE_ENV=production
 
-# Copy only what the binary needs
-COPY --from=builder /app/packages/mcp-server/package.json ./package.json
-COPY --from=builder /app/packages/mcp-server/bun.lock ./bun.lock
+# Copy the compiled application and production dependencies
 COPY --from=builder /app/packages/mcp-server/dist ./dist
+COPY --from=builder /app/packages/mcp-server/package.json ./package.json
+COPY --from=builder /app/packages/mcp-server/node_modules ./node_modules
 
-# Install prod deps (Bun will respect NODE_ENV=production)
-RUN bun install --production
+EXPOSE 3000
 
-ENV PORT=3333
-EXPOSE 3333
-
-CMD ["bun", "run", "dist/http-server.js"]
+# Default to the SSE server; override with another entrypoint if needed
+CMD ["bun", "dist/sse-server.js"]

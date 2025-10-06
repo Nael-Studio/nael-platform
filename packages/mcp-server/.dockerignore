@@ -1,0 +1,22 @@
+# General
+.git
+.gitignore
+Dockerfile
+node_modules
+**/node_modules
+**/dist
+.bun
+bun.lockb
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-store
+
+# Editor
+.vscode
+.idea
+.DS_Store
+
+# Build outputs
+packages/**/dist
+examples/**/dist

@@ -1,132 +1,102 @@
-import { Tool } from '@modelcontextprotocol/sdk/types.js';
-import { packageDocs } from '../docs/packages/index.js';
+import { z } from 'zod';
+import { docs } from '../docs';
+import type { McpTool } from './types';
+import { asTextContent } from './types';
 
-export const searchApiTool: Tool = {
-  name: 'search-api',
-  description: 'Search for decorators, classes, methods, or interfaces in Nael Framework with usage examples',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      query: {
-        type: 'string',
-        description: 'Search term (e.g., "@Controller", "Repository", "useFactory")'
-      },
-      type: {
-        type: 'string',
-        enum: ['decorator', 'class', 'method', 'interface', 'all'],
-        description: 'Filter by API type'
-      }
-    },
-    required: ['query']
-  }
-};
-
-export async function handleSearchApi(args: { query: string; type?: string }) {
-  const { query, type = 'all' } = args;
-  const searchTerm = query.toLowerCase();
-  const results: any[] = [];
-
-  // Search through all package documentation
-  for (const [packageName, docs] of Object.entries(packageDocs)) {
-    // Search decorators
-    if (type === 'all' || type === 'decorator') {
-      docs.api.decorators?.forEach((decorator: any) => {
-        if (
-          decorator.name.toLowerCase().includes(searchTerm) ||
-          decorator.description.toLowerCase().includes(searchTerm)
-        ) {
-          results.push({
-            type: 'decorator',
-            package: docs.name,
-            name: decorator.name,
-            signature: decorator.signature,
-            description: decorator.description,
-            example: decorator.examples[0] || null
-          });
-        }
-      });
-    }
-
-    // Search classes
-    if (type === 'all' || type === 'class') {
-      docs.api.classes?.forEach((cls: any) => {
-        if (
-          cls.name.toLowerCase().includes(searchTerm) ||
-          cls.description.toLowerCase().includes(searchTerm)
-        ) {
-          results.push({
-            type: 'class',
-            package: docs.name,
-            name: cls.name,
-            description: cls.description,
-            methods: cls.methods.map((m: any) => m.name),
-            example: cls.examples[0] || null
-          });
-        }
-      });
-    }
-
-    // Search methods
-    if (type === 'all' || type === 'method') {
-      docs.api.classes?.forEach((cls: any) => {
-        cls.methods.forEach((method: any) => {
-          if (
-            method.name.toLowerCase().includes(searchTerm) ||
-            method.description.toLowerCase().includes(searchTerm)
-          ) {
-            results.push({
-              type: 'method',
-              package: docs.name,
-              class: cls.name,
-              name: method.name,
-              signature: method.signature,
-              description: method.description
-            });
-          }
-        });
-      });
-    }
-
-    // Search interfaces
-    if (type === 'all' || type === 'interface') {
-      docs.api.interfaces?.forEach((iface: any) => {
-        if (
-          iface.name.toLowerCase().includes(searchTerm) ||
-          iface.description.toLowerCase().includes(searchTerm)
-        ) {
-          results.push({
-            type: 'interface',
-            package: docs.name,
-            name: iface.name,
-            description: iface.description,
-            properties: iface.properties.map((p: any) => ({ name: p.name, type: p.type }))
-          });
-        }
-      });
-    }
-  }
-
-  if (results.length === 0) {
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `No results found for "${query}". Try a different search term or check the package documentation.`
-        }
-      ]
-    };
-  }
-
-  return {
-    content: [
-      {
-        type: 'text',
-        text: JSON.stringify({
-          query,
-          count: results.length,
-          results: results.slice(0, 10) // Limit to 10 results
-        }, null, 2)
-      }
-    ]
-  };
+interface SearchHit {
+  type: 'decorator' | 'class' | 'interface';
+  name: string;
+  description: string;
+  signature?: string;
+  package?: string;
+  link?: string;
 }
+
+function includes(haystack: string, needle: string) {
+  return haystack.toLowerCase().includes(needle.toLowerCase());
+}
+
+const inputSchema = z.object({
+  query: z.string().min(1, 'query is required'),
+  type: z.enum(['decorator', 'class', 'interface', 'all']).optional(),
+});
+
+export const searchApiTool: McpTool<typeof inputSchema> = {
+  name: 'search-api',
+  description: 'Search for decorators, classes, methods, or interfaces in Nael Framework with usage examples.',
+  inputSchema,
+  async handler(args) {
+    const query = args.query.trim();
+    const filter = args.type ?? 'all';
+
+    if (!query) {
+      return {
+        content: [asTextContent('Please provide a non-empty query string.')],
+      };
+    }
+
+    const hits: SearchHit[] = [];
+
+    if (filter === 'decorator' || filter === 'all') {
+      for (const decorator of docs.api.decorators) {
+        if (includes(decorator.name, query) || includes(decorator.description, query)) {
+          hits.push({
+            type: 'decorator',
+            name: decorator.name,
+            description: decorator.description,
+            signature: decorator.signature,
+          });
+        }
+      }
+    }
+
+    if (filter === 'class' || filter === 'all') {
+      for (const entry of docs.api.classes) {
+        if (includes(entry.name, query) || includes(entry.description, query)) {
+          hits.push({
+            type: 'class',
+            name: entry.name,
+            description: entry.description,
+          });
+        }
+      }
+    }
+
+    if (filter === 'interface' || filter === 'all') {
+      for (const entry of docs.api.interfaces) {
+        if (includes(entry.name, query) || includes(entry.description, query)) {
+          hits.push({
+            type: 'interface',
+            name: entry.name,
+            description: entry.description,
+          });
+        }
+      }
+    }
+
+    if (!hits.length) {
+      return {
+        content: [
+          asTextContent(`No API entities found for query "${query}". Try different keywords or broaden the search.`),
+        ],
+      };
+    }
+
+    const rendered = hits
+      .map((hit, index) => {
+        const signature = hit.signature ? `\nSignature: ${hit.signature}` : '';
+        return `${index + 1}. [${hit.type}] ${hit.name} — ${hit.description}${signature}`;
+      })
+      .join('\n');
+
+    return {
+      content: [asTextContent(rendered)],
+      structuredContent: hits,
+      metadata: {
+        count: hits.length,
+        filter,
+        query,
+      },
+    };
+  },
+};
