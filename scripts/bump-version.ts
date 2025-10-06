@@ -65,10 +65,6 @@ function bumpVersion(version: string, bumpType: BumpType): string {
 	const minorStr = match[2];
 	const patchStr = match[3];
 
-	if (majorStr === undefined || minorStr === undefined || patchStr === undefined) {
-		throw new Error(`Unable to parse version: ${version}`);
-	}
-
 	const majorInitial = Number.parseInt(majorStr, 10);
 	const minorInitial = Number.parseInt(minorStr, 10);
 	const patchInitial = Number.parseInt(patchStr, 10);
