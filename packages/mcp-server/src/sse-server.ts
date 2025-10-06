@@ -160,8 +160,8 @@ async function main() {
       console.log('\n[mcp-server] Shutting down SSE server...');
       // Close all active transports
       for (const transport of activeTransports.values()) {
-        if (transport.onclose) {
-          transport.onclose();
+        if (typeof transport.close === 'function') {
+          transport.close();
         }
       }
       activeTransports.clear();
