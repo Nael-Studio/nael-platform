@@ -24,7 +24,7 @@ export const troubleshootTool: McpTool<typeof inputSchema> = {
               item.symptoms.some((symptom) => symptom.toLowerCase().includes(normalizedError))
             : true;
           const inTopic = normalizedTopic
-            ? item.relatedTopics?.some((topic) => topic.toLowerCase().includes(normalizedTopic)) ?? false
+            ? item.relatedTopics?.some((relatedTopic) => relatedTopic.toLowerCase().includes(normalizedTopic)) ?? false
             : true;
           return inError && inTopic;
         })
