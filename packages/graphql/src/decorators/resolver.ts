@@ -102,6 +102,17 @@ const createParamDecorator = (kind: ResolverParamKind) =>
 export const Arg = createParamDecorator('arg');
 const ArgsDecorator = createParamDecorator('args');
 
+/**
+ * Injects GraphQL resolver arguments with overloads for both single named values and the full args object.
+ *
+ * Passing a string name mirrors {@link Arg} and extracts only that argument (e.g. `@Args('input')`).
+ * Providing a type thunk or options without a name passes the entire args object and lets you describe its shape
+ * (e.g. `@Args(() => CreateUserArgs)` or `@Args({ transform: true })`).
+ *
+ * @param nameOrType Optional argument name or type thunk describing the args object.
+ * @param maybeTypeOrOptions Optional type thunk when the first parameter is the name, or parameter options.
+ * @param maybeOptions Optional parameter options when both name and type thunk are supplied.
+ */
 export const Args = (
   nameOrType?: string | TypeThunk,
   maybeTypeOrOptions?: TypeThunk | ResolverParamOptions,
