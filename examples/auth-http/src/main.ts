@@ -6,9 +6,7 @@ import { AppModule } from './app.module';
 import type { ExampleConfig } from './types';
 
 const bootstrap = async () => {
-  const app = await NaelFactory.create(AppModule, {
-    graphql: false,
-  });
+  const app = await NaelFactory.create(AppModule);
 
   const loggerFactory = await app.get<LoggerFactory>(LoggerFactory);
   const appLogger = loggerFactory.create({ context: 'AuthHttpExample' });
@@ -16,7 +14,7 @@ const bootstrap = async () => {
 
   const httpApp = app.getHttpApplication();
   if (!httpApp) {
-    appLogger.fatal('HTTP application is not available. Ensure NaelFactory HTTP mode is enabled.');
+    appLogger.fatal('HTTP application is not available. HTTP is always enabled, so this indicates an internal error.');
     throw new Error('HTTP application was not created.');
   }
 

@@ -4,7 +4,6 @@ import { AppModule } from './app.module';
 
 const bootstrap = async () => {
   const app = await NaelFactory.create(AppModule, {
-    http: true,
     graphql: {
       federation: { enabled: true },
     },

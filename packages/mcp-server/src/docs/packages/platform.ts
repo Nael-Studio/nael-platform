@@ -74,16 +74,15 @@ await Promise.all([httpApp.start(), microApp.start()]);
     },
     {
       title: 'HTTP + GraphQL via NaelFactory',
-      description: 'Start the platform wrapper with GraphQL enabled and log the server URL.',
+      description: 'Start the platform wrapper with GraphQL auto-discovery and log the server URL.',
       code: `import { NaelFactory } from '@nl-framework/platform';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
 import { AppModule } from './modules/app.module';
 
 const bootstrap = async () => {
   const app = await NaelFactory.create(AppModule, {
-    http: true,
     graphql: {
-      enabled: true,
+      path: '/api/graphql',
     },
   });
 

@@ -259,6 +259,7 @@ Unified factory for running HTTP and GraphQL servers together on a single port, 
 - **Shared Context**: HTTP and GraphQL share the same DI container
 - **Federation Gateway**: Built-in Apollo Gateway for subgraph aggregation
 - **Flexible Deployment**: Run as monolith or separate services
+- **Smart Defaults**: HTTP is always provisioned; GraphQL automatically mounts once resolvers are registered—no enable flags required
 
 **Example:**
 

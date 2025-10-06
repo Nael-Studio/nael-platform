@@ -30,6 +30,7 @@ export const graphqlDocumentation: PackageDocumentation = {
       'Create a resolver class and annotate operations with `@Query` and `@Mutation`.',
       'Decorate input DTO classes with `@InputType()` (and fields with `@Field()`) so schema metadata is generated.',
       'Register each resolver under the module\'s `resolvers` array so discovery picks them up.',
+      'Let NaelFactory auto-mount GraphQL—no enable flag is required once resolvers are registered.',
       'Bootstrap with `bootstrapGraphqlApplication` and supply the root module.',
     ],
     code: `import { Module } from '@nl-framework/core';

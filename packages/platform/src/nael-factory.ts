@@ -23,16 +23,20 @@ import {
 } from '@nl-framework/graphql';
 
 interface NormalizedHttpOptions {
-  enabled: boolean;
   options: HttpServerOptions;
-  explicit: boolean;
+  provided: boolean;
+  deprecatedBoolean?: boolean;
+  deprecatedEnabledFlag?: boolean;
+  disableAttempted?: boolean;
 }
 
 interface NormalizedGraphqlOptions {
-  enabled: boolean;
   options: GraphqlServerOptions;
-  explicit: boolean;
   path: string;
+  provided: boolean;
+  deprecatedBoolean?: boolean;
+  deprecatedEnabledFlag?: boolean;
+  disableAttempted?: boolean;
 }
 
 interface NormalizedGatewayOptions {
@@ -62,10 +66,12 @@ const normalizeGraphqlPath = (path: string): string => {
 };
 
 export interface NaelFactoryHttpOptions extends HttpServerOptions {
+  /** @deprecated HTTP is always enabled; remove this flag. */
   enabled?: boolean;
 }
 
 export interface NaelFactoryGraphqlOptions extends GraphqlServerOptions {
+  /** @deprecated GraphQL availability is determined by resolver discovery; remove this flag. */
   enabled?: boolean;
 }
 
@@ -74,7 +80,9 @@ export interface NaelFactoryGatewayOptions extends FederationGatewayServerOption
 }
 
 export interface NaelFactoryOptions extends ApplicationOptions {
+  /** @deprecated Boolean toggles are deprecated; HTTP is always enabled. Pass an options object instead. */
   http?: boolean | NaelFactoryHttpOptions;
+  /** @deprecated Boolean toggles and the `enabled` flag are deprecated; GraphQL starts automatically when resolvers exist. */
   graphql?: boolean | NaelFactoryGraphqlOptions;
   gateway?: boolean | NaelFactoryGatewayOptions;
 }
@@ -126,7 +134,7 @@ class NaelPlatformApplication implements NaelApplication {
     this.logger = baseLogger;
     void this.context
       .get<LoggerFactory>(LoggerFactory)
-      .then((factory) => {
+      .then((factory: LoggerFactory) => {
         this.logger = factory.create({ context: 'NaelPlatform' });
       })
       .catch(() => {
@@ -260,18 +268,24 @@ class NaelPlatformApplication implements NaelApplication {
 
 const normalizeHttpOptions = (value?: boolean | NaelFactoryHttpOptions): NormalizedHttpOptions => {
   if (typeof value === 'boolean') {
-    return { enabled: value, options: {}, explicit: true };
+    return {
+      options: {},
+      provided: true,
+      deprecatedBoolean: true,
+      disableAttempted: value === false,
+    };
   }
 
   if (!value) {
-    return { enabled: true, options: {}, explicit: false };
+    return { options: {}, provided: false };
   }
 
   const { enabled, ...rest } = value;
   return {
-    enabled: enabled ?? true,
     options: rest,
-    explicit: enabled !== undefined,
+    provided: true,
+    deprecatedEnabledFlag: enabled !== undefined,
+    disableAttempted: enabled === false,
   };
 };
 
@@ -281,20 +295,20 @@ const normalizeGraphqlOptions = (
   if (typeof value === 'boolean') {
     const path = normalizeGraphqlPath('/graphql');
     return {
-      enabled: value,
       options: { path },
-      explicit: true,
       path,
+      provided: true,
+      deprecatedBoolean: true,
+      disableAttempted: value === false,
     };
   }
 
   if (!value) {
     const path = normalizeGraphqlPath('/graphql');
     return {
-      enabled: false,
       options: { path },
-      explicit: false,
       path,
+      provided: false,
     };
   }
 
@@ -306,10 +320,11 @@ const normalizeGraphqlOptions = (
   };
 
   return {
-    enabled: enabled ?? true,
     options,
-    explicit: enabled !== undefined,
     path: normalizedPath,
+    provided: true,
+    deprecatedEnabledFlag: enabled !== undefined,
+    disableAttempted: enabled === false,
   };
 };
 
@@ -357,27 +372,47 @@ export class NaelFactory {
     const logger = context.getLogger();
     const hasResolvers = context.getResolvers().length > 0;
 
-    let graphqlEnabled = normalizedGraphql.enabled;
-    if (!normalizedGraphql.explicit && hasResolvers) {
-      graphqlEnabled = true;
-    }
-
-    if (graphqlEnabled && !hasResolvers) {
+    if (normalizedHttp.deprecatedBoolean) {
       logger.warn(
-        'GraphQL was enabled but no resolvers were discovered; skipping GraphQL server startup.',
-      );
-      graphqlEnabled = false;
-    }
-
-    if (graphqlEnabled && !normalizedHttp.enabled) {
-      throw new Error(
-        'GraphQL support requires the HTTP server to be enabled. Enable HTTP or disable GraphQL.',
+        'Passing a boolean to `http` is deprecated. HTTP is always enabled; provide an options object instead.',
       );
     }
 
-    const httpApp = normalizedHttp.enabled
-      ? createHttpApplicationFromContext(context, normalizedHttp.options)
-      : undefined;
+    if (normalizedHttp.deprecatedEnabledFlag) {
+      logger.warn('The `enabled` flag in HTTP options is deprecated and ignored. HTTP cannot be disabled.');
+    }
+
+    if (normalizedHttp.disableAttempted) {
+      logger.warn('HTTP server can no longer be disabled; ignoring the `false` flag.');
+    }
+
+    if (normalizedGraphql.deprecatedBoolean) {
+      logger.warn(
+        'Passing a boolean to `graphql` options is deprecated. GraphQL now starts automatically when resolvers are registered.',
+      );
+    }
+
+    if (normalizedGraphql.deprecatedEnabledFlag) {
+      logger.warn(
+        'The `enabled` flag in GraphQL options is deprecated and ignored. GraphQL availability is determined by discovered resolvers.',
+      );
+    }
+
+    if (normalizedGraphql.disableAttempted) {
+      logger.warn(
+        'GraphQL disable requests are no longer supported; availability is determined by registered resolvers.',
+      );
+    }
+
+    const graphqlEnabled = hasResolvers;
+
+    if (!graphqlEnabled && normalizedGraphql.provided) {
+      logger.warn(
+        'GraphQL configuration was provided but no resolvers were discovered; skipping GraphQL server startup.',
+      );
+    }
+
+    const httpApp = createHttpApplicationFromContext(context, normalizedHttp.options);
     const graphqlApp = graphqlEnabled
       ? createGraphqlApplicationFromContext(context, normalizedGraphql.options)
       : undefined;
@@ -387,7 +422,7 @@ export class NaelFactory {
 
     let graphqlIntegrationPath: string | undefined;
 
-    if (httpApp && graphqlApp) {
+    if (graphqlApp) {
       const mountPath = normalizedGraphql.path;
       const graphqlHandler = await graphqlApp.createHttpHandler(mountPath);
       const methods: HttpMethod[] = ['GET', 'POST', 'OPTIONS', 'HEAD'];
@@ -398,7 +433,7 @@ export class NaelFactory {
       logger.info('Mounted GraphQL within HTTP server', { path: mountPath });
     }
 
-    if (httpApp && gatewayApp) {
+    if (gatewayApp) {
       gatewayApp.setHttpIntegration(normalizedGateway.options.path);
       const mountPath = gatewayApp.getHttpIntegrationPath();
 

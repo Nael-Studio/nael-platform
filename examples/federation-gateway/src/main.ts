@@ -50,7 +50,6 @@ const bootstrap = async (): Promise<void> => {
         host,
         port,
       },
-      graphql: false,
       gateway: {
         path: graphqlPath,
         subgraphs,
