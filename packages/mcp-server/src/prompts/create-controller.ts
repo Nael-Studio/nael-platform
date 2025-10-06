@@ -7,8 +7,9 @@ function buildRoutesInput(raw?: string): string {
     .map((route) => route.trim())
     .filter(Boolean)
     .map((route) => {
-      const [method = 'GET', path = '/'] = route.split(/\s+/);
-      return `  @${method.toUpperCase().replace(/[^A-Z]/g, '')}(\'${path}\')\n  handler${method}${path.replace(/[^a-zA-Z]/g, '')}() {\n    // TODO: implement\n  }`;
+      const [methodRaw = 'GET', path = '/'] = route.split(/\s+/);
+      const validMethod = /^(GET|POST|PUT|DELETE|PATCH)$/i.test(methodRaw) ? methodRaw.toUpperCase() : 'GET';
+      return `  @${validMethod}('${path}')\n  handler${validMethod}${path.replace(/[^a-zA-Z]/g, '')}() {\n    // TODO: implement\n  }`;
     })
     .join('\n\n');
 }

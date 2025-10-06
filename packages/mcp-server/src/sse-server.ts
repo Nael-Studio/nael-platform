@@ -77,7 +77,7 @@ async function createSSEServer() {
           const transport = activeTransports.get(sessionId);
           if (transport && transport.onmessage) {
             transport.onmessage(message);
-            console.log(`[mcp-server] Message routed to session ${sessionId}:`, message.method);
+            console.log('[mcp-server] Message routed to session %s:', sessionId, message.method);
           } else {
             console.warn(`[mcp-server] No active transport for session ${sessionId}`);
           }
@@ -160,8 +160,8 @@ async function main() {
       console.log('\n[mcp-server] Shutting down SSE server...');
       // Close all active transports
       for (const transport of activeTransports.values()) {
-        if (transport.onclose) {
-          transport.onclose();
+        if (typeof transport.close === 'function') {
+          transport.close();
         }
       }
       activeTransports.clear();

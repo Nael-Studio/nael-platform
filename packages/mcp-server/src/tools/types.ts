@@ -13,9 +13,10 @@ export interface ToolResult {
   metadata?: Record<string, unknown>;
 }
 
-export type ToolHandlerArgs<TSchema extends AnyZodObject | undefined> = TSchema extends AnyZodObject
-  ? z.infer<TSchema>
-  : Record<string, never>;
+export type ToolHandlerArgs<TSchema extends AnyZodObject = z.ZodObject<any>> = z.infer<TSchema>;
+
+
+export interface McpTool<TSchema extends AnyZodObject = z.ZodObject<any>> {
 
 export interface McpTool<TSchema extends AnyZodObject | undefined = AnyZodObject | undefined> {
   name: string;

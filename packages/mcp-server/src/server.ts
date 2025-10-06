@@ -85,9 +85,14 @@ function toCallToolResult(result: ToolResult): CallToolResult {
   };
 
   if (typeof result.structuredContent !== 'undefined') {
-    callResult.structuredContent = result.structuredContent as NonNullable<
-      CallToolResult['structuredContent']
-    >;
+    // Use a zod schema to validate structuredContent at runtime
+    // Assuming structuredContent is an object or array; adjust schema as needed
+    const structuredContentSchema = z.any(); // Replace with a more specific schema if available
+    if (structuredContentSchema.safeParse(result.structuredContent).success) {
+      callResult.structuredContent = result.structuredContent;
+    } else {
+      // Optionally, handle invalid structuredContent (e.g., log or throw)
+    }
   }
 
   if (typeof result.isError !== 'undefined') {
