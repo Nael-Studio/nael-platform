@@ -42,8 +42,8 @@ export function createNaelMcpServer(): McpServer {
 function registerTools(server: McpServer, mcpTools: McpTool[]): void {
   for (const tool of mcpTools) {
     if (tool.inputSchema) {
-      const inputSchema = tool.inputSchema;
-      const inputShape = inputSchema.shape as ZodRawShape;
+      const toolInputSchema = tool.inputSchema;
+      const inputShape = toolInputSchema.shape as ZodRawShape;
       server.registerTool(
         tool.name,
         {
@@ -51,8 +51,8 @@ function registerTools(server: McpServer, mcpTools: McpTool[]): void {
           description: tool.description,
           inputSchema: inputShape,
         },
-        async (args: z.infer<typeof inputSchema>) => {
-          const normalizedArgs = (args ?? {}) as ToolHandlerArgs<typeof inputSchema>;
+        async (args: z.infer<typeof toolInputSchema>) => {
+          const normalizedArgs = (args ?? {}) as ToolHandlerArgs<typeof toolInputSchema>;
           const result = await tool.handler(normalizedArgs);
           return toCallToolResult(result);
         },
