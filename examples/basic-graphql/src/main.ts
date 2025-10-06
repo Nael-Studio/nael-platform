@@ -3,12 +3,7 @@ import { Logger, LoggerFactory } from '@nl-framework/logger';
 import { AppModule } from './app.module';
 
 const bootstrap = async () => {
-  const app = await NaelFactory.create(AppModule, {
-    http: false,
-    graphql: {
-      federation: { enabled: false },
-    },
-  });
+  const app = await NaelFactory.create(AppModule);
 
   const loggerFactory = await app.get<LoggerFactory>(LoggerFactory);
   const appLogger = loggerFactory.create({ context: 'BasicGraphqlExample' });

@@ -15,7 +15,6 @@ const bootstrap = async () => {
     config: {
       dir: configDir,
     },
-    graphql: false,
   });
 
   const loggerFactory = await app.get<LoggerFactory>(LoggerFactory);
@@ -24,7 +23,7 @@ const bootstrap = async () => {
 
   const httpApp = app.getHttpApplication();
   if (!httpApp) {
-    appLogger.fatal('HTTP application was not created. Ensure HTTP is enabled in NaelFactory options.');
+    appLogger.fatal('HTTP application was not created. HTTP is always enabled, so this indicates an internal error.');
     throw new Error('HTTP application is not available.');
   }
 
