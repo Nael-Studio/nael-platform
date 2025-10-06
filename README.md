@@ -756,11 +756,16 @@ When the tag lands:
 2. The workflow verifies that the `version` in every `packages/<slug>/package.json` equals the tag value.
 3. Each package is published to npm with `npm publish --access public`. If a package already exposes that version on npm, the step is skipped and the release continues.
 
+> **Workspace dependency ranges**
+>
+> Before publishing, make sure that cross-package dependencies no longer use Bun's `workspace:` protocol. Run `bun run sync:versions` to rewrite any `workspace:*` ranges to concrete semver ranges that match the versions defined in your packages. This keeps local development fast (Bun still links the workspace copy because the version satisfies the range) and ensures the published tarballs resolve correctly when consumers install from npm.
+
 ### Release checklist
 
-1. Update the `version` field in each package that should be part of the release (all nine packages normally share the same version).
-2. Commit the changes so the new versions are on the branch you want to release.
-3. Create and push the tag:
+1. Decide the semver bump (`major`, `minor`, or `patch`) and run `bun run bump:version <type>` to update every package (use `--dry-run` first if you want to preview the changes).
+2. Run `bun run sync:versions` and commit the resulting dependency updates so the published packages reference concrete versions instead of `workspace:*` ranges.
+3. Commit the changes so the new versions are on the branch you want to release.
+4. Create and push the tag:
 
   ```bash
   git tag 0.2.0

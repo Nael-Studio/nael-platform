@@ -1,7 +1,7 @@
 {
   "name": "nl-framework-monorepo",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "NestJS-inspired Bun framework with Dapr microservices, Apollo Federation, Better Auth, and MongoDB ODM.",
   "type": "module",
   "license": "MIT",
@@ -15,7 +15,9 @@
     "lint": "bun run scripts/lint-all.ts",
     "format": "bun run scripts/format-all.ts",
     "test": "bun test",
-    "check": "bun run scripts/check-all.ts"
+    "check": "bun run scripts/check-all.ts",
+    "bump:version": "bun run scripts/bump-version.ts",
+    "sync:versions": "bun run scripts/fix-workspace-versions.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.4.0",

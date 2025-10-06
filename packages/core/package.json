@@ -1,6 +1,6 @@
 {
   "name": "@nl-framework/core",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Core runtime for the nl-framework Bun ecosystem: dependency injection, module system, configuration, lifecycle.",
   "keywords": [
     "bun",
@@ -24,11 +24,11 @@
     }
   },
   "scripts": {
-  "build": "bunx tsc --build tsconfig.build.json",
+    "build": "bunx tsc --build tsconfig.build.json",
     "test": "bun test"
   },
   "dependencies": {
-    "@nl-framework/logger": "workspace:*",
+    "@nl-framework/logger": "^0.1.2",
     "reflect-metadata": "^0.2.2",
     "yaml": "^2.8.1"
   }

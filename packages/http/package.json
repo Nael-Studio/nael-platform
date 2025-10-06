@@ -1,6 +1,6 @@
 {
   "name": "@nl-framework/http",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "HTTP server adapter for nl-framework built on Bun, with routing, middleware, and controller integration.",
   "keywords": [
     "bun",
@@ -24,12 +24,12 @@
     }
   },
   "scripts": {
-  "build": "bunx tsc --build tsconfig.build.json",
+    "build": "bunx tsc --build tsconfig.build.json",
     "test": "bun test"
   },
   "dependencies": {
-    "@nl-framework/core": "workspace:*",
-    "@nl-framework/logger": "workspace:*",
+    "@nl-framework/core": "^0.1.2",
+    "@nl-framework/logger": "^0.1.2",
     "reflect-metadata": "^0.2.2"
   }
 }
