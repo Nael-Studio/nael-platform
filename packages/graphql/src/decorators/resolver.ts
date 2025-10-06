@@ -100,6 +100,19 @@ const createParamDecorator = (kind: ResolverParamKind) =>
   };
 
 export const Arg = createParamDecorator('arg');
+const ArgsDecorator = createParamDecorator('args');
+
+export const Args = (
+  nameOrType?: string | TypeThunk,
+  maybeTypeOrOptions?: TypeThunk | ResolverParamOptions,
+  maybeOptions?: ResolverParamOptions,
+): ParameterDecorator => {
+  if (typeof nameOrType === 'string') {
+    return Arg(nameOrType, maybeTypeOrOptions, maybeOptions);
+  }
+
+  return ArgsDecorator(nameOrType, maybeTypeOrOptions, maybeOptions);
+};
 export const Context = createParamDecorator('context');
 export const Parent = createParamDecorator('parent');
 export const Info = createParamDecorator('info');
