@@ -65,7 +65,7 @@ function registerTools(server: McpServer, mcpTools: McpTool[]): void {
           description: tool.description,
         },
         async () => {
-          const result = await tool.handler({} as ToolHandlerArgs<undefined>);
+          const result = await tool.handler({} as Record<string, unknown>);
           return toCallToolResult(result);
         },
       );

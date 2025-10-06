@@ -17,8 +17,6 @@ export type ToolHandlerArgs<TSchema extends AnyZodObject = z.ZodObject<any>> = z
 
 
 export interface McpTool<TSchema extends AnyZodObject = z.ZodObject<any>> {
-
-export interface McpTool<TSchema extends AnyZodObject | undefined = AnyZodObject | undefined> {
   name: string;
   description: string;
   inputSchema?: TSchema;
