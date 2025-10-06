@@ -1,51 +1,35 @@
 {
   "name": "@nl-framework/mcp-server",
   "version": "0.1.0",
-  "description": "Model Context Protocol server providing Nael Framework documentation and examples to AI assistants",
+  "description": "Model Context Protocol server for the Nael Framework. Provides interactive documentation, scaffolding prompts, and project bootstrap helpers for AI assistants.",
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
   "bin": {
-    "nl-mcp-server": "./dist/index.js"
-  },
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    }
+    "@nl-framework/mcp-server": "dist/index.js"
   },
   "files": [
-    "dist",
-    "README.md"
+    "dist"
   ],
   "scripts": {
     "build": "bunx tsc --build tsconfig.build.json",
+    "clean": "rm -rf dist tsconfig.build.tsbuildinfo",
     "dev": "bun run src/index.ts",
-    "serve:http": "bun run src/http-server.ts",
-    "inspector": "bunx @modelcontextprotocol/inspector bun run ./src/index.ts",
-    "test": "bun test",
-    "lint": "bunx tsc --noEmit"
+    "test": "bun test"
   },
-  "keywords": [
-    "mcp",
-    "model-context-protocol",
-    "nael-framework",
-    "documentation",
-    "ai-assistant",
-    "claude",
-    "cursor"
-  ],
-  "author": "Nael Studio",
-  "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.4"
-  },
-  "devDependencies": {
-    "@types/bun": "latest",
-    "@types/node": "^22.7.5",
-    "typescript": "^5.6.3"
-  },
-  "publishConfig": {
-    "access": "public"
+    "@modelcontextprotocol/sdk": "^1.19.1",
+    "@nl-framework/core": "workspace:*",
+    "@nl-framework/http": "workspace:*",
+    "@nl-framework/graphql": "workspace:*",
+    "@nl-framework/auth": "workspace:*",
+    "@nl-framework/microservices": "workspace:*",
+    "@nl-framework/platform": "workspace:*",
+    "@nl-framework/config": "workspace:*",
+    "@nl-framework/logger": "workspace:*",
+    "@nl-framework/orm": "workspace:*",
+    "yaml": "^2.8.0",
+    "zod": "^3.23.8"
   }
 }

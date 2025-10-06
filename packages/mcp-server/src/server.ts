@@ -1,229 +1,320 @@
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-  ListPromptsRequestSchema,
-  GetPromptRequestSchema,
-  ListResourcesRequestSchema,
-  ReadResourceRequestSchema,
+  ErrorCode,
+  McpError,
+  type CallToolResult,
+  type GetPromptResult,
 } from '@modelcontextprotocol/sdk/types.js';
+import { z } from 'zod';
+import type { ZodRawShape } from 'zod';
+import { docs } from './docs';
+import { exampleCatalog } from './docs/examples';
+import { guides } from './docs/guides';
+import { prompts } from './prompts';
+import type { PromptTemplate } from './prompts/types';
+import { resourceProviders } from './resources';
+import type { ResourceProvider, ResourceResponse } from './resources/types';
+import { tools } from './tools';
+import type { McpTool, ToolResult, ToolHandlerArgs } from './tools/types';
 
-import { listPackagesTool, handleListPackages } from './tools/list-packages.js';
-import { getPackageDocsTool, handleGetPackageDocs } from './tools/get-package-docs.js';
-import { searchApiTool, handleSearchApi } from './tools/search-api.js';
-import { getExampleTool, handleGetExample } from './tools/get-example.js';
-import { getDecoratorInfoTool, handleGetDecoratorInfo } from './tools/get-decorator-info.js';
-import { getBestPracticesTool, handleGetBestPractices } from './tools/get-best-practices.js';
-import { troubleshootTool, handleTroubleshoot } from './tools/troubleshoot.js';
-import {
-  createHttpControllerPrompt,
-  handleCreateHttpController,
-  createGraphqlResolverPrompt,
-  handleCreateGraphqlResolver,
-  setupMicroservicePrompt,
-  handleSetupMicroservice,
-  setupAuthPrompt,
-  handleSetupAuth,
-} from './prompts/index.js';
-import { resources, handleResourceRead } from './resources/index.js';
+interface PromptArgsSchemaResult {
+  schema?: z.ZodObject<Record<string, z.ZodTypeAny>, 'strip'>;
+  shape?: ZodRawShape;
+  hasArguments: boolean;
+}
 
-/**
- * Nael Framework MCP Server
- * Provides documentation and examples for all framework packages
- */
-export class NaelMCPServer {
-  private server: Server;
+export function createNaelMcpServer(): McpServer {
+  const serverInfo = {
+    name: '@nl-framework/mcp-server',
+    version: '0.1.0',
+    description: 'Model Context Protocol server for the Nael Framework.',
+  } as const;
 
-  constructor() {
-    this.server = new Server(
-      {
-        name: 'nael-framework',
-        version: '0.1.0',
-      },
-      {
-        capabilities: {
-          tools: {
-            list: true,
-            call: true,
-          },
-          prompts: {
-            list: true,
-            call: true,
-          },
-          resources: {
-            list: true,
-            read: true,
-          },
+  const server = new McpServer(serverInfo);
+
+  registerTools(server, tools);
+  registerPrompts(server, prompts);
+  registerResources(server, resourceProviders);
+
+  return server;
+}
+
+function registerTools(server: McpServer, mcpTools: McpTool[]): void {
+  for (const tool of mcpTools) {
+    if (tool.inputSchema) {
+      const inputSchema = tool.inputSchema;
+      const inputShape = inputSchema.shape as ZodRawShape;
+      server.registerTool(
+        tool.name,
+        {
+          title: tool.name,
+          description: tool.description,
+          inputSchema: inputShape,
         },
-      }
-    );
-
-    this.setupHandlers();
-  }
-
-  private setupHandlers() {
-    // List available tools
-    this.server.setRequestHandler(ListToolsRequestSchema, async () => {
-      return {
-        tools: [
-          listPackagesTool,
-          getPackageDocsTool,
-          searchApiTool,
-          getExampleTool,
-          getDecoratorInfoTool,
-          getBestPracticesTool,
-          troubleshootTool,
-        ],
-      };
-    });
-
-    // Handle tool calls
-    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
-      const { name, arguments: args } = request.params;
-
-      try {
-        switch (name) {
-          case 'list-packages':
-            return await handleListPackages();
-          
-          case 'get-package-docs':
-            return await handleGetPackageDocs(args as any);
-          
-          case 'search-api':
-            return await handleSearchApi(args as any);
-          
-          case 'get-example':
-            return await handleGetExample(args as any);
-          
-          case 'get-decorator-info':
-            return await handleGetDecoratorInfo(args as any);
-          
-          case 'get-best-practices':
-            return await handleGetBestPractices(args as any);
-          
-          case 'troubleshoot':
-            return await handleTroubleshoot(args as any);
-          
-          default:
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: `Unknown tool: ${name}`,
-                },
-              ],
-              isError: true,
-            };
-        }
-      } catch (error) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Error executing tool ${name}: ${error instanceof Error ? error.message : String(error)}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    });
-
-    // List available prompts
-    this.server.setRequestHandler(ListPromptsRequestSchema, async () => {
-      return {
-        prompts: [
-          createHttpControllerPrompt,
-          createGraphqlResolverPrompt,
-          setupMicroservicePrompt,
-          setupAuthPrompt,
-        ],
-      };
-    });
-
-    // Handle prompt requests
-    this.server.setRequestHandler(GetPromptRequestSchema, async (request) => {
-      const { name, arguments: args } = request.params;
-
-      try {
-        switch (name) {
-          case 'create-http-controller':
-            return await handleCreateHttpController(args || {});
-          
-          case 'create-graphql-resolver':
-            return await handleCreateGraphqlResolver(args || {});
-          
-          case 'setup-microservice':
-            return await handleSetupMicroservice(args || {});
-          
-          case 'setup-auth':
-            return await handleSetupAuth(args || {});
-          
-          default:
-            return {
-              messages: [
-                {
-                  role: 'assistant',
-                  content: {
-                    type: 'text',
-                    text: `Unknown prompt: ${name}`,
-                  },
-                },
-              ],
-            };
-        }
-      } catch (error) {
-        return {
-          messages: [
-            {
-              role: 'assistant',
-              content: {
-                type: 'text',
-                text: `Error executing prompt ${name}: ${error instanceof Error ? error.message : String(error)}`,
-              },
-            },
-          ],
-        };
-      }
-    });
-
-    // List available resources
-    this.server.setRequestHandler(ListResourcesRequestSchema, async () => {
-      return {
-        resources
-      };
-    });
-
-    // Handle resource reads
-    this.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-      const { uri } = request.params;
-
-      try {
-        return await handleResourceRead(uri);
-      } catch (error) {
-        throw new Error(`Error reading resource ${uri}: ${error instanceof Error ? error.message : String(error)}`);
-      }
-    });
-  }
-
-  async connect(transport: Transport) {
-    await this.server.connect(transport);
-  }
-
-  async run() {
-    const transport = new StdioServerTransport();
-    await this.connect(transport);
-    
-    // Log to stderr (stdout is used for MCP protocol)
-    console.error('Nael Framework MCP Server running on stdio');
+        async (args: z.infer<typeof inputSchema>) => {
+          const normalizedArgs = (args ?? {}) as ToolHandlerArgs<typeof inputSchema>;
+          const result = await tool.handler(normalizedArgs);
+          return toCallToolResult(result);
+        },
+      );
+    } else {
+      server.registerTool(
+        tool.name,
+        {
+          title: tool.name,
+          description: tool.description,
+        },
+        async () => {
+          const result = await tool.handler({} as ToolHandlerArgs<undefined>);
+          return toCallToolResult(result);
+        },
+      );
+    }
   }
 }
 
-if (import.meta.main) {
-  const server = new NaelMCPServer();
-  server.run().catch((error) => {
-    console.error('Fatal error in MCP server:', error);
-    process.exit(1);
-  });
+function toCallToolResult(result: ToolResult): CallToolResult {
+  const content = result.content.map((block) => ({
+    type: block.type,
+    text: block.text,
+    ...(block._meta ? { _meta: block._meta } : {}),
+  })) as CallToolResult['content'];
+
+  const callResult: CallToolResult = {
+    content,
+  };
+
+  if (typeof result.structuredContent !== 'undefined') {
+    callResult.structuredContent = result.structuredContent as NonNullable<
+      CallToolResult['structuredContent']
+    >;
+  }
+
+  if (typeof result.isError !== 'undefined') {
+    callResult.isError = result.isError;
+  }
+
+  if (result.metadata) {
+    callResult._meta = result.metadata as NonNullable<CallToolResult['_meta']>;
+  }
+
+  return callResult;
+}
+
+function registerPrompts(server: McpServer, promptTemplates: PromptTemplate[]): void {
+  for (const prompt of promptTemplates) {
+    const { schema, shape, hasArguments } = buildPromptSchema(prompt);
+
+    if (hasArguments && schema && shape) {
+      server.registerPrompt(
+        prompt.name,
+        {
+          description: prompt.description,
+          argsSchema: shape,
+        },
+        async (args: Record<string, string | undefined>) =>
+          buildPromptResult(prompt, args ?? {}),
+      );
+    } else {
+      server.registerPrompt(
+        prompt.name,
+        { description: prompt.description },
+        async () => buildPromptResult(prompt, {}),
+      );
+    }
+  }
+}
+
+function buildPromptSchema(prompt: PromptTemplate): PromptArgsSchemaResult {
+  const shape: Record<string, z.ZodTypeAny> = {};
+  for (const arg of prompt.arguments) {
+    const schema = z
+      .string()
+      .describe(arg.description)
+      .transform((value) => value.trim());
+    shape[arg.name] = arg.required ? schema : schema.optional();
+  }
+
+  const hasArguments = Object.keys(shape).length > 0;
+  const schema = hasArguments ? z.object(shape) : undefined;
+  return {
+    schema,
+    shape: schema?.shape as ZodRawShape | undefined,
+    hasArguments,
+  };
+}
+
+function buildPromptResult(
+  prompt: PromptTemplate,
+  args: Record<string, string | undefined>,
+): GetPromptResult {
+  const normalizedArgs = Object.fromEntries(
+    Object.entries(args).map(([key, value]) => [key, value ?? '']),
+  ) as Record<string, string>;
+
+  const promptText = prompt.build(normalizedArgs);
+  return {
+    description: prompt.description,
+    messages: [
+      {
+        role: 'user' as const,
+        content: {
+          type: 'text' as const,
+          text: promptText,
+        },
+      },
+    ],
+  } satisfies GetPromptResult;
+}
+
+function registerResources(server: McpServer, providers: ResourceProvider[]): void {
+  registerDocumentationResources(server, providers);
+  registerExampleResources(server, providers);
+  registerGuideResources(server, providers);
+  registerApiResources(server, providers);
+}
+
+function registerDocumentationResources(server: McpServer, providers: ResourceProvider[]): void {
+  for (const key of docs.packageKeys) {
+    const uri = `nael://docs/${key}`;
+    const doc = docs.packages[key as keyof typeof docs.packages];
+    if (!doc) continue;
+    server.registerResource(
+      `docs-${key}`,
+      uri,
+      {
+        title: doc.name,
+        description: doc.description,
+      },
+      async () => readResourceOrThrow(providers, uri),
+    );
+  }
+}
+
+function registerExampleResources(server: McpServer, providers: ResourceProvider[]): void {
+  const uniqueCategories = new Set(exampleCatalog.map((example) => example.category));
+  const uniqueIds = new Set(exampleCatalog.map((example) => example.id));
+
+  server.registerResource(
+    'examples-all',
+    'nael://examples/all',
+    {
+      title: 'All Examples',
+      description: 'Every example bundled with the Nael Framework.',
+    },
+    async () => readResourceOrThrow(providers, 'nael://examples/all'),
+  );
+
+  for (const id of uniqueIds) {
+    const uri = `nael://examples/${id}`;
+    server.registerResource(
+      `examples-${id}`,
+      uri,
+      {
+        title: `Example ${id}`,
+      },
+      async () => readResourceOrThrow(providers, uri),
+    );
+  }
+
+  for (const category of uniqueCategories) {
+    const uri = `nael://examples/${category}`;
+    server.registerResource(
+      `examples-category-${category}`,
+      uri,
+      {
+        title: `Examples: ${category}`,
+      },
+      async () => readResourceOrThrow(providers, uri),
+    );
+  }
+}
+
+function registerGuideResources(server: McpServer, providers: ResourceProvider[]): void {
+  server.registerResource(
+    'guides-all',
+    'nael://guides/all',
+    {
+      title: 'All Guides',
+      description: 'Framework-wide implementation guides and walkthroughs.',
+    },
+    async () => readResourceOrThrow(providers, 'nael://guides/all'),
+  );
+
+  for (const guide of guides) {
+    const uri = `nael://guides/${guide.id}`;
+    server.registerResource(
+      `guide-${guide.id}`,
+      uri,
+      {
+        title: guide.title,
+        description: guide.summary,
+      },
+      async () => readResourceOrThrow(providers, uri),
+    );
+  }
+}
+
+function registerApiResources(server: McpServer, providers: ResourceProvider[]): void {
+  const sections: Array<['decorators' | 'classes' | 'interfaces', string]> = [
+    ['decorators', 'Decorator Reference'],
+    ['classes', 'Class Reference'],
+    ['interfaces', 'Interface Reference'],
+  ];
+
+  for (const [section, title] of sections) {
+    const uri = `nael://api/${section}`;
+    server.registerResource(
+      `api-${section}`,
+      uri,
+      {
+        title,
+        description: `Nael Framework ${section} details and signatures.`,
+      },
+      async () => readResourceOrThrow(providers, uri),
+    );
+  }
+}
+
+async function readResourceOrThrow(providers: ResourceProvider[], uri: string) {
+  const resolved = await resolveResource(providers, uri);
+
+  if (!resolved) {
+    throw new McpError(ErrorCode.InvalidParams, `Resource ${uri} not found.`);
+  }
+
+  return formatResourceContents(resolved);
+}
+
+async function resolveResource(
+  providers: ResourceProvider[],
+  uri: string,
+): Promise<ResourceResponse | undefined> {
+  for (const provider of providers) {
+    for (const pattern of provider.patterns) {
+      if (!pattern.test(uri)) continue;
+      const result = await provider.resolve({ uri });
+      if (result) {
+        return result;
+      }
+    }
+  }
+  return undefined;
+}
+
+function formatResourceContents(resolved: ResourceResponse) {
+  const text =
+    typeof resolved.data === 'string'
+      ? resolved.data
+      : JSON.stringify(resolved.data, null, 2);
+
+  return {
+    contents: [
+      {
+        uri: resolved.uri,
+        mimeType: resolved.mimeType,
+        text,
+      },
+    ],
+  };
 }

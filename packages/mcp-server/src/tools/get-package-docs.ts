@@ -1,80 +1,55 @@
-import { Tool } from '@modelcontextprotocol/sdk/types.js';
-import type { PackageName } from '../types.js';
-import { getPackageDocumentation } from '../docs/packages/index.js';
+import { z } from 'zod';
+import { docs } from '../docs';
+import type { PackageDocumentation } from '../types';
+import type { McpTool } from './types';
+import { asTextContent } from './types';
 
-export const getPackageDocsTool: Tool = {
+function renderMarkdown(doc: PackageDocumentation): string {
+  const features = doc.features
+    .map((feature) => `- ${feature.icon ?? '•'} **${feature.title}** — ${feature.description}`)
+    .join('\n');
+
+  const steps = doc.quickStart.steps.map((step, index) => `${index + 1}. ${step}`).join('\n');
+
+  return `# ${doc.name}\n\n${doc.description}\n\n## Installation\n\n\`${doc.installation}\`\n\n## Key Features\n\n${features}\n\n## Quick Start\n\n${doc.quickStart.description}\n\n${steps}\n\n\n\`\`\`ts\n${doc.quickStart.code.trim()}\n\`\`\``;
+}
+
+const packageNameSchema =
+  docs.packageKeys.length > 0
+    ? z.enum([...docs.packageKeys] as [string, ...string[]])
+    : z.string().min(1, 'packageName is required');
+
+const inputSchema = z.object({
+  packageName: packageNameSchema,
+});
+
+export const getPackageDocsTool: McpTool<typeof inputSchema> = {
   name: 'get-package-docs',
-  description: 'Get comprehensive documentation for a specific Nael Framework package including features, installation, API reference, and examples',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      packageName: {
-        type: 'string',
-        enum: ['core', 'http', 'graphql', 'platform', 'config', 'logger', 'orm', 'auth', 'microservices'],
-        description: 'Name of the package to get documentation for'
-      }
-    },
-    required: ['packageName']
-  }
-};
+  description:
+    'Get comprehensive documentation for a specific Nael Framework package including features, installation, API reference, and examples.',
+  inputSchema,
+  async handler(args) {
+    const doc = docs.packages[args.packageName as keyof typeof docs.packages];
 
-export async function handleGetPackageDocs(args: { packageName: PackageName }) {
-  const docs = getPackageDocumentation(args.packageName);
-  
-  if (!docs) {
+    if (!doc) {
+      return {
+        content: [
+          asTextContent(
+            `No documentation found for package \`${args.packageName}\`. Use list-packages to see available keys.`,
+          ),
+        ],
+      };
+    }
+
     return {
       content: [
-        {
-          type: 'text',
-          text: `Package "${args.packageName}" not found. Available packages: core, http, graphql, platform, config, logger, orm, auth, microservices`
-        }
+        asTextContent(renderMarkdown(doc)),
       ],
-      isError: true
+      structuredContent: doc,
+      metadata: {
+        package: doc.name,
+        version: doc.version,
+      },
     };
-  }
-  
-  // Format comprehensive documentation
-  const formattedDocs = {
-    package: docs.name,
-    version: docs.version,
-    description: docs.description,
-    installation: docs.installation,
-    features: docs.features,
-    quickStart: docs.quickStart,
-    decorators: docs.api.decorators?.map(d => ({
-      name: d.name,
-      signature: d.signature,
-      description: d.description,
-      parameters: d.parameters,
-      example: d.examples[0] || 'No example available'
-    })),
-    classes: docs.api.classes?.map(c => ({
-      name: c.name,
-      description: c.description,
-      methods: c.methods.map(m => ({
-        name: m.name,
-        signature: m.signature,
-        description: m.description
-      })),
-      example: c.examples[0] || 'No example available'
-    })),
-    interfaces: docs.api.interfaces?.map(i => ({
-      name: i.name,
-      description: i.description,
-      properties: i.properties
-    })),
-    examples: docs.examples.slice(0, 5), // Limit to first 5 examples
-    bestPractices: docs.bestPractices,
-    troubleshooting: docs.troubleshooting,
-    relatedPackages: docs.relatedPackages
-  };
-  
-  return {
-    content: [
-      {
-        type: 'text',
-        text: JSON.stringify(formattedDocs, null, 2)
-      }
-    ]
-  };
-}
+  },
+};

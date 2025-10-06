@@ -1,111 +1,64 @@
-import { Tool } from '@modelcontextprotocol/sdk/types.js';
-import type { PackageName, PackageDocumentation, CodeExample } from '../types.js';
-import { packageDocs } from '../docs/packages/index.js';
+import { z } from 'zod';
+import { docs } from '../docs';
+import { exampleCatalog } from '../docs/examples';
+import type { McpTool } from './types';
+import { asTextContent } from './types';
 
-export const getExampleTool: Tool = {
+const packageFilterSchema =
+  docs.packageKeys.length > 0
+    ? z.enum([...docs.packageKeys] as [string, ...string[]])
+    : z.string().min(1, 'package must not be empty');
+
+const inputSchema = z.object({
+  useCase: z.string().min(1, 'useCase is required'),
+  package: packageFilterSchema.optional(),
+});
+
+export const getExampleTool: McpTool<typeof inputSchema> = {
   name: 'get-example',
-  description: 'Get complete code examples for specific use cases with explanations',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      useCase: {
-        type: 'string',
-        description: 'Use case description (e.g., "create REST API", "setup authentication", "MongoDB integration")'
-      },
-      package: {
-        type: 'string',
-        enum: ['core', 'http', 'graphql', 'platform', 'config', 'logger', 'orm', 'auth', 'microservices'],
-        description: 'Optional: Filter examples by package'
-      }
-    },
-    required: ['useCase']
-  }
-};
-
-interface ExampleResult {
-  package: string;
-  title: string;
-  description: string;
-  code: string;
-  explanation?: string;
-  tags: string[];
-}
-
-export async function handleGetExample(args: { useCase: string; package?: PackageName }) {
-  const { useCase, package: pkgFilter } = args;
-  const searchTerm = useCase.toLowerCase();
-  const examples: ExampleResult[] = [];
-
-  // Search through all or specific package
-  const packagesToSearch: Array<[PackageName, PackageDocumentation]> = (() => {
-    if (pkgFilter) {
-      const docs = packageDocs[pkgFilter];
-      return docs ? [[pkgFilter, docs]] : [];
-    }
-    return Object.entries(packageDocs) as Array<[PackageName, PackageDocumentation]>;
-  })();
-
-  if (pkgFilter && packagesToSearch.length === 0) {
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Package "${pkgFilter}" not found. Available packages: ${Object.keys(packageDocs).join(', ')}`
-        }
-      ],
-      isError: true
-    };
-  }
-
-  for (const [_packageName, docs] of packagesToSearch) {
-    docs.examples.forEach((example: CodeExample) => {
-      // Match against title, description, or tags
-      const matchesTitle = example.title.toLowerCase().includes(searchTerm);
-      const matchesDescription = example.description.toLowerCase().includes(searchTerm);
-      const matchesTags = example.tags.some((tag: string) => tag.toLowerCase().includes(searchTerm));
-
-      if (matchesTitle || matchesDescription || matchesTags) {
-        examples.push({
-          package: docs.name,
-          title: example.title,
-          description: example.description,
-          code: example.code,
-          explanation: example.explanation,
-          tags: example.tags
-        });
-      }
+  description: 'Get complete code examples for specific use cases with explanations.',
+  inputSchema,
+  async handler(args) {
+    const searchTerm = args.useCase.toLowerCase();
+    const packageFilter = args.package;
+    const matches = exampleCatalog.filter((example) => {
+      const inPackage = packageFilter
+        ? example.relatedPackages?.some((pkg) => pkg.includes(packageFilter))
+        : true;
+      const inTitle = example.title.toLowerCase().includes(searchTerm);
+      const inDescription = example.description.toLowerCase().includes(searchTerm);
+      const inTags = example.tags?.some((tag) => tag.toLowerCase().includes(searchTerm)) ?? false;
+      return inPackage && (inTitle || inDescription || inTags);
     });
-  }
 
-  if (examples.length === 0) {
+    if (!matches.length) {
+      return {
+        content: [
+          asTextContent(
+            `No examples found for "${args.useCase}". Try a different phrase or run list-packages to explore modules.`,
+          ),
+        ],
+      };
+    }
+
+    const rendered = matches
+      .map((example, index) => {
+        const header = `${index + 1}. ${example.title}`;
+        const body = `${example.description}\n\n${example.code.trim()}`;
+        const explanation = example.explanation ? `\n\n${example.explanation}` : '';
+        return `${header}\n${body}${explanation}`;
+      })
+      .join('\n\n---\n\n');
+
     return {
-      content: [
-        {
-          type: 'text',
-          text: `No examples found for use case "${useCase}". Try:
-- "dependency injection"
-- "REST API"
-- "GraphQL resolver"
-- "microservice"
-- "authentication"
-- "database"
-- "configuration"
-- "logging"`
-        }
-      ]
+      content: [asTextContent(rendered)],
+      structuredContent: {
+        examples: matches,
+      },
+      metadata: {
+        count: matches.length,
+        filteredByPackage: args.package ?? null,
+      },
     };
-  }
-
-  return {
-    content: [
-      {
-        type: 'text',
-        text: JSON.stringify({
-          useCase,
-          count: examples.length,
-          examples: examples.slice(0, 5) // Limit to 5 examples
-        }, null, 2)
-      }
-    ]
-  };
-}
+  },
+};

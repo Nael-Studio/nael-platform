@@ -1,116 +1,60 @@
-import { Tool } from '@modelcontextprotocol/sdk/types.js';
-import type { PackageName, PackageDocumentation, BestPractice } from '../types.js';
-import { packageDocs } from '../docs/packages/index.js';
+import { z } from 'zod';
+import { docs } from '../docs';
+import type { McpTool } from './types';
+import { asTextContent } from './types';
 
-export const getBestPracticesTool: Tool = {
+const inputSchema = z.object({
+  topic: z.string().trim().min(1).optional(),
+});
+
+export const getBestPracticesTool: McpTool<typeof inputSchema> = {
   name: 'get-best-practices',
-  description: 'Get best practices and patterns for a specific topic or package',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      topic: {
-        type: 'string',
-        description: 'Topic or concern (e.g., "testing", "error handling", "performance", "security")'
-      },
-      package: {
-        type: 'string',
-        enum: ['core', 'http', 'graphql', 'platform', 'config', 'logger', 'orm', 'auth', 'microservices'],
-        description: 'Optional: Filter by package'
-      }
-    },
-    required: ['topic']
-  }
-};
+  description: 'Get best practices, common patterns, and anti-patterns for the Nael Framework.',
+  inputSchema,
+  async handler(args) {
+    const topic = args.topic?.toLowerCase();
+    const matches = Object.entries(docs.packages).flatMap(([key, doc]) =>
+      doc.bestPractices
+        .filter((practice) =>
+          topic ? practice.category.toLowerCase().includes(topic) : true,
+        )
+        .map((practice) => ({
+          package: key,
+          category: practice.category,
+          do: practice.do,
+          dont: practice.dont,
+        })),
+    );
 
-interface BestPracticeResult {
-  package: string;
-  category: string;
-  practices: BestPractice[];
-}
-
-export async function handleGetBestPractices(args: { topic: string; package?: PackageName }) {
-  const { topic, package: pkgFilter } = args;
-  const searchTerm = topic.toLowerCase();
-  const results: BestPracticeResult[] = [];
-
-  // Search through all or specific package
-  const packagesToSearch: Array<[PackageName, PackageDocumentation]> = (() => {
-    if (pkgFilter) {
-      const docs = packageDocs[pkgFilter];
-      return docs ? [[pkgFilter, docs]] : [];
+    if (!matches.length) {
+      return {
+        content: [
+          asTextContent(
+            topic
+              ? `No best practices found for topic "${topic}". Try another keyword or omit the filter.`
+              : 'Best practices data is not available yet.',
+          ),
+        ],
+      };
     }
-    return Object.entries(packageDocs) as Array<[PackageName, PackageDocumentation]>;
-  })();
 
-  if (pkgFilter && packagesToSearch.length === 0) {
+    const rendered = matches
+      .map((match) => {
+        const doSection = match.do.map((item) => `  - ✅ ${item.title}: ${item.description}`).join('\n');
+        const dontSection = match.dont.map((item) => `  - ⚠️ ${item.title}: ${item.description}`).join('\n');
+        return `Package: ${match.package}\nCategory: ${match.category}\nDo:\n${doSection}\nDon't:\n${dontSection}`;
+      })
+      .join('\n\n');
+
     return {
       content: [
-        {
-          type: 'text',
-          text: `Package "${pkgFilter}" not found. Available packages: ${Object.keys(packageDocs).join(', ')}`
-        }
+        asTextContent(rendered),
       ],
-      isError: true
+      structuredContent: matches,
+      metadata: {
+        count: matches.length,
+        topic: topic ?? 'all',
+      },
     };
-  }
-
-  for (const [_packageName, docs] of packagesToSearch) {
-    // Filter best practices that match the topic
-    const matchingPractices = docs.bestPractices.filter((bp: BestPractice) => {
-      const matchesCategory = bp.category.toLowerCase().includes(searchTerm);
-      const matchesDos = bp.do.some(d => 
-        d.title.toLowerCase().includes(searchTerm) || 
-        d.description.toLowerCase().includes(searchTerm)
-      );
-      const matchesDonts = bp.dont.some(d => 
-        d.title.toLowerCase().includes(searchTerm) || 
-        d.description.toLowerCase().includes(searchTerm)
-      );
-      
-      return matchesCategory || matchesDos || matchesDonts;
-    });
-
-    if (matchingPractices.length > 0) {
-      results.push({
-        package: docs.name,
-        category: topic,
-        practices: matchingPractices
-      });
-    }
-  }
-
-  if (results.length === 0) {
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `No best practices found for topic "${topic}". Common topics include:
-- Dependency Injection
-- Error Handling
-- Testing
-- Configuration
-- Security
-- Performance
-- Logging
-- Database Operations
-- API Design
-
-Try using 'search-api' to explore available best practices.`
-        }
-      ]
-    };
-  }
-
-  return {
-    content: [
-      {
-        type: 'text',
-        text: JSON.stringify({
-          topic,
-          count: results.reduce((sum, r) => sum + r.practices.length, 0),
-          results
-        }, null, 2)
-      }
-    ]
-  };
-}
+  },
+};

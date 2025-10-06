@@ -1,93 +1,41 @@
-import { Tool } from '@modelcontextprotocol/sdk/types.js';
-import type { PackageName, PackageDocumentation, DecoratorDoc } from '../types.js';
-import { packageDocs } from '../docs/packages/index.js';
+import { z } from 'zod';
+import { docs } from '../docs';
+import type { McpTool } from './types';
+import { asTextContent } from './types';
 
-export const getDecoratorInfoTool: Tool = {
+const inputSchema = z.object({
+  decorator: z.string().min(1, 'decorator is required'),
+});
+
+export const getDecoratorInfoTool: McpTool<typeof inputSchema> = {
   name: 'get-decorator-info',
-  description: 'Get detailed information about a specific decorator including signature, parameters, and usage examples',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      decorator: {
-        type: 'string',
-        description: 'Decorator name (e.g., "@Controller", "@Injectable", "@Get")'
-      },
-      package: {
-        type: 'string',
-        enum: ['core', 'http', 'graphql', 'platform', 'config', 'logger', 'orm', 'auth', 'microservices'],
-        description: 'Optional: Filter by package'
-      }
-    },
-    required: ['decorator']
-  }
-};
+  description: 'Get detailed information about a specific decorator including signature, parameters, and usage examples.',
+  inputSchema,
+  async handler(args) {
+    const target = args.decorator.trim();
+    const match = docs.api.decorators.find((entry) => entry.name === target);
 
-export async function handleGetDecoratorInfo(args: { decorator: string; package?: PackageName }) {
-  const { decorator, package: pkgFilter } = args;
-  // Remove @ prefix if provided
-  const decoratorName = decorator.startsWith('@') ? decorator.slice(1) : decorator;
-  const searchTerm = decoratorName.toLowerCase();
-
-  // Search through all or specific package
-  const packagesToSearch: Array<[PackageName, PackageDocumentation]> = (() => {
-    if (pkgFilter) {
-      const docs = packageDocs[pkgFilter];
-      return docs ? [[pkgFilter, docs]] : [];
-    }
-    return Object.entries(packageDocs) as Array<[PackageName, PackageDocumentation]>;
-  })();
-
-  if (pkgFilter && packagesToSearch.length === 0) {
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Package "${pkgFilter}" not found. Available packages: ${Object.keys(packageDocs).join(', ')}`
-        }
-      ],
-      isError: true
-    };
-  }
-
-  for (const [_packageName, docs] of packagesToSearch) {
-    const decoratorDoc = docs.api.decorators?.find(
-      (dec: DecoratorDoc) => dec.name.toLowerCase() === searchTerm
-    );
-
-    if (decoratorDoc) {
+    if (!match) {
+      const available = docs.api.decorators.map((entry) => entry.name).join(', ');
       return {
         content: [
-          {
-            type: 'text',
-            text: JSON.stringify({
-              package: docs.name,
-              decorator: decoratorDoc,
-              relatedExamples: docs.examples
-                .filter(ex => 
-                  ex.code.includes(`@${decoratorName}`) || 
-                  ex.tags.some(tag => tag.toLowerCase().includes(searchTerm))
-                )
-                .slice(0, 3)
-            }, null, 2)
-          }
-        ]
+          asTextContent(`Decorator ${target} is not documented yet. Available decorators: ${available}.`),
+        ],
       };
     }
-  }
 
-  return {
-    content: [
-      {
-        type: 'text',
-        text: `Decorator "@${decoratorName}" not found. Available decorators include:
-- @Injectable, @Module (core)
-- @Controller, @Get, @Post, @Put, @Delete (http)
-- @Resolver, @Query, @Mutation (graphql)
-- @Entity, @Column (orm)
-- @Authenticated, @Authorized (auth)
+    const parametersSection =
+      match.parameters?.map((param) => `- ${param.name}: ${param.type} — ${param.description}`).join('\n') ??
+      'None';
+    const examplesSection = match.examples?.map((example) => `Example:\n${example}`).join('\n\n') ?? '';
 
-Use the 'search-api' tool to find decorators.`
-      }
-    ]
-  };
-}
+    return {
+      content: [
+        asTextContent(
+          `${match.name}\n\n${match.description}\n\nSignature:\n${match.signature}\n\nParameters:\n${parametersSection}${examplesSection ? `\n\n${examplesSection}` : ''}`,
+        ),
+      ],
+      structuredContent: match,
+    };
+  },
+};

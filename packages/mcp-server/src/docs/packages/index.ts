@@ -1,36 +1,89 @@
-import type { PackageDocumentation, PackageName } from '../../types.js';
-import { corePackageDocs } from './core.js';
-import { httpPackageDocs } from './http.js';
-import { graphqlPackageDocs } from './graphql.js';
-import { platformPackageDocs } from './platform.js';
-import { configPackageDocs } from './config.js';
-import { loggerPackageDocs } from './logger.js';
-import { ormPackageDocs } from './orm.js';
-import { authPackageDocs } from './auth.js';
-import { microservicesPackageDocs } from './microservices.js';
+import { coreDocumentation } from './core';
+import type { PackageDocumentation } from '../../types';
 
-/**
- * Central registry of all package documentation
- */
-export const packageDocs: Record<PackageName, PackageDocumentation> = {
-  core: corePackageDocs,
-  http: httpPackageDocs,
-  graphql: graphqlPackageDocs,
-  platform: platformPackageDocs,
-  config: configPackageDocs,
-  logger: loggerPackageDocs,
-  orm: ormPackageDocs,
-  auth: authPackageDocs,
-  microservices: microservicesPackageDocs,
+import { authDocumentation } from './auth';
+import { configDocumentation } from './config';
+import { graphqlDocumentation } from './graphql';
+import { httpDocumentation } from './http';
+import { loggerDocumentation } from './logger';
+import { microservicesDocumentation } from './microservices';
+import { ormDocumentation } from './orm';
+import { platformDocumentation } from './platform';
+
+export const packageDocumentationMap: Record<string, PackageDocumentation> = {
+  core: coreDocumentation,
+  http: httpDocumentation,
+  graphql: graphqlDocumentation,
+  platform: platformDocumentation,
+  config: configDocumentation,
+  logger: loggerDocumentation,
+  orm: ormDocumentation,
+  auth: authDocumentation,
+  microservices: microservicesDocumentation,
 };
 
-export function getPackageDocumentation(packageName: PackageName): PackageDocumentation | undefined {
-  return packageDocs[packageName];
-}
+type PackageKey = keyof typeof packageDocumentationMap;
 
-export function listAllPackages(): Array<{ name: string; description: string }> {
-  return Object.entries(packageDocs).map(([name, docs]) => ({
-    name: `@nl-framework/${name}`,
-    description: docs.description
-  }));
-}
+export const packageList: Array<{
+  key: PackageKey;
+  name: string;
+  description: string;
+  highlights: string[];
+}> = [
+  {
+    key: 'core',
+    name: '@nl-framework/core',
+    description: 'Dependency injection, module system, and application lifecycle primitives.',
+    highlights: ['DI container', 'module metadata', 'lifecycle hooks'],
+  },
+  {
+    key: 'http',
+    name: '@nl-framework/http',
+    description: 'Expressive HTTP routing layer with controllers, middleware, and interceptors.',
+    highlights: ['Controllers', 'Routing', 'Pipelines'],
+  },
+  {
+    key: 'graphql',
+    name: '@nl-framework/graphql',
+    description: 'Code-first GraphQL tooling powered by Apollo Server and schema-first ergonomics.',
+    highlights: ['Resolvers', 'Federation', 'Schema generation'],
+  },
+  {
+    key: 'platform',
+    name: '@nl-framework/platform',
+    description: 'Unified bootstrap utilities for HTTP, GraphQL, and microservices applications.',
+    highlights: ['Bootstrap', 'Adapters', 'Testing harness'],
+  },
+  {
+    key: 'config',
+    name: '@nl-framework/config',
+    description: 'Hierarchical configuration loader with YAML support and environment overrides.',
+    highlights: ['YAML', 'Schema validation', 'Hot reload'],
+  },
+  {
+    key: 'logger',
+    name: '@nl-framework/logger',
+    description: 'Structured logging with pluggable transports and request-scoped contexts.',
+    highlights: ['JSON logs', 'Transports', 'Correlation IDs'],
+  },
+  {
+    key: 'orm',
+    name: '@nl-framework/orm',
+    description: 'MongoDB ODM with repository abstractions, schema decorators, and transactions.',
+    highlights: ['Repositories', 'Indexes', 'Transactions'],
+  },
+  {
+    key: 'auth',
+    name: '@nl-framework/auth',
+    description: 'Better Auth integration for session management, guards, and GraphQL directives.',
+    highlights: ['Session routes', 'Guards', 'Resolvers'],
+  },
+  {
+    key: 'microservices',
+    name: '@nl-framework/microservices',
+    description: 'Dapr-backed microservice toolkit with message patterns and workflow orchestration.',
+    highlights: ['Dapr pub/sub', 'Workflows', 'State management'],
+  },
+];
+
+export const packageKeys = Object.keys(packageDocumentationMap) as PackageKey[];

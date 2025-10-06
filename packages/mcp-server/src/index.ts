@@ -1,38 +1,25 @@
-#!/usr/bin/env node
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { createNaelMcpServer } from './server';
 
-import { NaelMCPServer } from './server.js';
+async function main(): Promise<void> {
+  const server = createNaelMcpServer();
+  const transport = new StdioServerTransport();
 
-/**
- * Nael Framework MCP Server Entry Point
- * 
- * This server exposes Nael Framework documentation to AI assistants
- * via the Model Context Protocol (MCP).
- * 
- * Usage:
- *   bunx @nl-framework/mcp-server
- * 
- * Or add to Claude Desktop config:
- * {
- *   "mcpServers": {
- *     "nael-framework": {
- *       "command": "bunx",
- *       "args": ["@nl-framework/mcp-server"]
- *     }
- *   }
- * }
- */
+  transport.onerror = (error: Error) => {
+    console.error('[mcp-server] transport error', error);
+  };
 
-async function main() {
-  if (process.argv.includes('--http')) {
-    await import('./http-server.js');
-    return;
+  transport.onclose = () => {
+    console.error('[mcp-server] transport closed');
+    process.exit(0);
+  };
+
+  try {
+    await server.connect(transport);
+  } catch (error) {
+    console.error('[mcp-server] failed to start', error);
+    process.exit(1);
   }
-
-  const server = new NaelMCPServer();
-  await server.run();
 }
 
-main().catch((error) => {
-  console.error('Fatal error in MCP server:', error);
-  process.exit(1);
-});
+void main();
