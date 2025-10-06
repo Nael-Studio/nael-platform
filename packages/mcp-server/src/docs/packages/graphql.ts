@@ -28,6 +28,7 @@ export const graphqlDocumentation: PackageDocumentation = {
     steps: [
       'Define object types and DTOs with decorators or TypeScript interfaces.',
       'Create a resolver class and annotate operations with `@Query` and `@Mutation`.',
+      'Register each resolver under the module\'s `resolvers` array so discovery picks them up.',
       'Bootstrap with `bootstrapGraphqlApplication` and supply the root module.',
     ],
     code: `import { Module } from '@nl-framework/core';
@@ -51,7 +52,10 @@ class UsersResolver {
   }
 }
 
-@Module({ providers: [UsersResolver] })
+@Module({
+  providers: [UsersResolver],
+  resolvers: [UsersResolver],
+})
 class GraphqlModule {}
 
 await bootstrapGraphqlApplication(GraphqlModule, { port: 4000 });
@@ -128,6 +132,12 @@ export class ProductsResolver {
       symptoms: ['Runtime error: Unable to resolve return type'],
       solution:
         'Ensure every decorated method declares an explicit return type thunk (e.g., `() => User`) so metadata can be emitted.',
+    },
+    {
+      issue: 'GraphQL never starts',
+      symptoms: ['Platform logs warn that no resolvers were discovered'],
+      solution:
+        'List resolver classes under the module `resolvers` metadata key (not only `providers`) so the platform can register them for schema generation.',
     },
   ],
   relatedPackages: ['@nl-framework/platform', '@nl-framework/auth', '@nl-framework/logger'],
