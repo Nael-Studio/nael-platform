@@ -28,12 +28,19 @@ export const graphqlDocumentation: PackageDocumentation = {
     steps: [
       'Define object types and DTOs with decorators or TypeScript interfaces.',
       'Create a resolver class and annotate operations with `@Query` and `@Mutation`.',
+      'Decorate input DTO classes with `@InputType()` (and fields with `@Field()`) so schema metadata is generated.',
       'Register each resolver under the module\'s `resolvers` array so discovery picks them up.',
       'Bootstrap with `bootstrapGraphqlApplication` and supply the root module.',
     ],
     code: `import { Module } from '@nl-framework/core';
-import { Resolver, Query, Mutation, Args } from '@nl-framework/graphql';
+import { Resolver, Query, Mutation, Args, InputType, Field } from '@nl-framework/graphql';
 import { bootstrapGraphqlApplication } from '@nl-framework/platform';
+
+@InputType()
+class CreateUserInput {
+  @Field()
+  email!: string;
+}
 
 @Resolver('User')
 class UsersResolver {
@@ -45,9 +52,9 @@ class UsersResolver {
   }
 
   @Mutation(() => String)
-  createUser(@Args('email') email: string) {
+  createUser(@Args('input', () => CreateUserInput) input: CreateUserInput) {
     const id = crypto.randomUUID();
-    this.users.set(id, { id, email });
+    this.users.set(id, { id, email: input.email });
     return id;
   }
 }
@@ -117,6 +124,10 @@ export class ProductsResolver {
           title: 'Keep resolvers stateless',
           description: 'Use dependency injection to wire services; avoid storing request-specific data on resolver instances.',
         },
+        {
+          title: 'Decorate DTOs with InputType',
+          description: 'Apply `@InputType()` and `@Field()` to input classes so schema generation emits the correct argument types.',
+        },
       ],
       dont: [
         {
@@ -138,6 +149,12 @@ export class ProductsResolver {
       symptoms: ['Platform logs warn that no resolvers were discovered'],
       solution:
         'List resolver classes under the module `resolvers` metadata key (not only `providers`) so the platform can register them for schema generation.',
+    },
+    {
+      issue: 'Input arguments show up as `JSON`',
+      symptoms: ['Mutations accept generic objects instead of typed fields'],
+      solution:
+        'Wrap request DTOs with `@InputType()` and mark properties with `@Field()` so GraphQL schema metadata is emitted for each argument.',
     },
   ],
   relatedPackages: ['@nl-framework/platform', '@nl-framework/auth', '@nl-framework/logger'],
