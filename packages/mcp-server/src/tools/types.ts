@@ -13,11 +13,10 @@ export interface ToolResult {
   metadata?: Record<string, unknown>;
 }
 
-// If TSchema is a Zod schema, use its inferred type for the handler arguments.
-// Otherwise (e.g., if TSchema is undefined), use Record<string, never> to indicate no arguments are allowed.
-export type ToolHandlerArgs<TSchema extends AnyZodObject | undefined> = TSchema extends AnyZodObject
-  ? z.infer<TSchema>
-  : Record<string, unknown>;
+export type ToolHandlerArgs<TSchema extends AnyZodObject = z.ZodObject<any>> = z.infer<TSchema>;
+
+
+export interface McpTool<TSchema extends AnyZodObject = z.ZodObject<any>> {
 
 export interface McpTool<TSchema extends AnyZodObject | undefined = AnyZodObject | undefined> {
   name: string;
