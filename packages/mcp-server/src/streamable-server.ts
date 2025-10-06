@@ -6,11 +6,42 @@ import { randomUUID } from 'node:crypto';
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3001;
 
 async function createStreamableHttpServer() {
+  const transport = new StreamableHTTPServerTransport({
+    sessionIdGenerator: () => randomUUID(),
+    onsessioninitialized: (sessionId: string) => {
+      console.log(`[mcp-server] New session initialized: ${sessionId}`);
+    },
+    onsessionclosed: (sessionId: string) => {
+      console.log(`[mcp-server] Session closed: ${sessionId}`);
+    },
+  });
+
+  transport.onerror = (error: Error) => {
+    console.error('[mcp-server] Streamable HTTP transport error:', error);
+  };
+
+  transport.onclose = () => {
+    console.log('[mcp-server] Streamable HTTP transport closed');
+  };
+
+  const mcpServer = createNaelMcpServer();
+  await mcpServer.connect(transport);
+
   const server = http.createServer(async (req, res) => {
+    console.log('[mcp-server] Incoming request', {
+      method: req.method,
+      url: req.url,
+      headers: {
+        host: req.headers.host,
+        origin: req.headers.origin,
+        sessionId: req.headers['x-mcp-session-id'],
+      },
+    });
+
     // Enable CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Mcp-Session-Id');
 
     if (req.method === 'OPTIONS') {
       res.writeHead(200);
@@ -21,33 +52,9 @@ async function createStreamableHttpServer() {
     const url = new URL(req.url!, `http://${req.headers.host}`);
 
     if ((req.method === 'POST' || req.method === 'GET') && url.pathname === '/mcp') {
-      // Handle streamable HTTP MCP connection
       try {
-        const transport = new StreamableHTTPServerTransport({
-          sessionIdGenerator: () => randomUUID(),
-          onsessioninitialized: (sessionId: string) => {
-            console.log(`[mcp-server] New session initialized: ${sessionId}`);
-          },
-          onsessionclosed: (sessionId: string) => {
-            console.log(`[mcp-server] Session closed: ${sessionId}`);
-          },
-        });
-
-        const mcpServer = createNaelMcpServer();
-
-        transport.onerror = (error: Error) => {
-          console.error('[mcp-server] Streamable HTTP transport error:', error);
-        };
-
-        transport.onclose = () => {
-          console.log('[mcp-server] Streamable HTTP transport closed');
-        };
-
-        await mcpServer.connect(transport);
-        
-        // Handle the actual request
         await transport.handleRequest(req, res);
-        console.log(`[mcp-server] Streamable HTTP request handled`);
+        console.log('[mcp-server] Streamable HTTP request handled');
       } catch (error) {
         console.error('[mcp-server] Failed to handle streamable HTTP request:', error);
         if (!res.headersSent) {
@@ -121,6 +128,10 @@ const toolResponse = await fetch('/mcp', {
       res.writeHead(200, { 'Content-Type': 'text/html' });
       res.end(html);
     } else {
+      console.warn('[mcp-server] Request not handled', {
+        method: req.method,
+        pathname: url.pathname,
+      });
       res.writeHead(404);
       res.end('Not Found');
     }

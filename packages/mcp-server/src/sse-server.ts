@@ -10,6 +10,16 @@ const activeTransports = new Map<string, SSEServerTransport>();
 
 async function createSSEServer() {
   const server = http.createServer(async (req, res) => {
+    console.log('[mcp-server] Incoming request', {
+      method: req.method,
+      url: req.url,
+      headers: {
+        host: req.headers.host,
+        origin: req.headers.origin,
+        sessionId: req.headers['x-session-id'],
+      },
+    });
+
     // Enable CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -61,7 +71,10 @@ async function createSSEServer() {
           res.end('Failed to establish SSE connection');
         }
       }
-    } else if (req.method === 'POST' && url.pathname === '/message') {
+    } else if (
+      req.method === 'POST'
+      && (url.pathname === '/message' || url.pathname === '/sse')
+    ) {
       // Handle incoming JSON-RPC messages
       let body = '';
       req.on('data', chunk => {
@@ -83,7 +96,7 @@ async function createSSEServer() {
           }
           
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: true }));
+          res.end(JSON.stringify({ success: true, routedPath: url.pathname }));
         } catch (error) {
           console.error('[mcp-server] Failed to parse message:', error);
           res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -112,7 +125,7 @@ async function createSSEServer() {
         <strong>SSE Endpoint:</strong> <code>GET /sse</code>
     </div>
     <div class="endpoint">
-        <strong>Message Endpoint:</strong> <code>POST /message</code>
+        <strong>Message Endpoint:</strong> <code>POST /message</code> or <code>POST /sse</code>
     </div>
     
     <h3>Usage Example:</h3>
@@ -120,7 +133,7 @@ async function createSSEServer() {
 const eventSource = new EventSource('/sse');
 
 // Send messages via POST
-fetch('/message', {
+fetch('/sse', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -137,6 +150,10 @@ fetch('/message', {
       res.writeHead(200, { 'Content-Type': 'text/html' });
       res.end(html);
     } else {
+      console.warn('[mcp-server] Request not handled', {
+        method: req.method,
+        pathname: url.pathname,
+      });
       res.writeHead(404);
       res.end('Not Found');
     }

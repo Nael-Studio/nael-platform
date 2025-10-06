@@ -31,11 +31,11 @@ export const graphqlDocumentation: PackageDocumentation = {
       'Decorate input DTO classes with `@InputType()` (and fields with `@Field()`) so schema metadata is generated.',
       'Register each resolver under the module\'s `resolvers` array so discovery picks them up.',
       'Let NaelFactory auto-mount GraphQL—no enable flag is required once resolvers are registered.',
-      'Bootstrap with `bootstrapGraphqlApplication` and supply the root module.',
+      'Create an application with `NaelFactory.create()` and start listening on your desired port.',
     ],
     code: `import { Module } from '@nl-framework/core';
 import { Resolver, Query, Mutation, Args, InputType, Field } from '@nl-framework/graphql';
-import { bootstrapGraphqlApplication } from '@nl-framework/platform';
+import { NaelFactory } from '@nl-framework/platform';
 
 @InputType()
 class CreateUserInput {
@@ -66,7 +66,9 @@ class UsersResolver {
 })
 class GraphqlModule {}
 
-await bootstrapGraphqlApplication(GraphqlModule, { port: 4000 });
+const app = await NaelFactory.create(GraphqlModule);
+const { graphql } = await app.listen({ http: 4000 });
+console.log('GraphQL ready at', graphql?.url ?? 'http://localhost:4000/graphql');
 `,
   },
   api: {
