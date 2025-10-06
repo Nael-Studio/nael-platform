@@ -18,7 +18,9 @@
     "dev": "bun run src/index.ts",
     "dev:sse": "bun run src/sse-server.ts",
     "dev:http": "bun run src/streamable-server.ts",
-    "test": "bun test"
+    "test": "bun test",
+    "docker:build": "docker build -f packages/mcp-server/Dockerfile -t nl-framework/mcp-server .",
+    "docker:run": "docker run --rm -p 3000:3000 nl-framework/mcp-server"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.19.1",
