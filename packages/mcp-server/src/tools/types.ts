@@ -15,7 +15,7 @@ export interface ToolResult {
 
 export type ToolHandlerArgs<TSchema extends AnyZodObject | undefined> = TSchema extends AnyZodObject
   ? z.infer<TSchema>
-  : Record<string, never>;
+  : Record<string, unknown>;
 
 export interface McpTool<TSchema extends AnyZodObject | undefined = AnyZodObject | undefined> {
   name: string;
