@@ -1,0 +1,30 @@
+{
+  "name": "@nl-framework/cli",
+  "version": "0.1.5",
+  "description": "Command-line interface for generating Bun-native Nael Framework projects.",
+  "type": "module",
+  "bin": {
+    "nl": "./dist/bin.js"
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "bunx tsc --build tsconfig.build.json",
+    "dev": "bun run src/bin.ts"
+  },
+  "keywords": [
+    "cli",
+    "nael",
+    "framework",
+    "bun"
+  ],
+  "license": "MIT",
+  "config": {
+    "frameworkVersion": "^0.1.5",
+    "bunVersion": "1.1.20"
+  }
+}

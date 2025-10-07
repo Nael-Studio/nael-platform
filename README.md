@@ -58,10 +58,11 @@ The roadmap tracks both the pieces that already landed and the ones we still pla
 - [x] MongoDB ORM module with repositories, timestamps, soft delete, and seeding support
 - [x] Better Auth integration across HTTP and GraphQL, including session-aware proxy resolvers for the full Better Auth API
 - [x] **Microservices module with NestJS-inspired message patterns (@MessagePattern, @EventPattern), Dapr transport integration, and MicroserviceClient for pub/sub messaging**
+- [x] Bun-native CLI for bootstrapping new services (`nl new <project-name>`) with ready-to-run Nael scaffolding
 
 ### Planned
 
-- [ ] Command-line tooling for project scaffolding and code generation
+- [ ] Extend the CLI with generators for controllers, resolvers, and microservice handlers
 - [ ] Advanced configuration presets (multi-environment secrets, validation, live reload)
 - [ ] Harden Better Auth integration (integration tests, social login guides, multi-tenant support)
 - [ ] Role/permission authorisation primitives layered on top of the auth module
@@ -679,7 +680,18 @@ For detailed documentation, architecture diagrams, and deployment guides, refer 
 
 ## Getting Started
 
-While the API is still in flux, you can experiment locally by cloning the repository and running the examples:
+The quickest way to explore the framework is to scaffold a new service with the CLI. Once the CLI is installed (or after building it locally inside this repository), run:
+
+```bash
+nl new my-service
+cd my-service
+bun install
+bun run src/main.ts
+```
+
+This generates a Bun-native project with `NaelFactory`, logging, configuration, and starter HTTP endpoints already wired up.
+
+While the API is still in flux, you can also experiment locally by cloning the repository and running the examples:
 
 ```bash
 bun install

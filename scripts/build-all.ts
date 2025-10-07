@@ -2,7 +2,7 @@
 
 import { $ } from 'bun';
 
-const packages = ['logger', 'core', 'config', 'http', 'graphql', 'orm', 'auth', 'microservices', 'mcp-server', 'platform'] as const;
+const packages = ['logger', 'core', 'config', 'http', 'graphql', 'orm', 'auth', 'microservices', 'mcp-server', 'platform', 'cli'] as const;
 
 for (const pkg of packages) {
 	console.log(`[build] Building @nl-framework/${pkg}...`);
