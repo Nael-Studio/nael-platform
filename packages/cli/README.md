@@ -1,6 +1,6 @@
 # @nl-framework/cli
 
-A Bun-native command-line interface for scaffolding Nael Framework services, feature modules, controllers, services, and shareable libraries.
+A Bun-native command-line interface for scaffolding Nael Framework services, feature modules, controllers, services, resolvers, models, and shareable libraries.
 
 ## Usage
 
@@ -20,7 +20,7 @@ Generates a new project in `./my-service` with Bun scripts, TypeScript configura
 nl g module users
 ```
 
-Creates `src/modules/users` in the current workspace, including a `UsersModule` class, placeholder folders for controllers/services/resolvers, and an export entry in `src/modules/index.ts`. Use `--force` to regenerate an existing module directory.
+Creates `src/modules/users` in the current workspace, including a `UsersModule` class, placeholder folders for controllers/services/resolvers/models, and an export entry in `src/modules/index.ts`. Use `--force` to regenerate an existing module directory.
 
 ### Generate a service
 
@@ -45,6 +45,14 @@ nl g resolver users --module users
 ```
 
 Produces `src/modules/users/resolvers/users.resolver.ts`, adds the resolver to the module providers, and re-exports it from `src/modules/users/index.ts`. Extend the resolver with fields, queries, or mutations and inject services as required.
+
+### Generate a model
+
+```bash
+nl g model user --module users
+```
+
+Creates `src/modules/users/models/user.model.ts` with a default `id` field decorated for GraphQL, adds an index export in `src/modules/users/models/index.ts`, and leaves the module primed for further field additions.
 
 ### Generate a shared library
 

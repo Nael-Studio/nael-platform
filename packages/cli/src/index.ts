@@ -5,6 +5,7 @@ import { runGenerateModuleCommand } from './commands/generate-module';
 import { runGenerateServiceCommand } from './commands/generate-service';
 import { runGenerateControllerCommand } from './commands/generate-controller';
 import { runGenerateResolverCommand } from './commands/generate-resolver';
+import { runGenerateModelCommand } from './commands/generate-model';
 import { runNewCommand } from './commands/new';
 import { CliError } from './utils/cli-error';
 
@@ -33,11 +34,13 @@ Usage:
   nl generate service <service-name> --module <module-name> [options]
   nl generate controller <controller-name> --module <module-name> [options]
   nl generate resolver <resolver-name> --module <module-name> [options]
+  nl generate model <model-name> --module <module-name> [options]
   nl generate lib <lib-name> [options]
   nl g module <module-name> [options]
   nl g service <service-name> --module <module-name> [options]
   nl g controller <controller-name> --module <module-name> [options]
   nl g resolver <resolver-name> --module <module-name> [options]
+  nl g model <model-name> --module <module-name> [options]
   nl g lib <lib-name> [options]
 
 Commands:
@@ -46,11 +49,12 @@ Commands:
   generate service, g service   Add a provider inside an existing module
   generate controller, g controller Create an HTTP controller inside an existing module
   generate resolver, g resolver Register a GraphQL resolver inside an existing module
+  generate model, g model       Create a GraphQL object model inside an existing module
   generate lib, g lib           Scaffold a reusable Bun-native library under ./libs
 
 Options:
   --install         Run "bun install" after scaffolding
-  --module, -m      Target module name when generating services or controllers
+    --module, -m      Target module name when generating services, controllers, resolvers, or models
   --force, -f       Overwrite existing files in the target directory
   --help            Display this help message
   --version, -v     Show the CLI version
@@ -233,7 +237,7 @@ export const run = async (argv: string[] = Bun.argv): Promise<number> => {
         }
 
         console.log('\nNext steps:');
-        console.log(`  Add services, controllers, or resolvers inside ${relDir}`);
+    console.log(`  Add services, controllers, resolvers, or models inside ${relDir}`);
         console.log('  Register the module wherever it should be consumed\n');
 
         return 0;
@@ -368,6 +372,49 @@ export const run = async (argv: string[] = Bun.argv): Promise<number> => {
         return 0;
       }
 
+      if (target === 'model') {
+        const modelName = positionals[1];
+        if (!modelName) {
+          throw new CliError('Please provide a model name, e.g. "nl g model user --module accounts".');
+        }
+
+        const moduleName = getStringFlag('--module') ?? getStringFlag('-m') ?? positionals[2];
+        if (!moduleName) {
+          throw new CliError(
+            'Please specify which module to target using --module <name>, e.g. "nl g model user --module accounts".',
+          );
+        }
+
+        const result = await runGenerateModelCommand({
+          modelName,
+          moduleName,
+          force,
+        });
+
+        printBanner();
+        console.log(`\nModel created at ${result.modelFile}`);
+
+        if (result.createdFiles.length) {
+          console.log('\nCreated files:');
+          for (const file of result.createdFiles) {
+            console.log(`  • ${file}`);
+          }
+        }
+
+        if (result.overwrittenFiles.length) {
+          console.log('\nOverwritten files:');
+          for (const file of result.overwrittenFiles) {
+            console.log(`  • ${file}`);
+          }
+        }
+
+        console.log('\nNext steps:');
+        console.log('  Add additional fields and relationships to the model');
+        console.log('  Reference the model from resolvers or services as needed\n');
+
+        return 0;
+      }
+
       if (target === 'lib') {
         const libName = positionals[1];
         if (!libName) {
@@ -408,7 +455,7 @@ export const run = async (argv: string[] = Bun.argv): Promise<number> => {
         return 0;
       }
 
-      throw new CliError(`Unknown generate target: ${target}. Currently supported: module, service, controller, resolver, lib`);
+      throw new CliError(`Unknown generate target: ${target}. Currently supported: module, service, controller, resolver, model, lib`);
     }
 
     console.error(`Unknown command: ${command}`);

@@ -16,4 +16,5 @@ export const createModuleTemplate = (ctx: ModuleTemplateContext): TemplateFile[]
   { path: `${ctx.baseDir}/${ctx.moduleDirName}/controllers/.gitkeep`, contents: '' },
   { path: `${ctx.baseDir}/${ctx.moduleDirName}/services/.gitkeep`, contents: '' },
   { path: `${ctx.baseDir}/${ctx.moduleDirName}/resolvers/.gitkeep`, contents: '' },
+  { path: `${ctx.baseDir}/${ctx.moduleDirName}/models/.gitkeep`, contents: '' },
 ];
