@@ -3,28 +3,33 @@ import type { GuideEntry } from '../../types';
 export const gettingStartedGuide: GuideEntry = {
   id: 'getting-started',
   title: 'Getting Started with the Nael Framework',
-  summary: 'Bootstrap a fresh project using Bun and the Nael Framework core modules.',
+  summary: 'Initialize a Bun-native project powered by the Nael Framework core modules.',
   steps: [
-    'Install Bun and create a project directory.',
-    'Add `@nl-framework/core`, `@nl-framework/platform`, and `reflect-metadata` as dependencies.',
-    'Create an `AppModule` with controllers and services.',
-    'Use `bootstrapHttpApplication` or `Application.create` to start the app.',
+    'Create a new directory and run `bun init --yes` to scaffold a Bun workspace with `package.json` and `tsconfig` defaults.',
+    'Add `@nl-framework/core`, `@nl-framework/platform`, and `reflect-metadata` as dependencies via `bun add`.',
+    'Create an `AppModule` with controllers and services to define your application graph.',
+    'Bootstrap the app with `NaelFactory.create()` and call `listen()` to start Bun-powered HTTP/GraphQL servers.',
   ],
   codeSamples: [
     {
-      heading: 'Install dependencies',
-      code: 'bun add @nl-framework/core @nl-framework/platform reflect-metadata',
+      heading: 'Initialize Bun workspace & add dependencies',
+      code: `bun init --yes
+bun add @nl-framework/core @nl-framework/platform reflect-metadata`,
     },
     {
-      heading: 'Minimal AppModule',
+      heading: 'Minimal Bun bootstrap with NaelFactory',
       code: `import 'reflect-metadata';
 import { Module } from '@nl-framework/core';
-import { bootstrapHttpApplication } from '@nl-framework/platform';
+import { NaelFactory } from '@nl-framework/platform';
 
 @Module({})
 class AppModule {}
 
-await bootstrapHttpApplication(AppModule);
+const app = await NaelFactory.create(AppModule);
+const { http } = await app.listen({ http: 3000 });
+const port = http?.port ?? 3000;
+
+console.log(\`HTTP server ready on http://localhost:\${port}\`);
 `,
     },
   ],
