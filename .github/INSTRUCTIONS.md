@@ -37,6 +37,7 @@ scripts/             # Build/test/publish helpers
    - Cross-check the root roadmap in `README.md` so ongoing work reflects completed Better Auth + config milestones and focuses on the remaining targets.
 2. **Scaffold consistently**
    - Use Bun workspaces for every new package and keep TypeScript configs aligned with `tsconfig.base.json`.
+   - Favor Bun-native APIs in runtime code (`Bun.serve`, `Bun.file`, `Bun.hash`, etc.) and avoid Node.js-only polyfills or compatibility layers. Vet new dependencies for Bun support before adoption.
    - Expose ESM builds with declaration files and mark publishable packages with `"publishConfig"`.
    - Route all console or telemetry output through the shared logger; never instantiate ad-hoc loggers inside feature packages.
    - Resolve the logger from the DI container (`LoggerFactory` → `.create()`) inside runtime surfaces and examples; avoid importing `console` in framework-managed code paths.
