@@ -3,21 +3,28 @@ import type { GuideEntry } from '../../types';
 export const gettingStartedGuide: GuideEntry = {
   id: 'getting-started',
   title: 'Getting Started with the Nael Framework',
-  summary: 'Initialize a Bun-native project powered by the Nael Framework core modules.',
+  summary:
+    'Use the Bun-native `nl` CLI to scaffold a service in seconds, then explore the manual bootstrap flow when you need full control.',
   steps: [
-    'Create a new directory and run `bun init --yes` to scaffold a Bun workspace with `package.json` and `tsconfig` defaults.',
-    'Add `@nl-framework/core`, `@nl-framework/platform`, and `reflect-metadata` as dependencies via `bun add`.',
-    'Create an `AppModule` with controllers and services to define your application graph.',
-    'Bootstrap the app with `NaelFactory.create()` and call `listen()` to start Bun-powered HTTP/GraphQL servers.',
+    'Run `nl new my-service` to generate a project preconfigured with logging, configuration, and HTTP entrypoints.',
+    'Change into the new directory, execute `bun install`, and start the app with `bun run src/main.ts`.',
+    'Use CLI generators like `nl g module users`, `nl g resolver users --module users`, and `nl g model user --module users` to scaffold new features instantly.',
+    'Customize controllers, services, resolvers, and models under `src/` to evolve the generated scaffold.',
+    'Refer to the manual bootstrap sample below if you prefer to create a Nael project from scratch.',
   ],
   codeSamples: [
     {
-      heading: 'Initialize Bun workspace & add dependencies',
-      code: `bun init --yes
-bun add @nl-framework/core @nl-framework/platform reflect-metadata`,
+      heading: 'CLI quick start',
+      code: `nl new my-service
+cd my-service
+bun install
+nl g module users
+nl g resolver users --module users
+nl g model user --module users
+bun run src/main.ts`,
     },
     {
-      heading: 'Minimal Bun bootstrap with NaelFactory',
+      heading: 'Manual Bun bootstrap with NaelFactory',
       code: `import 'reflect-metadata';
 import { Module } from '@nl-framework/core';
 import { NaelFactory } from '@nl-framework/platform';

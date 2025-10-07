@@ -4,10 +4,10 @@ export const projectStructureGuide: GuideEntry = {
   id: 'project-structure',
   title: 'Recommended Project Structure',
   summary:
-    'Organize Nael Framework projects by feature modules with colocated controllers, services, and persistence artifacts.',
+    'Organize Nael Framework projects by feature modules with colocated controllers, services, resolvers, models, and persistence artifacts.',
   steps: [
     'Group code by feature (for example, `users/`, `billing/`, `orders/`) instead of technical layers.',
-    'Each feature folder exposes a `*.module.ts` file that wires controllers, resolvers, documents, and providers.',
+    'Each feature folder exposes a `*.module.ts` file that wires controllers, resolvers, models, documents, and providers.',
     'Keep injectable services beside their module, and export shared types through a local `types.ts`.',
     'Store bootstrapping entrypoints such as `main.ts` and data seeds at the root of the `src/` directory.',
   ],
@@ -15,7 +15,7 @@ export const projectStructureGuide: GuideEntry = {
     {
       heading: 'Feature-first layout (from `examples/mongo-orm`)',
       description:
-        'The `mongo-orm` example demonstrates how modules can wrap controllers, documents, seeds, and services inside a dedicated folder.',
+        'The `mongo-orm` example demonstrates how modules can wrap controllers, resolvers, documents, models, seeds, and services inside a dedicated folder.',
       code: `src/
   app.module.ts
   main.ts
@@ -26,6 +26,8 @@ export const projectStructureGuide: GuideEntry = {
     users.controller.ts
     users.service.ts
     user.document.ts
+    models/
+      user.model.ts
     seeds/
       initial-users.seed.ts
 `,

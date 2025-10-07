@@ -15,6 +15,7 @@ const packages = [
 	'microservices',
 	'mcp-server',
 	'platform',
+	'cli',
 ] as const;
 
 const examples = [

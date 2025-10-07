@@ -1,5 +1,14 @@
 import type { PromptTemplate } from './types';
 
+function toKebabCase(input: string): string {
+  return input
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .replace(/\s+/g, '-')
+    .replace(/_/g, '-')
+    .replace(/-+/g, '-')
+    .toLowerCase();
+}
+
 function buildRoutesInput(raw?: string): string {
   if (!raw) return '';
   return raw
@@ -21,6 +30,7 @@ export const createControllerPrompt: PromptTemplate = {
     { name: 'controllerName', description: 'Controller class name (e.g., UsersController)', required: true },
     { name: 'basePath', description: 'Base path for the controller (e.g., /users)', required: true },
     { name: 'routes', description: 'Comma-separated routes (e.g., "GET /, POST /, GET /:id")', required: false },
+    { name: 'moduleName', description: 'Existing module to register this controller under (e.g., users)', required: false },
   ],
   build(args) {
     const controllerName = args.controllerName ?? 'ExampleController';
@@ -30,8 +40,12 @@ export const createControllerPrompt: PromptTemplate = {
   list() {
     return this.service.list?.() ?? [];
   }`;
+    const moduleName = args.moduleName ?? 'example';
+    const commandName = toKebabCase(controllerName.replace(/Controller$/, '') || 'controller');
+  const cliHeader = `// CLI alternative: nl g controller ${commandName} --module ${moduleName}
+`;
 
-    return `import { Controller${routesBlock ? ', Get, Post, Put, Delete' : ', Get'} } from '@nl-framework/http';
+  return `${cliHeader}import { Controller${routesBlock ? ', Get, Post, Put, Delete' : ', Get'} } from '@nl-framework/http';
 import { Injectable, Module } from '@nl-framework/core';
 
 @Injectable()

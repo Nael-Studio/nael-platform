@@ -2,6 +2,7 @@ import { coreDocumentation } from './core';
 import type { PackageDocumentation } from '../../types';
 
 import { authDocumentation } from './auth';
+import { cliDocumentation } from './cli';
 import { configDocumentation } from './config';
 import { graphqlDocumentation } from './graphql';
 import { httpDocumentation } from './http';
@@ -20,6 +21,7 @@ export const packageDocumentationMap: Record<string, PackageDocumentation> = {
   orm: ormDocumentation,
   auth: authDocumentation,
   microservices: microservicesDocumentation,
+  cli: cliDocumentation,
 };
 
 type PackageKey = keyof typeof packageDocumentationMap;
@@ -83,6 +85,12 @@ export const packageList: Array<{
     name: '@nl-framework/microservices',
     description: 'Dapr-backed microservice toolkit with message patterns and workflow orchestration.',
     highlights: ['Dapr pub/sub', 'Workflows', 'State management'],
+  },
+  {
+    key: 'cli',
+    name: '@nl-framework/cli',
+    description: 'Bun-native scaffolding CLI for Nael services, modules, and reusable libraries.',
+    highlights: ['Scaffolding', 'Generators', 'Automation'],
   },
 ];
 
