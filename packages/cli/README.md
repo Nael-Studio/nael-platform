@@ -1,6 +1,6 @@
 # @nl-framework/cli
 
-A Bun-native command-line interface for scaffolding Nael Framework services, feature modules, and shareable libraries.
+A Bun-native command-line interface for scaffolding Nael Framework services, feature modules, controllers, services, and shareable libraries.
 
 ## Usage
 
@@ -21,6 +21,22 @@ nl g module users
 ```
 
 Creates `src/modules/users` in the current workspace, including a `UsersModule` class, placeholder folders for controllers/services/resolvers, and an export entry in `src/modules/index.ts`. Use `--force` to regenerate an existing module directory.
+
+### Generate a service
+
+```bash
+nl g service users --module users
+```
+
+Generates `src/modules/users/services/users.service.ts`, wires the service into the module's providers array, and re-exports it via `src/modules/users/index.ts`. Use `--module` (or `-m`) to target the destination module.
+
+### Generate a controller
+
+```bash
+nl g controller users --module users
+```
+
+Creates `src/modules/users/controllers/users.controller.ts`, registers the controller with the module, and exports it. Adjust the generated routes and inject services as needed.
 
 ### Generate a shared library
 

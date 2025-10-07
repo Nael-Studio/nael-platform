@@ -2,6 +2,8 @@ import { relative } from 'node:path';
 import packageJson from '../package.json' assert { type: 'json' };
 import { runGenerateLibCommand } from './commands/generate-lib';
 import { runGenerateModuleCommand } from './commands/generate-module';
+import { runGenerateServiceCommand } from './commands/generate-service';
+import { runGenerateControllerCommand } from './commands/generate-controller';
 import { runNewCommand } from './commands/new';
 import { CliError } from './utils/cli-error';
 
@@ -27,17 +29,24 @@ const printHelp = () => {
 Usage:
   nl new <project-name> [options]
   nl generate module <module-name> [options]
+  nl generate service <service-name> --module <module-name> [options]
+  nl generate controller <controller-name> --module <module-name> [options]
   nl generate lib <lib-name> [options]
   nl g module <module-name> [options]
+  nl g service <service-name> --module <module-name> [options]
+  nl g controller <controller-name> --module <module-name> [options]
   nl g lib <lib-name> [options]
 
 Commands:
   new                           Scaffold a new Bun-native Nael Framework service
   generate module, g module     Scaffold a feature module under ./src/modules
+  generate service, g service   Add a provider inside an existing module
+  generate controller, g controller Create an HTTP controller inside an existing module
   generate lib, g lib           Scaffold a reusable Bun-native library under ./libs
 
 Options:
   --install         Run "bun install" after scaffolding
+  --module, -m      Target module name when generating services or controllers
   --force, -f       Overwrite existing files in the target directory
   --help            Display this help message
   --version, -v     Show the CLI version
@@ -47,21 +56,63 @@ Options:
 interface ParsedArguments {
   command?: string;
   positionals: string[];
-  flags: Set<string>;
+  flags: Map<string, string | boolean>;
 }
 
 const parseArguments = (argv: string[]): ParsedArguments => {
   const [, , ...rest] = argv;
 
-  const flags = new Set<string>();
+  const flags = new Map<string, string | boolean>();
   const positionals: string[] = [];
 
-  for (const value of rest) {
-    if (value.startsWith('-')) {
-      flags.add(value);
-    } else {
-      positionals.push(value);
+  for (let i = 0; i < rest.length; i++) {
+    const value = rest[i];
+    if (typeof value !== 'string') {
+      continue;
     }
+
+    if (value.startsWith('--')) {
+      const equalsIndex = value.indexOf('=');
+      const flag = equalsIndex === -1 ? value : value.slice(0, equalsIndex);
+      if (!flag) {
+        continue;
+      }
+
+      if (equalsIndex !== -1) {
+        const inlineValue = value.slice(equalsIndex + 1);
+        flags.set(flag, inlineValue);
+        continue;
+      }
+
+      const next = rest[i + 1];
+      if (typeof next === 'string' && !next.startsWith('-')) {
+        flags.set(flag, next);
+        i += 1;
+      } else {
+        flags.set(flag, true);
+      }
+      continue;
+    }
+
+    if (value.startsWith('-') && value !== '-') {
+      if (value.length > 2) {
+        const cluster = value.slice(1);
+        for (const char of cluster) {
+          flags.set(`-${char}`, true);
+        }
+      } else {
+        const next = rest[i + 1];
+        if (typeof next === 'string' && !next.startsWith('-')) {
+          flags.set(value, next);
+          i += 1;
+        } else {
+          flags.set(value, true);
+        }
+      }
+      continue;
+    }
+
+    positionals.push(value);
   }
 
   const command = positionals.shift();
@@ -141,13 +192,18 @@ export const run = async (argv: string[] = Bun.argv): Promise<number> => {
         throw new CliError('Please specify what to generate, e.g. "nl g lib shared-utils".');
       }
 
+      const getStringFlag = (name: string): string | undefined => {
+        const value = flags.get(name);
+        return typeof value === 'string' ? value : undefined;
+      };
+
+      const force = flags.has('--force') || flags.has('-f');
+
       if (target === 'module') {
         const moduleName = positionals[1];
         if (!moduleName) {
           throw new CliError('Please provide a module name, e.g. "nl g module users".');
         }
-
-        const force = flags.has('--force') || flags.has('-f');
 
         const result = await runGenerateModuleCommand({
           moduleName,
@@ -172,9 +228,95 @@ export const run = async (argv: string[] = Bun.argv): Promise<number> => {
           }
         }
 
-  console.log('\nNext steps:');
-  console.log(`  Add services, controllers, or resolvers inside ${relDir}`);
-  console.log('  Register the module wherever it should be consumed\n');
+        console.log('\nNext steps:');
+        console.log(`  Add services, controllers, or resolvers inside ${relDir}`);
+        console.log('  Register the module wherever it should be consumed\n');
+
+        return 0;
+      }
+
+      if (target === 'service') {
+        const serviceName = positionals[1];
+        if (!serviceName) {
+          throw new CliError('Please provide a service name, e.g. "nl g service users --module accounts".');
+        }
+
+        const moduleName = getStringFlag('--module') ?? getStringFlag('-m') ?? positionals[2];
+        if (!moduleName) {
+          throw new CliError(
+            'Please specify which module to target using --module <name>, e.g. "nl g service users --module accounts".',
+          );
+        }
+
+        const result = await runGenerateServiceCommand({
+          serviceName,
+          moduleName,
+          force,
+        });
+
+        printBanner();
+        console.log(`\nService created at ${result.serviceFile}`);
+
+        if (result.createdFiles.length) {
+          console.log('\nCreated files:');
+          for (const file of result.createdFiles) {
+            console.log(`  • ${file}`);
+          }
+        }
+
+        if (result.overwrittenFiles.length) {
+          console.log('\nOverwritten files:');
+          for (const file of result.overwrittenFiles) {
+            console.log(`  • ${file}`);
+          }
+        }
+
+        console.log('\nNext steps:');
+        console.log('  Implement service logic in the generated class');
+        console.log('  Inject the service into controllers or other providers as needed\n');
+
+        return 0;
+      }
+
+      if (target === 'controller') {
+        const controllerName = positionals[1];
+        if (!controllerName) {
+          throw new CliError('Please provide a controller name, e.g. "nl g controller users --module accounts".');
+        }
+
+        const moduleName = getStringFlag('--module') ?? getStringFlag('-m') ?? positionals[2];
+        if (!moduleName) {
+          throw new CliError(
+            'Please specify which module to target using --module <name>, e.g. "nl g controller users --module accounts".',
+          );
+        }
+
+        const result = await runGenerateControllerCommand({
+          controllerName,
+          moduleName,
+          force,
+        });
+
+        printBanner();
+        console.log(`\nController created at ${result.controllerFile}`);
+
+        if (result.createdFiles.length) {
+          console.log('\nCreated files:');
+          for (const file of result.createdFiles) {
+            console.log(`  • ${file}`);
+          }
+        }
+
+        if (result.overwrittenFiles.length) {
+          console.log('\nOverwritten files:');
+          for (const file of result.overwrittenFiles) {
+            console.log(`  • ${file}`);
+          }
+        }
+
+        console.log('\nNext steps:');
+        console.log('  Implement request handlers within the controller');
+        console.log('  Wire up routes and services as required\n');
 
         return 0;
       }
@@ -184,8 +326,6 @@ export const run = async (argv: string[] = Bun.argv): Promise<number> => {
         if (!libName) {
           throw new CliError('Please provide a library name, e.g. "nl g lib shared-utils".');
         }
-
-        const force = flags.has('--force') || flags.has('-f');
 
         const result = await runGenerateLibCommand({
           libName,
@@ -221,7 +361,7 @@ export const run = async (argv: string[] = Bun.argv): Promise<number> => {
         return 0;
       }
 
-      throw new CliError(`Unknown generate target: ${target}. Currently supported: module, lib`);
+      throw new CliError(`Unknown generate target: ${target}. Currently supported: module, service, controller, lib`);
     }
 
     console.error(`Unknown command: ${command}`);

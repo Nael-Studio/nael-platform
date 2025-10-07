@@ -58,7 +58,7 @@ The roadmap tracks both the pieces that already landed and the ones we still pla
 - [x] MongoDB ORM module with repositories, timestamps, soft delete, and seeding support
 - [x] Better Auth integration across HTTP and GraphQL, including session-aware proxy resolvers for the full Better Auth API
 - [x] **Microservices module with NestJS-inspired message patterns (@MessagePattern, @EventPattern), Dapr transport integration, and MicroserviceClient for pub/sub messaging**
-- [x] Bun-native CLI for bootstrapping new services (`nl new <project-name>`), feature modules (`nl g module <module-name>`), and shared libraries (`nl g lib <lib-name>`) with ready-to-run Nael scaffolding
+- [x] Bun-native CLI for bootstrapping new services (`nl new <project-name>`), feature modules (`nl g module <module-name>`), controllers (`nl g controller <controller-name> --module <module-name>`), services (`nl g service <service-name> --module <module-name>`), and shared libraries (`nl g lib <lib-name>`) with ready-to-run Nael scaffolding
 
 ### Planned
 
