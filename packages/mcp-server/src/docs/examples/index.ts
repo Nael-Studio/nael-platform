@@ -1,4 +1,5 @@
 import { authExamples } from './auth-examples';
+import { cliExamples } from './cli-examples';
 import { graphqlExamples } from './graphql-examples';
 import { httpExamples } from './http-examples';
 import { microservicesExamples } from './microservices-examples';
@@ -9,6 +10,7 @@ export const exampleCatalog: ExampleCatalogEntry[] = [
   ...graphqlExamples,
   ...authExamples,
   ...microservicesExamples,
+  ...cliExamples,
 ];
 
 export function findExampleById(id: string): ExampleCatalogEntry | undefined {

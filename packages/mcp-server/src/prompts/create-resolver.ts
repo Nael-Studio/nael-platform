@@ -1,5 +1,14 @@
 import type { PromptTemplate } from './types';
 
+function toKebabCase(input: string): string {
+  return input
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .replace(/\s+/g, '-')
+    .replace(/_/g, '-')
+    .replace(/-+/g, '-')
+    .toLowerCase();
+}
+
 function parseOperations(raw?: string): string[] {
   if (!raw) return [];
   return raw
@@ -19,6 +28,7 @@ export const createResolverPrompt: PromptTemplate = {
       description: 'Comma-separated operations (e.g., "users, user(id), createUser").',
       required: false,
     },
+    { name: 'moduleName', description: 'Existing module to register this resolver under (e.g., users)', required: false },
   ],
   build(args) {
     const resolverName = args.resolverName ?? 'ExampleResolver';
@@ -48,8 +58,12 @@ export const createResolverPrompt: PromptTemplate = {
     const extraImports = operations.some((operation) => /^create|update|delete|mutate/i.test(operation.trim()))
       ? ', Mutation'
       : '';
+    const moduleName = args.moduleName ?? 'example';
+    const commandName = toKebabCase(resolverName.replace(/Resolver$/, '') || 'resolver');
+    const cliHeader = `// CLI alternative: nl g resolver ${commandName} --module ${moduleName}
+`;
 
-    return `import { Resolver, Query${extraImports} } from '@nl-framework/graphql';
+    return `${cliHeader}import { Resolver, Query${extraImports} } from '@nl-framework/graphql';
 import { Injectable } from '@nl-framework/core';
 
 @Injectable()

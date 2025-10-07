@@ -8,7 +8,8 @@ export const gettingStartedGuide: GuideEntry = {
   steps: [
     'Run `nl new my-service` to generate a project preconfigured with logging, configuration, and HTTP entrypoints.',
     'Change into the new directory, execute `bun install`, and start the app with `bun run src/main.ts`.',
-    'Customize controllers, services, and modules under `src/` to evolve the generated scaffold.',
+    'Use CLI generators like `nl g module users`, `nl g resolver users --module users`, and `nl g model user --module users` to scaffold new features instantly.',
+    'Customize controllers, services, resolvers, and models under `src/` to evolve the generated scaffold.',
     'Refer to the manual bootstrap sample below if you prefer to create a Nael project from scratch.',
   ],
   codeSamples: [
@@ -17,6 +18,9 @@ export const gettingStartedGuide: GuideEntry = {
       code: `nl new my-service
 cd my-service
 bun install
+nl g module users
+nl g resolver users --module users
+nl g model user --module users
 bun run src/main.ts`,
     },
     {
