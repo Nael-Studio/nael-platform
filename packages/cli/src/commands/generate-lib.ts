@@ -2,60 +2,63 @@ import { chmod, lstat, mkdir, readdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { CliError } from '../utils/cli-error';
-import { createProjectTemplate, type ProjectTemplateContext, type TemplateFile } from '../templates/project-template';
 import { fileExists } from '../utils/fs';
 import { toValidPackageName } from '../utils/package-name';
+import { createLibraryTemplate, type LibraryTemplateContext } from '../templates/library-template';
+import { resolveModuleNames } from '../utils/module-names';
 
-export interface NewCommandOptions {
-  projectName: string;
-  frameworkVersion: string;
+export interface GenerateLibOptions {
+  libName: string;
   bunVersion: string;
   cwd?: string;
   force?: boolean;
-  install?: boolean;
+  baseDir?: string;
 }
 
-export interface NewCommandResult {
-  projectDir: string;
+export interface GenerateLibResult {
+  libraryDir: string;
   packageName: string;
   createdFiles: string[];
   overwrittenFiles: string[];
-  installedDependencies: boolean;
 }
 
-export const runNewCommand = async (options: NewCommandOptions): Promise<NewCommandResult> => {
+const DEFAULT_BASE_DIR = 'libs';
+
+export const runGenerateLibCommand = async (options: GenerateLibOptions): Promise<GenerateLibResult> => {
   const cwd = options.cwd ?? process.cwd();
-  const inPlace = options.projectName === '.';
-  const targetDir = inPlace ? cwd : resolve(cwd, options.projectName);
+  const baseDir = options.baseDir ?? DEFAULT_BASE_DIR;
+  const targetDir = resolve(cwd, baseDir, options.libName);
   const baseName = basename(targetDir);
 
-  const projectStatsExists = existsSync(targetDir);
-  if (!projectStatsExists) {
+  if (!existsSync(targetDir)) {
     await mkdir(targetDir, { recursive: true });
   } else {
     const stats = await lstat(targetDir);
     if (!stats.isDirectory()) {
       throw new CliError(`Target path ${targetDir} exists and is not a directory.`);
     }
+
     const entries = await readdir(targetDir);
     const nonDotEntries = entries.filter((entry) => entry !== '.git' && entry !== '.gitkeep');
-    if (nonDotEntries.length > 0 && !options.force && !inPlace) {
+    if (nonDotEntries.length > 0 && !options.force) {
       throw new CliError(
         `Target directory ${targetDir} is not empty. Re-run with --force to allow overwriting generated files.`,
       );
     }
   }
 
-  const packageName = toValidPackageName(baseName);
+  const packageName = toValidPackageName(baseName, 'nael-library');
+  const { dirName: moduleDirName, className: moduleClassName } = resolveModuleNames(baseName);
 
-  const templateContext: ProjectTemplateContext = {
-    projectName: baseName,
+  const templateContext: LibraryTemplateContext = {
+    libraryName: baseName,
     packageName,
-    frameworkVersion: options.frameworkVersion,
     bunVersion: options.bunVersion,
+    moduleDirName,
+    moduleClassName,
   };
 
-  const templateFiles = createProjectTemplate(templateContext);
+  const templateFiles = createLibraryTemplate(templateContext);
 
   const createdFiles: string[] = [];
   const overwrittenFiles: string[] = [];
@@ -84,24 +87,10 @@ export const runNewCommand = async (options: NewCommandOptions): Promise<NewComm
     }
   }
 
-  if (options.install) {
-    const installProcess = Bun.spawn(['bun', 'install'], {
-      cwd: targetDir,
-      stdout: 'inherit',
-      stderr: 'inherit',
-    });
-
-    const exitCode = await installProcess.exited;
-    if (exitCode !== 0) {
-      throw new CliError('bun install failed', exitCode ?? 1);
-    }
-  }
-
   return {
-    projectDir: targetDir,
+    libraryDir: targetDir,
     packageName,
     createdFiles,
     overwrittenFiles,
-    installedDependencies: Boolean(options.install),
   };
 };

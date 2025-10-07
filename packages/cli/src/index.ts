@@ -1,4 +1,7 @@
+import { relative } from 'node:path';
 import packageJson from '../package.json' assert { type: 'json' };
+import { runGenerateLibCommand } from './commands/generate-lib';
+import { runGenerateModuleCommand } from './commands/generate-module';
 import { runNewCommand } from './commands/new';
 import { CliError } from './utils/cli-error';
 
@@ -23,9 +26,15 @@ const printHelp = () => {
   console.log(`
 Usage:
   nl new <project-name> [options]
+  nl generate module <module-name> [options]
+  nl generate lib <lib-name> [options]
+  nl g module <module-name> [options]
+  nl g lib <lib-name> [options]
 
 Commands:
-  new               Scaffold a new Bun-native Nael Framework service
+  new                           Scaffold a new Bun-native Nael Framework service
+  generate module, g module     Scaffold a feature module under ./src/modules
+  generate lib, g lib           Scaffold a reusable Bun-native library under ./libs
 
 Options:
   --install         Run "bun install" after scaffolding
@@ -124,6 +133,95 @@ export const run = async (argv: string[] = Bun.argv): Promise<number> => {
       console.log('  bun run src/main.ts\n');
 
       return 0;
+    }
+
+    if (command === 'generate' || command === 'g') {
+      const target = positionals[0];
+      if (!target) {
+        throw new CliError('Please specify what to generate, e.g. "nl g lib shared-utils".');
+      }
+
+      if (target === 'module') {
+        const moduleName = positionals[1];
+        if (!moduleName) {
+          throw new CliError('Please provide a module name, e.g. "nl g module users".');
+        }
+
+        const force = flags.has('--force') || flags.has('-f');
+
+        const result = await runGenerateModuleCommand({
+          moduleName,
+          force,
+        });
+
+        printBanner();
+        const relDir = relative(process.cwd(), result.moduleDir) || '.';
+        console.log(`\nModule created at ${result.moduleDir}`);
+
+        if (result.createdFiles.length) {
+          console.log('\nCreated files:');
+          for (const file of result.createdFiles) {
+            console.log(`  • ${file}`);
+          }
+        }
+
+        if (result.overwrittenFiles.length) {
+          console.log('\nOverwritten files:');
+          for (const file of result.overwrittenFiles) {
+            console.log(`  • ${file}`);
+          }
+        }
+
+  console.log('\nNext steps:');
+  console.log(`  Add services, controllers, or resolvers inside ${relDir}`);
+  console.log('  Register the module wherever it should be consumed\n');
+
+        return 0;
+      }
+
+      if (target === 'lib') {
+        const libName = positionals[1];
+        if (!libName) {
+          throw new CliError('Please provide a library name, e.g. "nl g lib shared-utils".');
+        }
+
+        const force = flags.has('--force') || flags.has('-f');
+
+        const result = await runGenerateLibCommand({
+          libName,
+          bunVersion,
+          force,
+        });
+
+        printBanner();
+        const relDir = relative(process.cwd(), result.libraryDir) || '.';
+        console.log(`\nLibrary created at ${result.libraryDir}`);
+
+        if (result.createdFiles.length) {
+          console.log('\nCreated files:');
+          for (const file of result.createdFiles) {
+            console.log(`  • ${file}`);
+          }
+        }
+
+        if (result.overwrittenFiles.length) {
+          console.log('\nOverwritten files:');
+          for (const file of result.overwrittenFiles) {
+            console.log(`  • ${file}`);
+          }
+        }
+
+        console.log('\nNext steps:');
+        if (relDir !== '.') {
+          console.log(`  cd ${relDir}`);
+        }
+        console.log('  bun run build');
+        console.log('  bun test\n');
+
+        return 0;
+      }
+
+      throw new CliError(`Unknown generate target: ${target}. Currently supported: module, lib`);
     }
 
     console.error(`Unknown command: ${command}`);
