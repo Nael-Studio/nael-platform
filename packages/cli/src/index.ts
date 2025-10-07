@@ -54,7 +54,7 @@ Commands:
 
 Options:
   --install         Run "bun install" after scaffolding
-    --module, -m      Target module name when generating services, controllers, resolvers, or models
+  --module, -m      Target module name when generating services, controllers, resolvers, or models
   --force, -f       Overwrite existing files in the target directory
   --help            Display this help message
   --version, -v     Show the CLI version
