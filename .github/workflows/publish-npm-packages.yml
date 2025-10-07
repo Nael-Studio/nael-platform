@@ -10,6 +10,7 @@ env:
   NODE_VERSION: 20
   NPM_REGISTRY_URL: https://registry.npmjs.org/
   PACKAGE_SLUGS: |
+    cli
     auth
     config
     core
