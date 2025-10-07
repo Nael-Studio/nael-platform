@@ -38,6 +38,14 @@ nl g controller users --module users
 
 Creates `src/modules/users/controllers/users.controller.ts`, registers the controller with the module, and exports it. Adjust the generated routes and inject services as needed.
 
+### Generate a resolver
+
+```bash
+nl g resolver users --module users
+```
+
+Produces `src/modules/users/resolvers/users.resolver.ts`, adds the resolver to the module providers, and re-exports it from `src/modules/users/index.ts`. Extend the resolver with fields, queries, or mutations and inject services as required.
+
 ### Generate a shared library
 
 ```bash

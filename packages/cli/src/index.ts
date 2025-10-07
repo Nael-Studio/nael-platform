@@ -4,6 +4,7 @@ import { runGenerateLibCommand } from './commands/generate-lib';
 import { runGenerateModuleCommand } from './commands/generate-module';
 import { runGenerateServiceCommand } from './commands/generate-service';
 import { runGenerateControllerCommand } from './commands/generate-controller';
+import { runGenerateResolverCommand } from './commands/generate-resolver';
 import { runNewCommand } from './commands/new';
 import { CliError } from './utils/cli-error';
 
@@ -31,10 +32,12 @@ Usage:
   nl generate module <module-name> [options]
   nl generate service <service-name> --module <module-name> [options]
   nl generate controller <controller-name> --module <module-name> [options]
+  nl generate resolver <resolver-name> --module <module-name> [options]
   nl generate lib <lib-name> [options]
   nl g module <module-name> [options]
   nl g service <service-name> --module <module-name> [options]
   nl g controller <controller-name> --module <module-name> [options]
+  nl g resolver <resolver-name> --module <module-name> [options]
   nl g lib <lib-name> [options]
 
 Commands:
@@ -42,6 +45,7 @@ Commands:
   generate module, g module     Scaffold a feature module under ./src/modules
   generate service, g service   Add a provider inside an existing module
   generate controller, g controller Create an HTTP controller inside an existing module
+  generate resolver, g resolver Register a GraphQL resolver inside an existing module
   generate lib, g lib           Scaffold a reusable Bun-native library under ./libs
 
 Options:
@@ -321,6 +325,49 @@ export const run = async (argv: string[] = Bun.argv): Promise<number> => {
         return 0;
       }
 
+      if (target === 'resolver') {
+        const resolverName = positionals[1];
+        if (!resolverName) {
+          throw new CliError('Please provide a resolver name, e.g. "nl g resolver users --module accounts".');
+        }
+
+        const moduleName = getStringFlag('--module') ?? getStringFlag('-m') ?? positionals[2];
+        if (!moduleName) {
+          throw new CliError(
+            'Please specify which module to target using --module <name>, e.g. "nl g resolver users --module accounts".',
+          );
+        }
+
+        const result = await runGenerateResolverCommand({
+          resolverName,
+          moduleName,
+          force,
+        });
+
+        printBanner();
+        console.log(`\nResolver created at ${result.resolverFile}`);
+
+        if (result.createdFiles.length) {
+          console.log('\nCreated files:');
+          for (const file of result.createdFiles) {
+            console.log(`  • ${file}`);
+          }
+        }
+
+        if (result.overwrittenFiles.length) {
+          console.log('\nOverwritten files:');
+          for (const file of result.overwrittenFiles) {
+            console.log(`  • ${file}`);
+          }
+        }
+
+        console.log('\nNext steps:');
+        console.log('  Implement resolver fields and inject required services');
+        console.log('  Ensure the resolver is imported where needed in your GraphQL schema\n');
+
+        return 0;
+      }
+
       if (target === 'lib') {
         const libName = positionals[1];
         if (!libName) {
@@ -361,7 +408,7 @@ export const run = async (argv: string[] = Bun.argv): Promise<number> => {
         return 0;
       }
 
-      throw new CliError(`Unknown generate target: ${target}. Currently supported: module, service, controller, lib`);
+      throw new CliError(`Unknown generate target: ${target}. Currently supported: module, service, controller, resolver, lib`);
     }
 
     console.error(`Unknown command: ${command}`);
