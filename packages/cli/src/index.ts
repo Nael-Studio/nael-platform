@@ -237,7 +237,7 @@ export const run = async (argv: string[] = Bun.argv): Promise<number> => {
         }
 
         console.log('\nNext steps:');
-    console.log(`  Add services, controllers, resolvers, or models inside ${relDir}`);
+        console.log(`  Add services, controllers, resolvers, or models inside ${relDir}`);
         console.log('  Register the module wherever it should be consumed\n');
 
         return 0;
