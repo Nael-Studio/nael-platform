@@ -9,22 +9,26 @@ export const schedulerDocumentation: PackageDocumentation = {
   features: [
     {
       title: 'Cron, Interval, and Timeout Decorators',
-      description: 'Attach `@Cron`, `@Interval`, or `@Timeout` to class methods to declare recurring work alongside your other providers.',
+      description:
+        'Attach `@Cron`, `@Interval`, or `@Timeout` to class methods to declare recurring work alongside your other providers.',
       icon: '⏰',
     },
     {
       title: 'Worker-Based Isolation',
-      description: 'Jobs execute in a dedicated Bun worker, keeping the primary event loop responsive and avoiding timer drift.',
+      description:
+        'Jobs execute in a dedicated Bun worker, keeping the primary event loop responsive and avoiding timer drift.',
       icon: '🧵',
     },
     {
       title: 'Dynamic Registration API',
-      description: 'Use `SchedulerService` to register, cancel, or introspect tasks programmatically at runtime.',
+      description:
+        'Use `SchedulerService` to register, cancel, or introspect tasks programmatically at runtime.',
       icon: '🛠️',
     },
   ],
   quickStart: {
-    description: 'Import the scheduler module, decorate a provider, and register it inside your feature module.',
+    description:
+      'Import the scheduler module, decorate a provider, and register it inside your feature module.',
     steps: [
       'Import `SchedulerModule` into your feature module and add it to the `imports` array.',
       'Create an injectable service, decorate methods with `@Cron`, `@Interval`, or `@Timeout`, and implement `OnModuleInit` to call `registerDecoratedTarget`.',
@@ -65,7 +69,8 @@ export class ReportsModule {}
       {
         name: '@Cron',
         signature: `@Cron(expression: string, options?: CronDecoratorOptions): MethodDecorator`,
-        description: 'Schedule a method using a cron expression. Supports optional names, timezones, and immediate execution.',
+        description:
+          'Schedule a method using a cron expression. Supports optional names, timezones, and immediate execution.',
         parameters: [
           {
             name: 'expression',
@@ -83,12 +88,14 @@ export class ReportsModule {}
       },
       {
         name: '@Interval',
-        signature: '@Interval(milliseconds: number, options?: IntervalDecoratorOptions): MethodDecorator',
+        signature:
+          '@Interval(milliseconds: number, options?: IntervalDecoratorOptions): MethodDecorator',
         description: 'Run a handler on a fixed interval with optional naming and execution limits.',
       },
       {
         name: '@Timeout',
-        signature: '@Timeout(milliseconds: number, options?: TimeoutDecoratorOptions): MethodDecorator',
+        signature:
+          '@Timeout(milliseconds: number, options?: TimeoutDecoratorOptions): MethodDecorator',
         description: 'Schedule a one-off execution after the provided delay.',
       },
     ],
@@ -104,8 +111,10 @@ export class ReportsModule {}
           },
           {
             name: 'scheduleInterval',
-            signature: 'scheduleInterval(name: string, handler: SchedulerHandler, options: IntervalOptions): Promise<ScheduledHandle>',
-            description: 'Programmatically register an interval-based job and receive a cancellable handle.',
+            signature:
+              'scheduleInterval(name: string, handler: SchedulerHandler, options: IntervalOptions): Promise<ScheduledHandle>',
+            description:
+              'Programmatically register an interval-based job and receive a cancellable handle.',
           },
           {
             name: 'cancel',
@@ -134,13 +143,39 @@ export class ReportsModule {}
     interfaces: [
       {
         name: 'CronOptions',
-        description: 'Options for cron-based tasks accepted by the scheduler service and decorators.',
+        description:
+          'Options for cron-based tasks accepted by the scheduler service and decorators.',
         properties: [
-          { name: 'cron', type: 'string', description: 'Cron expression describing the schedule.', required: true },
-          { name: 'name', type: 'string', description: 'Friendly identifier for the task.', required: false },
-          { name: 'timezone', type: 'string', description: 'IANA timezone name to evaluate the cron expression in.', required: false },
-          { name: 'runOnInit', type: 'boolean', description: 'Whether to execute the handler immediately after registration.', required: false },
-          { name: 'maxRuns', type: 'number', description: 'Maximum number of executions before automatic cancellation.', required: false },
+          {
+            name: 'cron',
+            type: 'string',
+            description: 'Cron expression describing the schedule.',
+            required: true,
+          },
+          {
+            name: 'name',
+            type: 'string',
+            description: 'Friendly identifier for the task.',
+            required: false,
+          },
+          {
+            name: 'timezone',
+            type: 'string',
+            description: 'IANA timezone name to evaluate the cron expression in.',
+            required: false,
+          },
+          {
+            name: 'runOnInit',
+            type: 'boolean',
+            description: 'Whether to execute the handler immediately after registration.',
+            required: false,
+          },
+          {
+            name: 'maxRuns',
+            type: 'number',
+            description: 'Maximum number of executions before automatic cancellation.',
+            required: false,
+          },
         ],
       },
     ],
@@ -148,7 +183,8 @@ export class ReportsModule {}
   examples: [
     {
       title: 'Dynamic pulse registration',
-      description: 'Register an ad-hoc interval from another provider during runtime to support feature flags or user-driven scheduling.',
+      description:
+        'Register an ad-hoc interval from another provider during runtime to support feature flags or user-driven scheduling.',
       code: `await scheduler.scheduleInterval('reports.dynamic-pulse', async () => {
   logger.debug('Pulse check from runtime job');
 }, {
@@ -157,7 +193,8 @@ export class ReportsModule {}
   runOnInit: true,
 });
 `,
-      explanation: 'Combine decorator-based tasks with dynamic handles for flexible scheduling topologies.',
+      explanation:
+        'Combine decorator-based tasks with dynamic handles for flexible scheduling topologies.',
       tags: ['dynamic', 'interval'],
     },
   ],
@@ -167,17 +204,20 @@ export class ReportsModule {}
       do: [
         {
           title: 'Use descriptive task names',
-          description: 'Names surface within the registry and logs, making it easy to trace execution histories.',
+          description:
+            'Names surface within the registry and logs, making it easy to trace execution histories.',
         },
         {
           title: 'Guard handlers with try/catch',
-          description: 'Wrap scheduled logic to handle transient failures and emit structured logs for observability.',
+          description:
+            'Wrap scheduled logic to handle transient failures and emit structured logs for observability.',
         },
       ],
       dont: [
         {
           title: 'Block within handlers',
-          description: 'Avoid heavy synchronous work; delegate to async services to keep workers responsive.',
+          description:
+            'Avoid heavy synchronous work; delegate to async services to keep workers responsive.',
         },
       ],
     },

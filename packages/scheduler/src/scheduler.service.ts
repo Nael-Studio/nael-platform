@@ -63,7 +63,11 @@ export class SchedulerService implements OnModuleDestroy {
     }
   }
 
-  async scheduleCron(name: string, handler: SchedulerHandler, options: CronOptions): Promise<ScheduledHandle> {
+  async scheduleCron(
+    name: string,
+    handler: SchedulerHandler,
+    options: CronOptions,
+  ): Promise<ScheduledHandle> {
     return this.registerTask(
       {
         id: name,
@@ -121,7 +125,9 @@ export class SchedulerService implements OnModuleDestroy {
     });
 
     this.handlers.delete(id);
-    this.registry.removeCronJob(id) || this.registry.removeInterval(id) || this.registry.removeTimeout(id);
+    this.registry.removeCronJob(id) ||
+      this.registry.removeInterval(id) ||
+      this.registry.removeTimeout(id);
   }
 
   async onModuleDestroy(): Promise<void> {
@@ -168,9 +174,9 @@ export class SchedulerService implements OnModuleDestroy {
       return;
     }
 
-  const boundHandler = instanceMethod.bind(target) as SchedulerHandler;
-  const defaultName = `${target.constructor?.name ?? 'AnonymousClass'}#${String(metadata.propertyKey)}`;
-  const name = metadata.options.name ?? defaultName;
+    const boundHandler = instanceMethod.bind(target) as SchedulerHandler;
+    const defaultName = `${target.constructor?.name ?? 'AnonymousClass'}#${String(metadata.propertyKey)}`;
+    const name = metadata.options.name ?? defaultName;
 
     switch (metadata.type) {
       case 'cron':
