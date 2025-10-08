@@ -18,6 +18,8 @@ const dependencyFields = [
 type PackageJson = {
 	name: string;
 	version: string;
+	config?: Record<string, unknown>;
+	packageManager?: string;
 	[section: string]: unknown;
 };
 
@@ -97,10 +99,28 @@ function updateDependencies(pkg: PackageJson, versions: VersionMap): boolean {
 	return mutated;
 }
 
+async function readRootPackageJson(): Promise<PackageJson> {
+	const raw = await readFile(path.join(rootDir, 'package.json'), 'utf8');
+	return JSON.parse(raw) as PackageJson;
+}
+
+function extractBunVersion(packageManager: string | undefined): string | null {
+	if (!packageManager) {
+		return null;
+	}
+
+	const match = /^bun@(.+)$/.exec(packageManager.trim());
+	return match?.[1] ?? null;
+}
+
 async function main() {
 	const versions = await collectWorkspaceVersions();
 	const entries = await readdir(packagesDir, { withFileTypes: true });
 	let updated = 0;
+	const rootPackageJson = await readRootPackageJson();
+	const coreVersion = versions.get('@nl-framework/core');
+	const desiredFrameworkRange = coreVersion ? `^${coreVersion}` : null;
+	const desiredBunVersion = extractBunVersion(rootPackageJson.packageManager);
 
 	for (const entry of entries) {
 		if (!entry.isDirectory()) continue;
@@ -117,7 +137,38 @@ async function main() {
 		const raw = await readFile(pkgJsonPath, 'utf8');
 		const pkg = JSON.parse(raw) as PackageJson;
 
-		if (!updateDependencies(pkg, versions)) {
+		let mutated = updateDependencies(pkg, versions);
+
+		if (pkg.name === '@nl-framework/cli') {
+			if (pkg.config && typeof pkg.config === 'object') {
+				const config = pkg.config as Record<string, unknown>;
+				const currentFrameworkVersion = config['frameworkVersion'] as string | undefined;
+				const currentBunVersion = config['bunVersion'] as string | undefined;
+
+				if (desiredFrameworkRange && currentFrameworkVersion !== desiredFrameworkRange) {
+					config['frameworkVersion'] = desiredFrameworkRange;
+					mutated = true;
+				}
+
+				if (desiredBunVersion && currentBunVersion !== desiredBunVersion) {
+					config['bunVersion'] = desiredBunVersion;
+					mutated = true;
+				}
+			} else if (desiredFrameworkRange) {
+				const nextConfig: Record<string, unknown> = {
+					frameworkVersion: desiredFrameworkRange
+				};
+
+				if (desiredBunVersion) {
+					nextConfig['bunVersion'] = desiredBunVersion;
+				}
+
+				pkg.config = nextConfig;
+				mutated = true;
+			}
+		}
+
+		if (!mutated) {
 			continue;
 		}
 

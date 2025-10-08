@@ -22,9 +22,9 @@
     "framework",
     "bun"
   ],
-  "license": "MIT",
+  "license": "Apache-2.0",
   "config": {
     "frameworkVersion": "^0.1.5",
-    "bunVersion": "1.1.20"
+    "bunVersion": "1.1.22"
   }
 }
