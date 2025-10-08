@@ -48,9 +48,9 @@ jobs:
           fi
 
           {
-            echo "list<<'EOF'"
+            echo "list<<EOF"
             cat packages.txt
-            echo 'EOF'
+            echo "EOF"
           } >> "${GITHUB_OUTPUT}"
 
           echo "Discovered $(wc -l < packages.txt | tr -d ' ') publishable package(s)."
