@@ -277,7 +277,7 @@ export class SchedulerService implements OnModuleDestroy {
     try {
       await handler();
     } catch (error) {
-  this.logger.error('Scheduled task execution failed', error, { id });
+      this.logger.error('Scheduled task execution failed', error, { id });
     }
   }
 
