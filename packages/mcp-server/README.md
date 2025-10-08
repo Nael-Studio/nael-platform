@@ -2,6 +2,8 @@
 
 The Nael MCP Server packages up the Nael Framework documentation, tooling examples, and guided prompts behind the [Model Context Protocol](https://modelcontextprotocol.io/) so that AI assistants can integrate directly with the platform. It supports multiple transports (stdio, Server-Sent Events, and a streamable HTTP API) and is published as `@nl-framework/mcp-server` on npm.
 
+Latest builds now ship with the scheduler package documentation and examples, so MCP clients can explore cron/interval decorators, worker-backed execution, and the new `examples/scheduler` project without leaving their agent environment.
+
 ## Local development
 
 ```bash
