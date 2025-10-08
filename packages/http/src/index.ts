@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+export { Controller, getControllerPrefix } from '@nl-framework/core';
 export { Router } from './router/router';
 export type {
   MiddlewareHandler,

@@ -1,18 +1,18 @@
 {
   "name": "@nl-framework/config",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Configuration module for nl-framework with DI integration and YAML loading utilities.",
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "types": "dist/types/index.d.ts",
   "files": [
     "dist"
   ],
   "exports": {
     ".": {
       "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/types/index.d.ts"
     }
   },
   "scripts": {
@@ -25,6 +25,6 @@
     "dependency-injection"
   ],
   "peerDependencies": {
-    "@nl-framework/core": "^0.2.0"
+    "@nl-framework/core": "^0.2.1"
   }
 }

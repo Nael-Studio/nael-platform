@@ -1,7 +1,7 @@
 {
   "name": "nl-framework-monorepo",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "NestJS-inspired Bun framework with Dapr microservices, Apollo Federation, Better Auth, and MongoDB ODM.",
   "type": "module",
   "license": "Apache-2.0",

@@ -1,6 +1,6 @@
 {
   "name": "@nl-framework/platform",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Unified application factory for nl-framework combining HTTP and GraphQL servers with shared dependency injection context.",
   "keywords": [
     "bun",
@@ -29,10 +29,10 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@nl-framework/config": "^0.2.0",
-    "@nl-framework/core": "^0.2.0",
-    "@nl-framework/graphql": "^0.2.0",
-    "@nl-framework/http": "^0.2.0",
-    "@nl-framework/logger": "^0.2.0"
+    "@nl-framework/config": "^0.2.1",
+    "@nl-framework/core": "^0.2.1",
+    "@nl-framework/graphql": "^0.2.1",
+    "@nl-framework/http": "^0.2.1",
+    "@nl-framework/logger": "^0.2.1"
   }
 }
