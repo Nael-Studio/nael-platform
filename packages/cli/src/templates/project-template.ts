@@ -32,6 +32,7 @@ const createPackageJson = (ctx: ProjectTemplateContext): string =>
         '@nl-framework/platform': ctx.frameworkVersion,
         '@nl-framework/http': ctx.frameworkVersion,
         '@nl-framework/logger': ctx.frameworkVersion,
+        '@nl-framework/scheduler': ctx.frameworkVersion,
         '@nl-framework/config': ctx.frameworkVersion,
         'reflect-metadata': '^0.1.13'
       },
@@ -96,6 +97,7 @@ Then visit <http://localhost:3000> to verify the service is healthy.
 ## Next steps
 
 - Add controllers, services, and providers under \`src/\`.
+- Customize scheduled jobs in \`src/app.scheduler.ts\` to match your domain needs.
 - Configure additional environment settings in \`config/default.yaml\`.
 - Consult the Nael documentation via the MCP server for deeper guidance.
 `;
@@ -126,7 +128,9 @@ const appModule = `import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { Module } from '@nl-framework/core';
 import { ConfigModule } from '@nl-framework/config';
+import { SchedulerModule } from '@nl-framework/scheduler';
 import { AppController } from './app.controller';
+import { AppScheduler } from './app.scheduler';
 
 const configDir = resolve(dirname(fileURLToPath(import.meta.url)), '../config');
 
@@ -135,8 +139,10 @@ const configDir = resolve(dirname(fileURLToPath(import.meta.url)), '../config');
     ConfigModule.forRoot({
       dir: configDir,
     }),
+    SchedulerModule,
   ],
   controllers: [AppController],
+  providers: [AppScheduler],
 })
 export class AppModule {}
 `;
@@ -186,6 +192,34 @@ const configDefaultYaml = `server:
   port: 3000
 `;
 
+const appScheduler = `import { Injectable, type OnModuleInit } from '@nl-framework/core';
+import { Logger } from '@nl-framework/logger';
+import { Cron, Interval, SchedulerService } from '@nl-framework/scheduler';
+
+@Injectable()
+export class AppScheduler implements OnModuleInit {
+  constructor(
+    private readonly scheduler: SchedulerService,
+    private readonly logger: Logger,
+  ) {}
+
+  @Cron('*/30 * * * * *', { name: 'app.heartbeat', runOnInit: true })
+  async reportHeartbeat(): Promise<void> {
+    this.logger.debug('Heartbeat tick');
+  }
+
+  @Interval(60000, { name: 'app.cleanup' })
+  async cleanup(): Promise<void> {
+    this.logger.info('Cleanup job executed');
+  }
+
+  async onModuleInit(): Promise<void> {
+    this.logger.info('Registering scheduled tasks');
+    await this.scheduler.registerDecoratedTarget(this);
+  }
+}
+`;
+
 export const createProjectTemplate = (ctx: ProjectTemplateContext): TemplateFile[] => [
   { path: 'package.json', contents: createPackageJson(ctx) },
   { path: 'tsconfig.json', contents: tsconfigJson },
@@ -195,5 +229,6 @@ export const createProjectTemplate = (ctx: ProjectTemplateContext): TemplateFile
   { path: 'src/app.config.ts', contents: appConfig },
   { path: 'src/app.controller.ts', contents: appController },
   { path: 'src/app.module.ts', contents: appModule },
+  { path: 'src/app.scheduler.ts', contents: appScheduler },
   { path: 'src/main.ts', contents: mainTs },
 ];
