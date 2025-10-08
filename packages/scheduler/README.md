@@ -36,13 +36,12 @@ class ReportService {
 }
 
 @Module({
-  imports: [SchedulerModule],
-  providers: [ReportService],
+  imports: [SchedulerModule.forFeature(ReportService)],
 })
 class ReportingModule {}
 ```
 
-- Add `SchedulerModule` to your module imports.
+- Use `SchedulerModule.forFeature(ReportService)` (or pass an array for multiple schedulers) to register your injectable class as a scheduler feature.
 - Inject `SchedulerService` and call `registerDecoratedTarget` (usually inside `onModuleInit`) to activate all decorated methods.
 
 ## Runtime management

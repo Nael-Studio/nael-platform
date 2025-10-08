@@ -41,6 +41,7 @@ interface ModuleDefinition {
   metadata: Required<ModuleMetadata>;
   controllers: ClassType[];
   resolvers: ClassType[];
+  bootstrap: Token[];
 }
 
 const MODULE_NOT_FOUND = (token: Token) =>
@@ -64,6 +65,7 @@ export class Container {
       metadata,
       controllers: metadata.controllers ?? [],
       resolvers: metadata.resolvers ?? [],
+      bootstrap: metadata.bootstrap ?? [],
     };
 
     this.moduleRegistry.set(moduleClass, definition);

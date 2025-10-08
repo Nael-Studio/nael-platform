@@ -9,6 +9,7 @@ const defaultMetadata: Required<ModuleMetadata> = {
   controllers: [],
   resolvers: [],
   exports: [],
+  bootstrap: [],
 };
 
 export const Module = (metadata: ModuleMetadata): ClassDecorator => (target) => {

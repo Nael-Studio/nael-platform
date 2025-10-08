@@ -109,6 +109,7 @@ export class Application {
 
     const controllersMap = new Map<ClassType, unknown[]>();
     const resolversMap = new Map<ClassType, unknown[]>();
+    const bootstrapMap = new Map<ClassType, Token[]>();
     for (const moduleClass of this.container.getModules()) {
       const definition = this.container.getModuleDefinition(moduleClass);
       if (!definition) {
@@ -123,6 +124,14 @@ export class Application {
         definition.resolvers.map((resolver) => this.container.resolve(resolver)),
       );
       resolversMap.set(moduleClass, resolverInstances);
+
+      const bootstrapTokens = definition.bootstrap ?? [];
+      const instantiated: Token[] = [];
+      for (const token of new Set<Token>(bootstrapTokens)) {
+        await this.container.resolve(token);
+        instantiated.push(token);
+      }
+      bootstrapMap.set(moduleClass, instantiated);
     }
 
     const moduleSummaries = Array.from(this.container.getModules()).map((moduleClass) => {
@@ -132,6 +141,7 @@ export class Application {
         controllers: controllersMap.get(moduleClass)?.length ?? 0,
         resolvers: resolversMap.get(moduleClass)?.length ?? 0,
         providers: definition?.metadata.providers?.length ?? 0,
+        bootstrap: bootstrapMap.get(moduleClass)?.length ?? 0,
       };
     });
 
