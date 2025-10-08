@@ -159,7 +159,7 @@ export class SchedulerService implements OnModuleDestroy {
   }
 
   private async registerMetadata(target: object, metadata: SchedulerTaskMetadata): Promise<void> {
-  const instanceMethod = Reflect.get(target, metadata.propertyKey);
+    const instanceMethod = Reflect.get(target, metadata.propertyKey);
     if (typeof instanceMethod !== 'function') {
       this.logger.error('Scheduled method is not a function', undefined, {
         target: target.constructor?.name ?? 'AnonymousClass',
