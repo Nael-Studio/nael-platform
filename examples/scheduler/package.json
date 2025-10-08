@@ -1,0 +1,18 @@
+{
+  "name": "@nl-framework/example-scheduler",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Demonstrates @nl-framework/scheduler cron, interval, and timeout decorators with dynamic runtime scheduling.",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/main.ts",
+    "start": "bun run src/main.ts",
+    "check": "bunx tsc --noEmit"
+  },
+  "dependencies": {
+    "@nl-framework/core": "workspace:*",
+    "@nl-framework/logger": "workspace:*",
+    "@nl-framework/scheduler": "workspace:*",
+    "reflect-metadata": "^0.2.2"
+  }
+}

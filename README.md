@@ -16,6 +16,7 @@ Nael Platform is a [NestJS](https://nestjs.com/)-inspired application framework 
   - [ORM Module](#orm-module-nl-frameworkorm)
   - [Auth Module](#auth-module-nl-frameworkauth)
   - [Microservices Module](#microservices-architecture)
+  - [Scheduler Module](#scheduler-module-nl-frameworkscheduler)
 - [Getting Started](#getting-started)
 - [Releasing to npm](#releasing-to-npm)
 - [Contributing](#contributing)
@@ -31,6 +32,7 @@ Nael Platform is a [NestJS](https://nestjs.com/)-inspired application framework 
 - Better Auth integration with shared session handling across REST and GraphQL (including the `BetterAuthGraphqlModule`)
 - Config module with layered YAML loading, async factories, and feature-scoped injection helpers
 - **Microservices module with NestJS-style message patterns, Dapr integration, and event-driven pub/sub messaging**
+- **Scheduler module with Bun Worker-powered cron, interval, and timeout decorators for background jobs**
 
 Explore the `examples/` folder for runnable samples that demonstrate the current functionality:
 
@@ -41,6 +43,7 @@ Explore the `examples/` folder for runnable samples that demonstrate the current
 - `examples/federated-graphql` – subgraph service suitable for Apollo Federation
 - `examples/federation-gateway` – single-port HTTP + GraphQL gateway using NaelFactory
 - `examples/mongo-orm` – REST API backed by the Mongo ORM with seeding and soft deletes
+- `examples/scheduler` – background job scheduler demo showcasing cron, interval, timeout, and dynamic jobs powered by Bun workers
 - **`examples/microservices` – event-driven microservice with Dapr pub/sub, message pattern handlers, and deployment guides**
 
 ## Roadmap
@@ -58,6 +61,7 @@ The roadmap tracks both the pieces that already landed and the ones we still pla
 - [x] MongoDB ORM module with repositories, timestamps, soft delete, and seeding support
 - [x] Better Auth integration across HTTP and GraphQL, including session-aware proxy resolvers for the full Better Auth API
 - [x] **Microservices module with NestJS-inspired message patterns (@MessagePattern, @EventPattern), Dapr transport integration, and MicroserviceClient for pub/sub messaging**
+- [x] **Scheduler module delivering Bun Worker-backed `@Cron`, `@Interval`, and `@Timeout` decorators with run-time registry APIs**
 - [x] Bun-native CLI for bootstrapping new services (`nl new <project-name>`), feature modules (`nl g module <module-name>`), controllers (`nl g controller <controller-name> --module <module-name>`), services (`nl g service <service-name> --module <module-name>`), resolvers (`nl g resolver <resolver-name> --module <module-name>`), models (`nl g model <model-name> --module <module-name>`), and shared libraries (`nl g lib <lib-name>`) with ready-to-run Nael scaffolding
 
 ### Planned
@@ -599,6 +603,59 @@ export class AppModule {}
 // query { betterAuth { session { user { id name email } } } }
 // mutation { betterAuth { signIn(input: {email: "...", password: "..."}) { success } } }
 ```
+
+---
+
+### Scheduler Module (`@nl-framework/scheduler`)
+
+Background job scheduling with Bun Worker-powered timers, inspired by NestJS Schedule but tuned for Nael's DI container and ESM-first runtime.
+
+**Key Features:**
+- **Decorator API**: `@Cron()`, `@Interval()`, and `@Timeout()` method decorators with optional names, `runOnInit`, and `maxRuns` controls
+- **Worker-backed timers**: Jobs run inside a dedicated Bun Worker for accurate timing without blocking the main event loop
+- **Imperative API**: `SchedulerService` exposes `scheduleCron`, `scheduleInterval`, `scheduleTimeout`, and `cancel` for dynamic job management
+- **Registry inspection**: `SchedulerRegistry` tracks active cron, interval, and timeout handles for observability
+- **Custom workers**: Swap the worker factory via the `SCHEDULER_WORKER_FACTORY` token for advanced scenarios or testing
+
+**Usage:**
+
+```typescript
+import { Injectable, Module, OnModuleInit } from '@nl-framework/core';
+import { SchedulerModule, SchedulerService, Cron } from '@nl-framework/scheduler';
+
+@Injectable()
+class ReportService implements OnModuleInit {
+  constructor(private readonly scheduler: SchedulerService) {}
+
+  @Cron('0 * * * *', { runOnInit: true })
+  async generateHourlyReport() {
+    // ... business logic here
+  }
+
+  async onModuleInit() {
+    await this.scheduler.registerDecoratedTarget(this);
+  }
+}
+
+@Module({
+  imports: [SchedulerModule],
+  providers: [ReportService],
+})
+export class ReportingModule {}
+```
+
+**Dynamic Scheduling:**
+
+```typescript
+await scheduler.scheduleInterval('cleanup', () => cleanup(), {
+  interval: 60_000,
+  maxRuns: 10,
+});
+
+await scheduler.cancel('cleanup');
+```
+
+For test environments, provide a custom worker factory via the `SCHEDULER_WORKER_FACTORY` token so jobs can run deterministically without spinning up a real worker.
 
 ---
 

@@ -12,7 +12,7 @@ After building or installing the package, you can run the following commands:
 nl new my-service
 ```
 
-Generates a new project in `./my-service` with Bun scripts, TypeScript configuration, and a starter HTTP controller. By default the CLI avoids overwriting existing files; use `--force` to permit regenerating files and `--install` to automatically run `bun install`.
+Generates a new project in `./my-service` with Bun scripts, TypeScript configuration, a starter HTTP controller, and a sample scheduler provider ready to customize. By default the CLI avoids overwriting existing files; use `--force` to permit regenerating files and `--install` to automatically run `bun install`.
 
 ### Generate a feature module
 

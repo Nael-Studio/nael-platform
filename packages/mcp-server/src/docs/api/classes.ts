@@ -39,4 +39,41 @@ export const classReference: ApiClassEntry[] = [
       },
     ],
   },
+  {
+    name: 'SchedulerService',
+    description: 'Register cron, interval, and timeout jobs backed by Bun workers.',
+    methods: [
+      {
+        name: 'registerDecoratedTarget',
+        signature: 'registerDecoratedTarget(target: object): Promise<void>',
+        description: 'Scan a provider for scheduler decorators and register each task.',
+      },
+      {
+        name: 'scheduleCron',
+        signature: 'scheduleCron(name: string, handler: SchedulerHandler, options: CronOptions): Promise<ScheduledHandle>',
+        description: 'Programmatically register a cron job with dynamic handlers.',
+      },
+      {
+        name: 'cancel',
+        signature: 'cancel(id: string): Promise<void>',
+        description: 'Cancel any registered job by its identifier.',
+      },
+    ],
+  },
+  {
+    name: 'SchedulerRegistry',
+    description: 'Holds references to all active scheduled jobs for inspection or diagnostics.',
+    methods: [
+      {
+        name: 'getIntervals',
+        signature: 'getIntervals(): Map<string, ScheduledHandle>',
+        description: 'View registered interval handles.',
+      },
+      {
+        name: 'removeCronJob',
+        signature: 'removeCronJob(id: string): boolean',
+        description: 'Remove a cron job from the registry and return whether it existed.',
+      },
+    ],
+  },
 ];

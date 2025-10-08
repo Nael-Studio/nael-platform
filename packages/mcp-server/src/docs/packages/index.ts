@@ -10,6 +10,7 @@ import { loggerDocumentation } from './logger';
 import { microservicesDocumentation } from './microservices';
 import { ormDocumentation } from './orm';
 import { platformDocumentation } from './platform';
+import { schedulerDocumentation } from './scheduler';
 
 export const packageDocumentationMap: Record<string, PackageDocumentation> = {
   core: coreDocumentation,
@@ -22,6 +23,7 @@ export const packageDocumentationMap: Record<string, PackageDocumentation> = {
   auth: authDocumentation,
   microservices: microservicesDocumentation,
   cli: cliDocumentation,
+  scheduler: schedulerDocumentation,
 };
 
 type PackageKey = keyof typeof packageDocumentationMap;
@@ -91,6 +93,12 @@ export const packageList: Array<{
     name: '@nl-framework/cli',
     description: 'Bun-native scaffolding CLI for Nael services, modules, and reusable libraries.',
     highlights: ['Scaffolding', 'Generators', 'Automation'],
+  },
+  {
+    key: 'scheduler',
+    name: '@nl-framework/scheduler',
+    description: 'Worker-backed task scheduling with cron, interval, and timeout decorators.',
+    highlights: ['Cron', 'Intervals', 'Workers'],
   },
 ];
 
