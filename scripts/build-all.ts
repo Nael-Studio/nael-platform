@@ -2,11 +2,17 @@
 
 import { $ } from 'bun';
 
-const packages = ['logger', 'core', 'config', 'http', 'graphql', 'orm', 'auth', 'microservices', 'mcp-server', 'platform', 'cli'] as const;
+import { loadPublishablePackages } from './utils/publishable-packages';
 
-for (const pkg of packages) {
-	console.log(`[build] Building @nl-framework/${pkg}...`);
-	await $`bun run --cwd packages/${pkg} build`;
+const packages = await loadPublishablePackages();
+
+if (packages.length === 0) {
+	console.warn('[build] No publishable packages with build scripts were discovered.');
+} else {
+	for (const pkg of packages) {
+		console.log(`[build] Building ${pkg.name}...`);
+		await $`bun run --cwd ${pkg.dir} build`;
+	}
+
+	console.log('[build] All packages built successfully.');
 }
-
-console.log('[build] All packages built successfully.');

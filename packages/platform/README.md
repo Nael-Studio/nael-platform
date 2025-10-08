@@ -17,32 +17,44 @@ bun add @nl-framework/platform
 ## Quick start
 
 ```ts
-import { bootstrapHttpApplication } from '@nl-framework/platform';
+import { NaelFactory } from '@nl-framework/platform';
 import { AppModule } from './app.module';
 
-const app = await bootstrapHttpApplication(AppModule, {
-  port: 3000,
-  logger: true,
-});
-
-await app.start();
-console.log('HTTP server ready');
-```
-
-Need GraphQL too? Use the factory helper:
-
-```ts
-import { NaelFactory } from '@nl-framework/platform';
-
-const factory = await NaelFactory.create(AppModule, {
+const application = await NaelFactory.create(AppModule, {
+  http: {
+    port: 3000,
+  },
   graphql: {
     path: '/api/graphql',
   },
 });
 
-const { graphql } = await factory.listen();
-console.log('GraphQL server running at', graphql?.url);
+const { http, graphql } = await application.listen({ http: 3000 });
+
+console.log('HTTP server running on port', http?.port);
+console.log('GraphQL mounted at', graphql?.url);
 ```
+
+To shut everything down gracefully later on:
+
+```ts
+await application.close();
+```
+
+## API surface
+
+- `NaelFactory.create(Module, options)` – boots the dependency graph and returns a `NaelApplication` facade.
+- `NaelApplication.listen(options)` – starts HTTP, GraphQL, and federation gateway servers and returns active handles.
+- `NaelApplication.getHttpApplication()` / `getGraphqlApplication()` / `getGatewayApplication()` – access the underlying adapters when you need lower-level control.
+- `NaelApplication.get(token)` / `getConfig()` / `getLogger()` – resolve services from the shared application context.
+- Types such as `NaelFactoryOptions`, `NaelListenOptions`, and `NaelListenResults` document the available configuration hooks.
+
+## Compatibility
+
+| Runtime | Minimum version | Notes |
+|---------|-----------------|-------|
+| Bun     | 1.1.22          | Primary runtime. CI, CLI scaffolding, and docs target Bun 1.1.22+. |
+| Node.js | 20 (experimental) | HTTP adapters run on Node, but Bun remains the recommended build/test environment. |
 
 ## License
 

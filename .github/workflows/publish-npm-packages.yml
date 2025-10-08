@@ -9,17 +9,6 @@ env:
   BUN_VERSION: 1.1.22
   NODE_VERSION: 20
   NPM_REGISTRY_URL: https://registry.npmjs.org/
-  PACKAGE_SLUGS: |
-    cli
-    auth
-    config
-    core
-    graphql
-    http
-    logger
-    microservices
-    orm
-    platform
 
 permissions:
   contents: read
@@ -47,6 +36,24 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      - name: Resolve publishable packages
+        id: packages
+        run: |
+          bun run scripts/list-publishable-packages.ts > packages.txt
+
+          if [ ! -s packages.txt ]; then
+            echo "::error::No publishable packages with build scripts were discovered." >&2
+            exit 1
+          fi
+
+          {
+            echo "list<<'EOF'"
+            cat packages.txt
+            echo 'EOF'
+          } >> "${GITHUB_OUTPUT}"
+
+          echo "Discovered $(wc -l < packages.txt | tr -d ' ') publishable package(s)."
 
       - name: Determine release version
         id: release
@@ -81,7 +88,7 @@ jobs:
             fi
 
             echo "✔ ${PACKAGE_NAME}@${PACKAGE_JSON_VERSION}"
-          done <<< "${PACKAGE_SLUGS}"
+          done <<< "${{ steps.packages.outputs.list }}"
 
       - name: Build workspace packages
         run: bun run scripts/build-all.ts
@@ -113,4 +120,4 @@ jobs:
 
             (cd "${PACKAGE_DIR}" && npm publish --access public)
             echo "::endgroup::"
-          done <<< "${PACKAGE_SLUGS}"
+          done <<< "${{ steps.packages.outputs.list }}"

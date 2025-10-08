@@ -4,8 +4,8 @@
   "version": "0.1.5",
   "description": "NestJS-inspired Bun framework with Dapr microservices, Apollo Federation, Better Auth, and MongoDB ODM.",
   "type": "module",
-  "license": "MIT",
-  "packageManager": "bun@1.1.20",
+  "license": "Apache-2.0",
+  "packageManager": "bun@1.1.22",
   "workspaces": [
     "packages/*",
     "examples/*"
