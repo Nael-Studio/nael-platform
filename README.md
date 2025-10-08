@@ -43,6 +43,7 @@ Explore the `examples/` folder for runnable samples that demonstrate the current
 - `examples/federated-graphql` – subgraph service suitable for Apollo Federation
 - `examples/federation-gateway` – single-port HTTP + GraphQL gateway using NaelFactory
 - `examples/mongo-orm` – REST API backed by the Mongo ORM with seeding and soft deletes
+- `examples/scheduler` – background job scheduler demo showcasing cron, interval, timeout, and dynamic jobs powered by Bun workers
 - **`examples/microservices` – event-driven microservice with Dapr pub/sub, message pattern handlers, and deployment guides**
 
 ## Roadmap
