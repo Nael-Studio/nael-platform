@@ -6,4 +6,5 @@ export interface ModuleMetadata {
   controllers?: ClassType[];
   resolvers?: ClassType[];
   exports?: Token[];
+  bootstrap?: Token[];
 }

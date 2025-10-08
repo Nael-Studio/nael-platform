@@ -5,7 +5,8 @@ export const schedulerExamples: ExampleCatalogEntry[] = [
     id: 'scheduler-module',
     category: 'scheduler',
     title: 'Cron and Interval Scheduler Module',
-    description: 'Demonstrates decorator-based cron jobs, interval polling, and dynamic registrations backed by Bun workers.',
+    description:
+      'Demonstrates decorator-based cron jobs, interval polling, and dynamic registrations backed by Bun workers using SchedulerModule.forFeature.',
     code: `import { Injectable, Module, OnModuleDestroy, OnModuleInit } from '@nl-framework/core';
 import { Logger } from '@nl-framework/logger';
 import { Cron, Interval, SchedulerModule, SchedulerRegistry, SchedulerService } from '@nl-framework/scheduler';
@@ -46,8 +47,7 @@ class ReportScheduler implements OnModuleInit, OnModuleDestroy {
 }
 
 @Module({
-  imports: [SchedulerModule],
-  providers: [ReportScheduler],
+  imports: [SchedulerModule.forFeature(ReportScheduler)],
 })
 export class SchedulerExampleModule {}
 `,

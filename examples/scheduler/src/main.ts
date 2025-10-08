@@ -25,7 +25,7 @@ class ReportScheduler implements OnModuleInit, OnModuleDestroy {
 
   @Interval(5000, { name: 'reports.metric-poll', maxRuns: 5 })
   async pollMetrics(): Promise<void> {
-    this.logger.debug('Interval: polling external metrics');
+    this.logger.info('Interval: polling external metrics');
   }
 
   @Timeout(2000, { name: 'reports.initial-warmup' })
@@ -67,8 +67,7 @@ class ReportScheduler implements OnModuleInit, OnModuleDestroy {
 }
 
 @Module({
-  imports: [SchedulerModule],
-  providers: [ReportScheduler],
+  imports: [SchedulerModule.forFeature(ReportScheduler)],
 })
 class SchedulerExampleModule {}
 

@@ -1,4 +1,14 @@
-import { parseExpression } from 'cron-parser';
+import CronExpressionParser from 'cron-parser';
+
+type CronExpression = {
+  next(): { toDate(): Date };
+};
+
+const parseCronExpression = (
+  CronExpressionParser as unknown as {
+    parse: (expression: string, options?: Record<string, unknown>) => CronExpression;
+  }
+).parse.bind(CronExpressionParser);
 import type {
   WorkerInboundMessage,
   WorkerOutboundMessage,
@@ -26,11 +36,11 @@ const scheduleCronTask = (task: WorkerCronTask) => {
     }
 
     try {
-      const iterator = parseExpression(task.cron, {
+      const expression = parseCronExpression(task.cron, {
         tz: task.timezone,
         currentDate: new Date(Date.now() + 20),
       });
-      const next = iterator.next().toDate();
+      const next = expression.next().toDate();
       const delay = Math.max(0, next.getTime() - Date.now());
       timer = setTimeout(() => {
         runs += 1;
