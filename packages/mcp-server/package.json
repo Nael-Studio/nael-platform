@@ -1,6 +1,6 @@
 {
   "name": "@nl-framework/mcp-server",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Model Context Protocol server for the Nael Framework. Provides interactive documentation, scaffolding prompts, and project bootstrap helpers for AI assistants.",
   "type": "module",
   "main": "dist/index.js",
@@ -24,15 +24,15 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.19.1",
-    "@nl-framework/core": "^0.1.5",
-    "@nl-framework/http": "^0.1.5",
-    "@nl-framework/graphql": "^0.1.5",
-    "@nl-framework/auth": "^0.1.5",
-    "@nl-framework/microservices": "^0.1.5",
-    "@nl-framework/platform": "^0.1.5",
-    "@nl-framework/config": "^0.1.5",
-    "@nl-framework/logger": "^0.1.5",
-    "@nl-framework/orm": "^0.1.5",
+    "@nl-framework/core": "^0.1.6",
+    "@nl-framework/http": "^0.1.6",
+    "@nl-framework/graphql": "^0.1.6",
+    "@nl-framework/auth": "^0.1.6",
+    "@nl-framework/microservices": "^0.1.6",
+    "@nl-framework/platform": "^0.1.6",
+    "@nl-framework/config": "^0.1.6",
+    "@nl-framework/logger": "^0.1.6",
+    "@nl-framework/orm": "^0.1.6",
     "yaml": "^2.8.0",
     "zod": "^3.23.8"
   }
