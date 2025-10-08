@@ -12,11 +12,14 @@ const dependencyFields = [
 	'bundleDependencies'
 ] as const;
 
+const CLI_PACKAGE_NAME = '@nl-framework/cli';
+
 type DependencySection = (typeof dependencyFields)[number];
 
 type PackageJson = {
 	name: string;
 	version: string;
+	config?: Record<string, unknown>;
 	[section: string]: unknown;
 };
 
@@ -64,6 +67,10 @@ function bumpVersion(version: string, bumpType: BumpType): string {
 	const majorStr = match[1];
 	const minorStr = match[2];
 	const patchStr = match[3];
+
+	if (!majorStr || !minorStr || !patchStr) {
+		throw new Error(`Failed to capture semantic version parts from ${version}`);
+	}
 
 	const majorInitial = Number.parseInt(majorStr, 10);
 	const minorInitial = Number.parseInt(minorStr, 10);
@@ -158,6 +165,7 @@ async function collectWorkspacePackages(packagesDir: string): Promise<{ path: st
 	return packages;
 }
 
+
 function updateDependencySections(pkg: PackageJson, affectedPackages: Set<string>, nextVersion: string): void {
 	for (const field of dependencyFields) {
 		const section = pkg[field] as Record<string, string> | undefined;
@@ -170,6 +178,17 @@ function updateDependencySections(pkg: PackageJson, affectedPackages: Set<string
 			section[depName] = deriveRange(currentRange, nextVersion);
 		}
 	}
+}
+
+function updateCliFrameworkVersion(pkg: PackageJson, nextVersion: string): void {
+	if (pkg.name !== CLI_PACKAGE_NAME) {
+		return;
+	}
+
+	const config = (pkg.config ?? {}) as Record<string, unknown>;
+	const currentRange = typeof config.frameworkVersion === 'string' ? config.frameworkVersion : `^${nextVersion}`;
+	config.frameworkVersion = deriveRange(currentRange, nextVersion);
+	pkg.config = config;
 }
 
 async function main() {
@@ -196,6 +215,7 @@ async function main() {
 	for (const { json } of workspacePackages) {
 		json.version = nextVersion;
 		updateDependencySections(json, packageNames, nextVersion);
+		updateCliFrameworkVersion(json, nextVersion);
 	}
 
 	if (dryRun) {
