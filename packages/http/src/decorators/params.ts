@@ -67,6 +67,10 @@ export const Param = (paramName?: string): ParameterDecorator =>
 export const Query = (queryParam?: string): ParameterDecorator =>
   createParameterDecorator('query')(queryParam);
 
+/**
+ * Decorator to inject a header value. The header name is automatically converted to lowercase,
+ * as HTTP headers are case-insensitive.
+ */
 export const Headers = (headerName?: string): ParameterDecorator =>
   createParameterDecorator('headers')(headerName?.toLowerCase());
 
