@@ -64,7 +64,7 @@ export class SeedRunner implements OnModuleInit {
 
     const context: SeederContext = {
       connectionName: this.connectionName,
-      getRepository: async <T extends Record<string, unknown>>(
+      getRepository: async <T extends object>(
         document: DocumentClass<T>,
       ) => this.createRepository(document),
     };
@@ -136,7 +136,7 @@ export class SeedRunner implements OnModuleInit {
     });
   }
 
-  private async createRepository<T extends Record<string, unknown>>(
+  private async createRepository<T extends object>(
     document: DocumentClass<T>,
   ): Promise<OrmRepository<T>> {
     this.connection.registerEntity(document);

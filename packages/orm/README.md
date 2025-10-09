@@ -81,6 +81,7 @@ import { Document } from '@nl-framework/orm';
 
 @Document({ collection: 'users', timestamps: true, softDelete: true })
 export class User {
+  id?: string;
   _id?: ObjectId;
   email!: string;
   name!: string;
@@ -88,6 +89,8 @@ export class User {
 ```
 
 Timestamps automatically manage `createdAt`/`updatedAt` fields, while `softDelete` adds `deletedAt` support for repositories.
+
+> **Portable identifiers.** Repositories expose an `id` string on every document and accept it for lookups and updates. The underlying Mongo `_id` field remains for database compatibility but is managed internally by the repository.
 
 > **Auto-discovery.** The ORM automatically registers every decorated document that has been imported before `OrmModule.forRoot` executes. Provide the optional `entities` array only when you need to scope a connection to a specific subset.
 

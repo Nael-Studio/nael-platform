@@ -25,7 +25,7 @@ export const createMongoDriver = (options: MongoDriverOptions): OrmDriver => ({
   name: 'mongo',
   createConnection: (connectionName, loggerFactory) =>
     new MongoConnection(createConnectionOptions(options, connectionName), loggerFactory),
-  createRepository: async <T extends Record<string, unknown>>(
+  createRepository: async <T extends object>(
     connection: OrmConnection,
     entity: DocumentClass<T>,
   ) => {

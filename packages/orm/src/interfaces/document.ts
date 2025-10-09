@@ -1,6 +1,6 @@
 import type { ClassType } from '@nl-framework/core';
 
-export type DocumentClass<T extends Record<string, unknown> = Record<string, unknown>> = ClassType<T>;
+export type DocumentClass<T = object> = ClassType<T>;
 
 export interface DocumentOptions {
   collection?: string;
@@ -16,6 +16,7 @@ export interface DocumentMetadata {
 }
 
 export interface BaseDocument {
+  id?: string;
   createdAt?: Date;
   updatedAt?: Date;
   deletedAt?: Date | null;

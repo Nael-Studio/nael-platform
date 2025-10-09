@@ -19,7 +19,7 @@ export interface SeedHistoryFactoryOptions {
 export interface OrmDriver {
   readonly name: string;
   createConnection(connectionName: string, loggerFactory: LoggerFactory): OrmConnection;
-  createRepository<T extends Record<string, unknown>>(
+  createRepository<T extends object>(
     connection: OrmConnection,
     entity: DocumentClass<T>,
   ): Promise<OrmRepository<T, unknown, unknown, unknown, unknown, unknown>>;

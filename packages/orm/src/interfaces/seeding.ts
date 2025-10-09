@@ -4,7 +4,7 @@ import type { OrmRepository } from './repository';
 
 export interface SeederContext {
   connectionName: string;
-  getRepository<T extends Record<string, unknown>>(
+  getRepository<T extends object>(
     document: DocumentClass<T>,
   ): Promise<OrmRepository<T>>;
 }

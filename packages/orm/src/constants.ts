@@ -15,7 +15,7 @@ export const getSeedRunnerToken = (name?: string): symbol => Symbol.for(buildKey
 export const getSeedHistoryToken = (name?: string): symbol => Symbol.for(buildKey('seed-history', name));
 export const getDriverToken = (name?: string): symbol => Symbol.for(buildKey('driver', name));
 
-export const getRepositoryToken = <T extends Record<string, unknown>>(
+export const getRepositoryToken = <T extends object>(
   document: DocumentClass<T>,
   name?: string,
 ): symbol =>
