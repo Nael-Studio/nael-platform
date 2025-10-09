@@ -5,12 +5,17 @@ export const httpExamples: ExampleCatalogEntry[] = [
     id: 'http-basic-crud',
     category: 'http',
     title: 'RESTful CRUD Controller',
-    description: 'Implements a REST controller with CRUD endpoints, DTO validation, and structured responses.',
+    description: 'Implements a REST controller with CRUD endpoints, automatic DTO sanitization, and structured responses.',
     code: `import { Controller, Get, Post, Put, Delete, Param, Body } from '@nl-framework/http';
 import { Injectable, Module } from '@nl-framework/core';
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
 
-interface CreateTodoDto {
-  title: string;
+class CreateTodoDto {
+  @IsString()
+  title!: string;
+
+  @IsOptional()
+  @IsBoolean()
   completed?: boolean;
 }
 

@@ -12,6 +12,7 @@ bun add @nl-framework/graphql graphql
 
 - **Resolver decorators** – annotate queries, mutations, subscriptions, and field resolvers with expressive decorators.
 - **Schema tooling** – generate SDL from TypeScript metadata or stitch existing schemas with federation directives.
+- **Input sanitization** – arguments decorated with class-validator rules are transformed via `class-transformer` before resolvers execute, rejecting invalid payloads with `BAD_USER_INPUT` errors.
 - **Module integration** – register resolvers alongside providers using standard Nael modules.
 
 ## Quick start
@@ -20,16 +21,24 @@ bun add @nl-framework/graphql graphql
 import { Module } from '@nl-framework/core';
 import { Resolver, Query, Mutation, Args, InputType, Field } from '@nl-framework/graphql';
 import { NaelFactory } from '@nl-framework/platform';
+import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
 
 @InputType()
 class CreateUserInput {
   @Field()
+  @IsEmail()
   email!: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  name?: string;
 }
 
 @Resolver('User')
 class UsersResolver {
-  private readonly users = new Map<string, { id: string; email: string }>();
+  private readonly users = new Map<string, { id: string; email: string; name?: string }>();
 
   @Query(() => [String])
   users() {
@@ -39,7 +48,7 @@ class UsersResolver {
   @Mutation(() => String)
   createUser(@Args('input', () => CreateUserInput) input: CreateUserInput) {
     const id = crypto.randomUUID();
-    this.users.set(id, { id, email: input.email });
+    this.users.set(id, { id, email: input.email, name: input.name });
     return id;
   }
 }

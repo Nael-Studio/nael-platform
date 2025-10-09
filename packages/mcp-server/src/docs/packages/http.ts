@@ -18,6 +18,12 @@ export const httpDocumentation: PackageDocumentation = {
       icon: '📦',
     },
     {
+      title: 'Built-in DTO Validation',
+      description:
+        'Classes decorated with class-validator rules are transformed and vetted automatically, stripping unknown fields and returning structured 400 responses when validation fails.',
+      icon: '✅',
+    },
+    {
       title: 'Better Auth Ready',
       description: 'Drop-in integration with the auth package to protect routes via guards or global interceptors.',
       icon: '🔐',
@@ -33,10 +39,20 @@ export const httpDocumentation: PackageDocumentation = {
     code: `import { Controller, Get, Post, Body, Param } from '@nl-framework/http';
 import { Module } from '@nl-framework/core';
 import { bootstrapHttpApplication } from '@nl-framework/platform';
+import { IsEmail, IsOptional, IsString } from 'class-validator';
+
+class CreateUserDto {
+  @IsEmail()
+  email!: string;
+
+  @IsOptional()
+  @IsString()
+  name?: string;
+}
 
 @Controller('/users')
 class UsersController {
-  private readonly users = new Map<string, { id: string; email: string }>();
+  private readonly users = new Map<string, { id: string; email: string; name?: string }>();
 
   @Get('/')
   list() {
@@ -49,9 +65,9 @@ class UsersController {
   }
 
   @Post('/')
-  create(@Body() body: { email: string }) {
+  create(@Body() body: CreateUserDto) {
     const id = crypto.randomUUID();
-    const user = { id, email: body.email };
+    const user = { id, email: body.email, name: body.name };
     this.users.set(id, user);
     return user;
   }

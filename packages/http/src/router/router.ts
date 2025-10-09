@@ -17,6 +17,9 @@ import type {
   HttpExecutionContext,
 } from '../guards/types';
 import { isGuardClassToken, isGuardFunctionToken } from '../guards/utils';
+import { getRouteArgsMetadata, type RouteArgMetadata } from '../decorators/params';
+import { getMetadata } from '../utils/metadata';
+import { transformAndValidate, ValidationException } from '../utils/validation';
 
 interface HandlerEntry {
   controllerInstance: unknown;
@@ -141,7 +144,28 @@ export class Router {
       const middleware = this.middleware[i];
 
       if (!middleware) {
-        const result = await callable.call(controller, context);
+        let args: unknown[];
+        try {
+          args = await this.resolveHandlerArguments(handler, context, callable);
+        } catch (error) {
+          if (error instanceof ValidationException) {
+            return new Response(
+              JSON.stringify({
+                message: error.message,
+                issues: error.issues,
+              }),
+              {
+                status: 400,
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+              },
+            );
+          }
+          throw error;
+        }
+
+        const result = await callable.apply(controller, args);
         return this.normalizeResponse(result);
       }
 
@@ -241,5 +265,126 @@ export class Router {
     }
 
     return instance.canActivate(executionContext);
+  }
+
+  private async resolveHandlerArguments(
+    handler: HandlerEntry,
+    context: RequestContext,
+    callable: (...args: unknown[]) => unknown,
+  ): Promise<unknown[]> {
+    const metadata = getRouteArgsMetadata(
+      handler.controllerClass.prototype,
+      handler.route.handlerName,
+    );
+
+    if (!metadata.length) {
+      return [context];
+    }
+
+    const paramTypes = (getMetadata(
+      'design:paramtypes',
+      handler.controllerClass.prototype,
+      handler.route.handlerName,
+    ) as unknown[]) ?? [];
+
+    const maxIndex = metadata.reduce((maximum, meta) => Math.max(maximum, meta.index), -1);
+    const declaredParams = typeof callable.length === 'number' ? callable.length : 0;
+    const parameterCount = Math.max(declaredParams, paramTypes.length, maxIndex + 1);
+    const args = new Array(parameterCount).fill(undefined);
+
+    await Promise.all(
+      metadata.map(async (meta) => {
+        args[meta.index] = await this.resolveArgument(
+          meta,
+          context,
+          paramTypes[meta.index],
+        );
+      }),
+    );
+
+    if (!args.length) {
+      return [context];
+    }
+
+    for (let index = 0; index < args.length; index += 1) {
+      if (args[index] === undefined) {
+        args[index] = context;
+      }
+    }
+
+    return args;
+  }
+
+  private async resolveArgument(
+    metadata: RouteArgMetadata,
+    context: RequestContext,
+    metatype: unknown,
+  ): Promise<unknown> {
+    switch (metadata.type) {
+      case 'body':
+        return this.transformBodyValue(
+          metadata.data ? this.pickFromObject(context.body, metadata.data) : context.body,
+          metatype,
+        );
+      case 'param':
+        return metadata.data ? context.params?.[metadata.data] : context.params;
+      case 'query':
+        if (!metadata.data) {
+          return context.query;
+        }
+        return context.query.get(metadata.data) ?? undefined;
+      case 'headers':
+        if (!metadata.data) {
+          return context.headers;
+        }
+        return context.headers.get(metadata.data) ?? undefined;
+      case 'request':
+        return context.request;
+      case 'context':
+      default:
+        return context;
+    }
+  }
+
+  private isTransformableMetatype(metatype: unknown): metatype is ClassType<unknown> {
+    if (typeof metatype !== 'function') {
+      return false;
+    }
+
+    const primitives: unknown[] = [String, Boolean, Number, Array, Object, Promise, Date];
+    return !primitives.includes(metatype);
+  }
+
+  private async transformBodyValue(value: unknown, metatype: unknown): Promise<unknown> {
+    if (!this.isTransformableMetatype(metatype)) {
+      return value;
+    }
+
+    return transformAndValidate({
+      metatype,
+      value,
+      sanitize: true,
+      validate: true,
+    });
+  }
+
+  private pickFromObject(source: unknown, path: string): unknown {
+    if (path.trim() === '') {
+      return source;
+    }
+
+    if (source === null || typeof source !== 'object') {
+      return undefined;
+    }
+
+    const segments = path.split('.');
+    let current: unknown = source;
+    for (const segment of segments) {
+      if (current === null || typeof current !== 'object') {
+        return undefined;
+      }
+      current = (current as Record<string, unknown>)[segment];
+    }
+    return current;
   }
 }

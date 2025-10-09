@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import { parse, type DocumentNode, GraphQLError } from 'graphql';
+import { transformAndValidate, ValidationException } from '@nl-framework/core';
 import type { ClassType, Token } from '@nl-framework/core';
 import {
   listAppliedGuards,
@@ -42,6 +43,103 @@ const BUILT_IN_TYPES = new Set(['String', 'Float', 'Int', 'Boolean', 'ID']);
 export interface GraphqlGuardRuntimeOptions {
   resolve<T>(token: Token<T>): Promise<T>;
 }
+
+interface ValidationTarget {
+  metatype: ClassType<unknown>;
+  isArray: boolean;
+}
+
+const NON_TRANSFORMABLE_METATYPES = new Set<unknown>([
+  String,
+  Boolean,
+  Number,
+  Array,
+  Object,
+  Promise,
+  Date,
+]);
+
+const isTransformableMetatype = (metatype: unknown): metatype is ClassType<unknown> =>
+  typeof metatype === 'function' && !NON_TRANSFORMABLE_METATYPES.has(metatype);
+
+const resolveValidationTarget = (param: ResolverParamDefinition): ValidationTarget | null => {
+  const resolvedType = param.typeThunk?.();
+
+  if (Array.isArray(resolvedType) && resolvedType.length > 0) {
+    const candidate = resolvedType[0];
+    if (isTransformableMetatype(candidate)) {
+      return {
+        metatype: candidate,
+        isArray: true,
+      };
+    }
+  }
+
+  if (isTransformableMetatype(resolvedType)) {
+    return {
+      metatype: resolvedType,
+      isArray: false,
+    };
+  }
+
+  if (param.designType === Array) {
+    if (Array.isArray(resolvedType) && resolvedType.length > 0) {
+      const candidate = resolvedType[0];
+      if (isTransformableMetatype(candidate)) {
+        return {
+          metatype: candidate,
+          isArray: true,
+        };
+      }
+    }
+    return null;
+  }
+
+  if (isTransformableMetatype(param.designType)) {
+    return {
+      metatype: param.designType,
+      isArray: false,
+    };
+  }
+
+  return null;
+};
+
+const transformInputValue = async (value: unknown, target: ValidationTarget | null): Promise<unknown> => {
+  if (!target) {
+    return value;
+  }
+
+  if (target.isArray) {
+    if (!Array.isArray(value)) {
+      return value;
+    }
+
+    const transformed = await Promise.all(
+      value.map((item) =>
+        transformAndValidate({
+          metatype: target.metatype,
+          value: item,
+        }),
+      ),
+    );
+
+    return transformed;
+  }
+
+  return transformAndValidate({
+    metatype: target.metatype,
+    value,
+  });
+};
+
+const validationErrorToGraphQLError = (error: ValidationException): GraphQLError =>
+  new GraphQLError(error.message, {
+    extensions: {
+      code: 'BAD_USER_INPUT',
+      validation: error.issues,
+    },
+  });
 
 const isGraphqlGuardFunction = (
   token: unknown,
@@ -205,24 +303,70 @@ const createResolverInvoker = (
 
   const sortedParams = [...params].sort((a, b) => a.index - b.index);
 
-  const invokeHandler = (parent: unknown, args: any, context: any, info: any) => {
+  const sanitizeArguments = async (
+    rawArgs: any,
+  ): Promise<{ sanitizedArgs: any; precomputed: Map<number, unknown> }> => {
+    let workingArgs = rawArgs;
+    const precomputed = new Map<number, unknown>();
+
+    const argsParams = sortedParams.filter((param) => param.kind === 'args');
+    for (const param of argsParams) {
+      const target = resolveValidationTarget(param);
+      const sanitizedValue = await transformInputValue(workingArgs, target);
+      precomputed.set(param.index, sanitizedValue);
+      if (target) {
+        workingArgs = sanitizedValue;
+      }
+    }
+
+    const argParams = sortedParams.filter((param) => param.kind === 'arg');
+    for (const param of argParams) {
+      if (!param.name) {
+        throw new Error(
+          `Argument decorator on ${method.target.name}.${method.methodName} is missing a name`,
+        );
+      }
+      const target = resolveValidationTarget(param);
+      const container =
+        (workingArgs && typeof workingArgs === 'object'
+          ? (workingArgs as Record<string, unknown>)
+          : rawArgs && typeof rawArgs === 'object'
+            ? (rawArgs as Record<string, unknown>)
+            : undefined);
+      const sourceValue = container ? container[param.name] : undefined;
+      const sanitizedValue = await transformInputValue(sourceValue, target);
+      if (workingArgs && typeof workingArgs === 'object') {
+        (workingArgs as Record<string, unknown>)[param.name] = sanitizedValue as unknown;
+      } else if (!workingArgs && target) {
+        workingArgs = { [param.name]: sanitizedValue };
+      }
+      precomputed.set(param.index, sanitizedValue);
+    }
+
+    return { sanitizedArgs: workingArgs, precomputed };
+  };
+
+  const invokeHandler = async (
+    parent: unknown,
+    argsValue: any,
+    context: any,
+    info: any,
+    precomputed: Map<number, unknown>,
+  ) => {
     if (!sortedParams.length) {
-      const fallbackArgs = [parent, args, context, info];
+      const fallbackArgs = [parent, argsValue, context, info];
       return handler.apply(instance, fallbackArgs.slice(0, handler.length));
     }
 
     const actualArgs: unknown[] = [];
     for (const param of sortedParams) {
       switch (param.kind) {
-        case 'arg': {
-          if (!param.name) {
-            throw new Error(
-              `Argument decorator on ${method.target.name}.${method.methodName} is missing a name`,
-            );
-          }
-          actualArgs.push(args?.[param.name]);
+        case 'arg':
+          actualArgs.push(precomputed.get(param.index));
           break;
-        }
+        case 'args':
+          actualArgs.push(precomputed.get(param.index) ?? argsValue);
+          break;
         case 'context':
           actualArgs.push(context);
           break;
@@ -231,9 +375,6 @@ const createResolverInvoker = (
           break;
         case 'parent':
           actualArgs.push(parent);
-          break;
-        case 'args':
-          actualArgs.push(args);
           break;
         default:
           actualArgs.push(undefined);
@@ -244,6 +385,20 @@ const createResolverInvoker = (
   };
 
   return async (parent: unknown, args: any, context: any, info: any) => {
+    let sanitizedArgs: any = args;
+    let precomputed = new Map<number, unknown>();
+
+    try {
+      const result = await sanitizeArguments(args);
+      sanitizedArgs = result.sanitizedArgs;
+      precomputed = result.precomputed;
+    } catch (error) {
+      if (error instanceof ValidationException) {
+        throw validationErrorToGraphQLError(error);
+      }
+      throw error;
+    }
+
     if (guardRuntime) {
       const guardTokens = [
         ...listGraphqlGuards(),
@@ -251,9 +406,13 @@ const createResolverInvoker = (
       ];
 
       if (guardTokens.length && !isPublicResolver(method.target, method.methodName)) {
+        const guardArgs =
+          sanitizedArgs && typeof sanitizedArgs === 'object'
+            ? (sanitizedArgs as Record<string, unknown>)
+            : {};
         const executionContext = createGraphqlGuardExecutionContext({
           parent,
-          args: (args ?? {}) as Record<string, unknown>,
+          args: guardArgs,
           context,
           info,
           resolverClass: method.target,
@@ -279,7 +438,14 @@ const createResolverInvoker = (
       }
     }
 
-    return invokeHandler(parent, args, context, info);
+    try {
+      return await invokeHandler(parent, sanitizedArgs, context, info, precomputed);
+    } catch (error) {
+      if (error instanceof ValidationException) {
+        throw validationErrorToGraphQLError(error);
+      }
+      throw error;
+    }
   };
 };
 
