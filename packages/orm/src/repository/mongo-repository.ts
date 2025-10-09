@@ -206,7 +206,7 @@ export class MongoRepository<T extends object> extends OrmRepository<
   }
 
   private prepareForUpdate(update: Partial<T>): UpdateFilter<T & BaseDocument> {
-  const prepared: Record<string, unknown> = { ...(update as Record<string, unknown>) };
+    const prepared: Record<string, unknown> = { ...(update as Record<string, unknown>) };
 
     if (this.metadata.timestamps) {
       prepared.updatedAt = new Date();
