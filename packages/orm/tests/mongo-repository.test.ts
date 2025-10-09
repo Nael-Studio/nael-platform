@@ -92,7 +92,7 @@ const matchesFilter = (filter: Filter<TestEntity & BaseDocument>, doc: StoredEnt
       continue;
     }
 
-  if (!matchesValue(condition, (doc as unknown as Record<string, unknown>)[key])) {
+    if (!matchesValue(condition, (doc as unknown as Record<string, unknown>)[key])) {
       return false;
     }
   }
