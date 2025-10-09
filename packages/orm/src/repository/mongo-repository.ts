@@ -65,8 +65,7 @@ export class MongoRepository<T extends Record<string, unknown>> extends OrmRepos
   }
 
   async findById(id: string | ObjectId, options: FindOneOptions<T> = {}): Promise<EntityDocument<T> | null> {
-    const objectId = typeof id === 'string' ? new ObjectId(id) : id;
-    return this.findOne({ _id: objectId } as Filter<T>, options);
+    return this.findOne(this.buildIdFilter(id), options);
   }
 
   async count(filter: Filter<T> = {}, options: FindManyOptions<T> = {}): Promise<number> {
@@ -89,12 +88,13 @@ export class MongoRepository<T extends Record<string, unknown>> extends OrmRepos
     })) as Array<EntityDocument<T>>;
   }
 
-  async save(entity: Partial<T> & { _id?: ObjectId }): Promise<EntityDocument<T>> {
+  async save(entity: Partial<T> & { _id?: string | ObjectId }): Promise<EntityDocument<T>> {
     if (entity._id) {
       const { _id, ...rest } = entity;
       const update = this.prepareForUpdate(rest as Partial<T>);
-      await this.collection.updateOne({ _id } as Filter<T & BaseDocument>, update);
-      const updated = await this.findById(_id, { withDeleted: true });
+      const filter = this.buildIdFilter(_id);
+      await this.collection.updateOne(filter as Filter<T & BaseDocument>, update);
+      const updated = await this.findOne(filter, { withDeleted: true });
       if (!updated) {
         throw new Error('Failed to load entity after update');
       }
@@ -222,5 +222,21 @@ export class MongoRepository<T extends Record<string, unknown>> extends OrmRepos
     }
 
     return updateFilter;
+  }
+
+  private buildIdFilter(id: string | ObjectId): Filter<T> {
+    if (typeof id === 'string') {
+      if (ObjectId.isValid(id)) {
+        return {
+          _id: {
+            $in: [id, new ObjectId(id)],
+          },
+        } as Filter<T>;
+      }
+
+      return { _id: id } as Filter<T>;
+    }
+
+    return { _id: id } as Filter<T>;
   }
 }
