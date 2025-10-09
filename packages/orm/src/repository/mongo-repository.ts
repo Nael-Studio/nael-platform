@@ -83,7 +83,7 @@ export class MongoRepository<T extends object> extends OrmRepository<
       ...prepared,
       _id: prepared._id ?? result.insertedId,
     } as WithId<T & BaseDocument>;
-  return this.mapDocument(persisted);
+    return this.mapDocument(persisted);
   }
 
   async insertMany(docs: OptionalUnlessRequiredId<T>[]): Promise<Array<EntityDocument<T>>> {
