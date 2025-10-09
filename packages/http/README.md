@@ -18,6 +18,7 @@ import 'reflect-metadata';
 
 - **Annotation-based routing** – declare controllers, routes, and guards using decorators like `@Controller`, `@Get`, and `@UseGuards`.
 - **Request context** – access params, query, headers, and user state through typed handler signatures.
+- **Automatic DTO validation** – request bodies annotated with class-validator rules are transformed with `class-transformer`, stripped of unknown properties, and rejected with a structured 400 response when invalid.
 - **Auth-friendly** – pair with `@nl-framework/auth` to secure routes using session guards or middleware.
 
 ## Quick start
@@ -26,10 +27,20 @@ import 'reflect-metadata';
 import { Controller, Get, Post, Body, Param } from '@nl-framework/http';
 import { Module } from '@nl-framework/core';
 import { bootstrapHttpApplication } from '@nl-framework/platform';
+import { IsEmail, IsOptional, IsString } from 'class-validator';
+
+class CreateUserDto {
+  @IsEmail()
+  email!: string;
+
+  @IsOptional()
+  @IsString()
+  name?: string;
+}
 
 @Controller('/users')
 class UsersController {
-  private readonly users = new Map<string, { id: string; email: string }>();
+  private readonly users = new Map<string, { id: string; email: string; name?: string }>();
 
   @Get('/')
   list() {
@@ -42,9 +53,9 @@ class UsersController {
   }
 
   @Post('/')
-  create(@Body() body: { email: string }) {
+  create(@Body() body: CreateUserDto) {
     const id = crypto.randomUUID();
-    const user = { id, email: body.email };
+    const user = { id, email: body.email, name: body.name };
     this.users.set(id, user);
     return user;
   }

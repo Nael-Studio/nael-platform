@@ -18,6 +18,12 @@ export const graphqlDocumentation: PackageDocumentation = {
       icon: '🧵',
     },
     {
+      title: 'Argument Validation',
+      description:
+        'Resolver arguments backed by class-validator DTOs are transformed, whitelisted, and rejected as `BAD_USER_INPUT` when invalid before hitting your business logic.',
+      icon: '🧪',
+    },
+    {
       title: 'GraphQL Modules',
       description: 'Bundle resolvers, types, and data sources within standard framework modules.',
       icon: '📦',
@@ -36,16 +42,24 @@ export const graphqlDocumentation: PackageDocumentation = {
     code: `import { Module } from '@nl-framework/core';
 import { Resolver, Query, Mutation, Args, InputType, Field } from '@nl-framework/graphql';
 import { NaelFactory } from '@nl-framework/platform';
+import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
 
 @InputType()
 class CreateUserInput {
   @Field()
+  @IsEmail()
   email!: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  name?: string;
 }
 
 @Resolver('User')
 class UsersResolver {
-  private readonly users = new Map<string, { id: string; email: string }>();
+  private readonly users = new Map<string, { id: string; email: string; name?: string }>();
 
   @Query(() => [String])
   users() {
@@ -55,7 +69,7 @@ class UsersResolver {
   @Mutation(() => String)
   createUser(@Args('input', () => CreateUserInput) input: CreateUserInput) {
     const id = crypto.randomUUID();
-    this.users.set(id, { id, email: input.email });
+    this.users.set(id, { id, email: input.email, name: input.name });
     return id;
   }
 }

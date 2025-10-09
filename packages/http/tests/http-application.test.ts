@@ -20,6 +20,8 @@ import {
   type HttpExecutionContext,
   type MiddlewareHandler,
 } from '../src/index';
+import { IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { Type } from 'class-transformer';
 import type { RequestContext } from '../src/interfaces/http';
 
 @Injectable()
@@ -111,6 +113,17 @@ class PersonalizedController {
 })
 class GuardedModule {}
 
+class CreatePayloadDto {
+  @IsString()
+  message!: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Type(() => Number)
+  count?: number;
+}
+
 @Controller('/payloads')
 class PayloadController {
   @Post('/')
@@ -121,6 +134,11 @@ class PayloadController {
   @Post('/message')
   project(@Body('message') message: string) {
     return { message };
+  }
+
+  @Post('/validated')
+  createValidated(@Body() payload: CreatePayloadDto) {
+    return payload;
   }
 
   @Get('/params/:id')
@@ -340,5 +358,30 @@ describe('HTTP Application', () => {
     const contextExposure = await fetch(`http://127.0.0.1:${server.port}/payloads/context`);
     expect(contextExposure.status).toBe(200);
     expect(await contextExposure.json()).toEqual({ path: '/context' });
+
+    const created = await fetch(`http://127.0.0.1:${server.port}/payloads/validated`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ message: 'validated', count: '5', extra: 'nope' }),
+    });
+    expect(created.status).toBe(200);
+    expect(await created.json()).toEqual({ message: 'validated', count: 5 });
+
+    const invalid = await fetch(`http://127.0.0.1:${server.port}/payloads/validated`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ count: 'not-a-number' }),
+    });
+    expect(invalid.status).toBe(400);
+    expect(await invalid.json()).toEqual({
+      message: 'Validation failed',
+      issues: expect.arrayContaining([
+        expect.objectContaining({ property: 'message' }),
+      ]),
+    });
   });
 });

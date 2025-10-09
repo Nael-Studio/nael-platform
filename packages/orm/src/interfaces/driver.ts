@@ -22,7 +22,7 @@ export interface OrmDriver {
   createRepository<T extends Record<string, unknown>>(
     connection: OrmConnection,
     entity: DocumentClass<T>,
-  ): Promise<OrmRepository<T>>;
+  ): Promise<OrmRepository<T, unknown, unknown, unknown, unknown, unknown>>;
   createSeedHistory(
     connection: OrmConnection,
     options: SeedHistoryFactoryOptions,

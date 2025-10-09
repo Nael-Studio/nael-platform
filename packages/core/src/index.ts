@@ -20,3 +20,9 @@ export { ConfigService } from './config/config.service';
 export type { ConfigLoadOptions } from './config/config-loader';
 export type { OnModuleInit, OnModuleDestroy } from './lifecycle/hooks';
 export { GLOBAL_PROVIDERS } from './constants';
+export {
+  transformAndValidate,
+  ValidationException,
+  type ValidationIssue,
+  type TransformValidationOptions,
+} from './utils/validation';

@@ -5,9 +5,10 @@ export const graphqlExamples: ExampleCatalogEntry[] = [
     id: 'graphql-resolver-crud',
     category: 'graphql',
     title: 'GraphQL Resolver with Queries and Mutations',
-    description: 'Implements a resolver that exposes read/write operations using dependency-injected services.',
-    code: `import { Resolver, Query, Mutation, Args } from '@nl-framework/graphql';
+  description: 'Implements a resolver that exposes read/write operations with validated DTO arguments.',
+  code: `import { Resolver, Query, Mutation, Args, InputType, Field } from '@nl-framework/graphql';
 import { Injectable } from '@nl-framework/core';
+import { IsString, MinLength } from 'class-validator';
 
 @Injectable()
 class PostsService {
@@ -21,8 +22,16 @@ class PostsService {
     const id = crypto.randomUUID();
     const post = { id, title };
     this.posts.set(id, post);
-    return post;
+    return id;
   }
+}
+
+@InputType()
+class CreatePostInput {
+  @Field()
+  @IsString()
+  @MinLength(5)
+  title!: string;
 }
 
 @Resolver('Post')
@@ -35,8 +44,8 @@ export class PostsResolver {
   }
 
   @Mutation(() => String)
-  createPost(@Args('title') title: string) {
-    return this.posts.create(title);
+  createPost(@Args('input', () => CreatePostInput) input: CreatePostInput) {
+    return this.posts.create(input.title);
   }
 }
 `,

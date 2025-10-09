@@ -24,7 +24,15 @@ const buildNotDeletedFilter = <T>(): Filter<T & BaseDocument> =>
     $or: [{ deletedAt: { $exists: false } }, { deletedAt: null }],
   }) as Filter<T & BaseDocument>;
 
-export class MongoRepository<T extends Record<string, unknown>> extends OrmRepository<T> {
+export class MongoRepository<T extends Record<string, unknown>> extends OrmRepository<
+  T,
+  Filter<T>,
+  FindManyOptions<T>,
+  FindOneOptions<T>,
+  OptionalUnlessRequiredId<T>,
+  Partial<T>,
+  EntityDocument<T>
+> {
   constructor(
     private readonly collection: Collection<T & BaseDocument>,
     private readonly metadata: DocumentMetadata,

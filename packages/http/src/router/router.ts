@@ -19,6 +19,7 @@ import type {
 import { isGuardClassToken, isGuardFunctionToken } from '../guards/utils';
 import { getRouteArgsMetadata, type RouteArgMetadata } from '../decorators/params';
 import { getMetadata } from '../utils/metadata';
+import { transformAndValidate, ValidationException } from '../utils/validation';
 
 interface HandlerEntry {
   controllerInstance: unknown;
@@ -143,7 +144,27 @@ export class Router {
       const middleware = this.middleware[i];
 
       if (!middleware) {
-        const args = this.resolveHandlerArguments(handler, context, callable);
+        let args: unknown[];
+        try {
+          args = await this.resolveHandlerArguments(handler, context, callable);
+        } catch (error) {
+          if (error instanceof ValidationException) {
+            return new Response(
+              JSON.stringify({
+                message: error.message,
+                issues: error.issues,
+              }),
+              {
+                status: 400,
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+              },
+            );
+          }
+          throw error;
+        }
+
         const result = await callable.apply(controller, args);
         return this.normalizeResponse(result);
       }
@@ -246,11 +267,11 @@ export class Router {
     return instance.canActivate(executionContext);
   }
 
-  private resolveHandlerArguments(
+  private async resolveHandlerArguments(
     handler: HandlerEntry,
     context: RequestContext,
     callable: (...args: unknown[]) => unknown,
-  ): unknown[] {
+  ): Promise<unknown[]> {
     const metadata = getRouteArgsMetadata(
       handler.controllerClass.prototype,
       handler.route.handlerName,
@@ -271,9 +292,15 @@ export class Router {
     const parameterCount = Math.max(declaredParams, paramTypes.length, maxIndex + 1);
     const args = new Array(parameterCount > 0 ? parameterCount : 0).fill(undefined);
 
-    for (const meta of metadata) {
-      args[meta.index] = this.resolveArgument(meta, context);
-    }
+    await Promise.all(
+      metadata.map(async (meta) => {
+        args[meta.index] = await this.resolveArgument(
+          meta,
+          context,
+          paramTypes[meta.index],
+        );
+      }),
+    );
 
     if (!args.length) {
       return [context];
@@ -288,10 +315,17 @@ export class Router {
     return args;
   }
 
-  private resolveArgument(metadata: RouteArgMetadata, context: RequestContext): unknown {
+  private async resolveArgument(
+    metadata: RouteArgMetadata,
+    context: RequestContext,
+    metatype: unknown,
+  ): Promise<unknown> {
     switch (metadata.type) {
       case 'body':
-        return metadata.data ? this.pickFromObject(context.body, metadata.data) : context.body;
+        return this.transformBodyValue(
+          metadata.data ? this.pickFromObject(context.body, metadata.data) : context.body,
+          metatype,
+        );
       case 'param':
         return metadata.data ? context.params?.[metadata.data] : context.params;
       case 'query':
@@ -310,6 +344,28 @@ export class Router {
       default:
         return context;
     }
+  }
+
+  private isTransformableMetatype(metatype: unknown): metatype is ClassType<unknown> {
+    if (typeof metatype !== 'function') {
+      return false;
+    }
+
+    const primitives: unknown[] = [String, Boolean, Number, Array, Object, Promise, Date];
+    return !primitives.includes(metatype);
+  }
+
+  private async transformBodyValue(value: unknown, metatype: unknown): Promise<unknown> {
+    if (!this.isTransformableMetatype(metatype)) {
+      return value;
+    }
+
+    return transformAndValidate({
+      metatype,
+      value,
+      sanitize: true,
+      validate: true,
+    });
   }
 
   private pickFromObject(source: unknown, path: string): unknown {

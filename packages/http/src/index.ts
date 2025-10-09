@@ -63,3 +63,4 @@ export {
   isGuardFunctionToken,
 } from './guards/utils';
 export { PUBLIC_ROUTE_METADATA_KEY } from './constants';
+export { ValidationException, type ValidationIssue } from './utils/validation';
