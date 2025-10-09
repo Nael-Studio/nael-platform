@@ -290,7 +290,7 @@ export class Router {
     const maxIndex = metadata.reduce((maximum, meta) => Math.max(maximum, meta.index), -1);
     const declaredParams = typeof callable.length === 'number' ? callable.length : 0;
     const parameterCount = Math.max(declaredParams, paramTypes.length, maxIndex + 1);
-    const args = new Array(parameterCount > 0 ? parameterCount : 0).fill(undefined);
+    const args = new Array(parameterCount).fill(undefined);
 
     await Promise.all(
       metadata.map(async (meta) => {
