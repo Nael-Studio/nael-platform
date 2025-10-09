@@ -7,11 +7,9 @@ interface TestEntity extends BaseDocument {
   _id?: string | ObjectId;
   name: string;
   nickname?: string;
-  [key: string]: unknown;
 }
 
 class TestDoc implements TestEntity {
-  [key: string]: unknown;
   _id?: string | ObjectId;
   name!: string;
   nickname?: string;
@@ -20,7 +18,7 @@ class TestDoc implements TestEntity {
   deletedAt?: Date | null;
 }
 
-type StoredEntity = TestEntity & { _id: string | ObjectId; name: string };
+type StoredEntity = TestEntity & { _id: string | ObjectId; id: string; name: string };
 
 type FakeCollection = {
   findOne: (filter: Filter<TestEntity & BaseDocument>) => Promise<(TestEntity & BaseDocument) | null>;
@@ -49,6 +47,21 @@ const matchesId = (condition: unknown, value: unknown): boolean => {
   return condition === value;
 };
 
+const matchesValue = (condition: unknown, value: unknown): boolean => {
+  if (condition && typeof condition === 'object' && !Array.isArray(condition)) {
+    const cond = condition as Record<string, unknown>;
+    if ('$exists' in cond) {
+      const expected = Boolean(cond.$exists);
+      return expected ? value !== undefined : value === undefined;
+    }
+    if ('$in' in cond && Array.isArray(cond.$in)) {
+      return cond.$in.some((item) => matchesValue(item, value));
+    }
+  }
+
+  return condition === value;
+};
+
 const matchesFilter = (filter: Filter<TestEntity & BaseDocument>, doc: StoredEntity): boolean => {
   if (!filter || Object.keys(filter).length === 0) {
     return true;
@@ -59,8 +72,29 @@ const matchesFilter = (filter: Filter<TestEntity & BaseDocument>, doc: StoredEnt
     return clauses.every((clause) => matchesFilter(clause, doc));
   }
 
-  if ('_id' in filter) {
-    return matchesId((filter as { _id: unknown })._id, doc._id);
+  if ('$or' in filter) {
+    const clauses = (filter as { $or: Array<Filter<TestEntity & BaseDocument>> }).$or;
+    return clauses.some((clause) => matchesFilter(clause, doc));
+  }
+
+  for (const [key, condition] of Object.entries(filter)) {
+    if (key === '_id') {
+      if (!matchesId(condition, doc._id)) {
+        return false;
+      }
+      continue;
+    }
+
+    if (key === 'id') {
+      if (!matchesId(condition, doc.id)) {
+        return false;
+      }
+      continue;
+    }
+
+  if (!matchesValue(condition, (doc as unknown as Record<string, unknown>)[key])) {
+      return false;
+    }
   }
 
   return true;
@@ -124,6 +158,7 @@ describe('MongoRepository', () => {
         stringId,
         {
           _id: stringId,
+          id: stringId,
           name: 'Initial',
           createdAt: now,
           updatedAt: now,
@@ -135,9 +170,10 @@ describe('MongoRepository', () => {
     const collection = createCollection(store) as unknown as Collection<TestEntity & BaseDocument>;
     const repository = new MongoRepository<TestEntity>(collection, metadata);
 
-    const updated = await repository.save({ _id: stringId, name: 'Updated' });
+    const updated = await repository.save({ id: stringId, name: 'Updated' });
 
     expect(updated).not.toBeNull();
+    expect(updated?.id).toBe(stringId);
     expect(updated?._id).toBe(stringId);
     expect(updated?.name).toBe('Updated');
     expect(store.get(stringId)?.name).toBe('Updated');
@@ -157,6 +193,7 @@ describe('MongoRepository', () => {
         objectId,
         {
           _id: objectId,
+          id: objectId.toHexString(),
           name: 'Stored',
         },
       ],
@@ -168,6 +205,7 @@ describe('MongoRepository', () => {
     const entity = await repository.findById(objectId.toHexString());
 
     expect(entity).not.toBeNull();
+    expect(entity?.id).toBe(objectId.toHexString());
     expect(entity?._id instanceof ObjectId).toBe(true);
     expect(entity?.name).toBe('Stored');
   });
