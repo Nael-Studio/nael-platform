@@ -17,6 +17,8 @@ import type {
   HttpExecutionContext,
 } from '../guards/types';
 import { isGuardClassToken, isGuardFunctionToken } from '../guards/utils';
+import { getRouteArgsMetadata, type RouteArgMetadata } from '../decorators/params';
+import { getMetadata } from '../utils/metadata';
 
 interface HandlerEntry {
   controllerInstance: unknown;
@@ -141,7 +143,8 @@ export class Router {
       const middleware = this.middleware[i];
 
       if (!middleware) {
-        const result = await callable.call(controller, context);
+        const args = this.resolveHandlerArguments(handler, context, callable);
+        const result = await callable.apply(controller, args);
         return this.normalizeResponse(result);
       }
 
@@ -241,5 +244,91 @@ export class Router {
     }
 
     return instance.canActivate(executionContext);
+  }
+
+  private resolveHandlerArguments(
+    handler: HandlerEntry,
+    context: RequestContext,
+    callable: (...args: unknown[]) => unknown,
+  ): unknown[] {
+    const metadata = getRouteArgsMetadata(
+      handler.controllerClass.prototype,
+      handler.route.handlerName,
+    );
+
+    if (!metadata.length) {
+      return [context];
+    }
+
+    const paramTypes = (getMetadata(
+      'design:paramtypes',
+      handler.controllerClass.prototype,
+      handler.route.handlerName,
+    ) as unknown[]) ?? [];
+
+    const maxIndex = metadata.reduce((maximum, meta) => Math.max(maximum, meta.index), -1);
+    const declaredParams = typeof callable.length === 'number' ? callable.length : 0;
+    const parameterCount = Math.max(declaredParams, paramTypes.length, maxIndex + 1);
+    const args = new Array(parameterCount > 0 ? parameterCount : 0).fill(undefined);
+
+    for (const meta of metadata) {
+      args[meta.index] = this.resolveArgument(meta, context);
+    }
+
+    if (!args.length) {
+      return [context];
+    }
+
+    for (let index = 0; index < args.length; index += 1) {
+      if (args[index] === undefined) {
+        args[index] = context;
+      }
+    }
+
+    return args;
+  }
+
+  private resolveArgument(metadata: RouteArgMetadata, context: RequestContext): unknown {
+    switch (metadata.type) {
+      case 'body':
+        return metadata.data ? this.pickFromObject(context.body, metadata.data) : context.body;
+      case 'param':
+        return metadata.data ? context.params?.[metadata.data] : context.params;
+      case 'query':
+        if (!metadata.data) {
+          return context.query;
+        }
+        return context.query.get(metadata.data) ?? undefined;
+      case 'headers':
+        if (!metadata.data) {
+          return context.headers;
+        }
+        return context.headers.get(metadata.data) ?? undefined;
+      case 'request':
+        return context.request;
+      case 'context':
+      default:
+        return context;
+    }
+  }
+
+  private pickFromObject(source: unknown, path: string): unknown {
+    if (path.trim() === '') {
+      return source;
+    }
+
+    if (source === null || typeof source !== 'object') {
+      return undefined;
+    }
+
+    const segments = path.split('.');
+    let current: unknown = source;
+    for (const segment of segments) {
+      if (current === null || typeof current !== 'object') {
+        return undefined;
+      }
+      current = (current as Record<string, unknown>)[segment];
+    }
+    return current;
   }
 }

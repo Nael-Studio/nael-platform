@@ -18,6 +18,7 @@ export {
   Head,
   getRouteDefinitions,
 } from './decorators/routes';
+export { Body, Param, Query, Headers, Req, Context } from './decorators/params';
 export {
   HttpApplication,
   createHttpApplication,

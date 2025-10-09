@@ -33,7 +33,7 @@ export class UsersService {
       role: input.role ?? 'member',
     } satisfies Partial<User>;
 
-  const emailFilter: Filter<User> = { email: input.email };
+    const emailFilter: Filter<User> = { email: input.email };
     const existing = (await this.users.findOne(emailFilter, {
       withDeleted: true,
     })) as OrmEntityDocument<User> | null;
@@ -50,13 +50,13 @@ export class UsersService {
   }
 
   async softDelete(id: string): Promise<boolean> {
-  const filter: Filter<User> = { _id: this.toObjectId(id) };
+    const filter: Filter<User> = { _id: this.toObjectId(id) };
     const modified = await this.users.softDelete(filter);
     return modified > 0;
   }
 
   async restore(id: string): Promise<boolean> {
-  const filter: Filter<User> = { _id: this.toObjectId(id) };
+    const filter: Filter<User> = { _id: this.toObjectId(id) };
     const restored = await this.users.restore(filter);
     return restored > 0;
   }

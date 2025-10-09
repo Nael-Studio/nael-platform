@@ -5,9 +5,16 @@ import {
   clearHttpRouteRegistrars,
   createHttpApplication,
   Get,
+  Post,
   registerHttpGuard,
   registerHttpRouteRegistrar,
   UseGuards,
+  Body,
+  Param,
+  Query,
+  Headers,
+  Req,
+  Context,
   type CanActivate,
   type GuardFunction,
   type HttpExecutionContext,
@@ -103,6 +110,49 @@ class PersonalizedController {
   controllers: [ProtectedController, PersonalizedController],
 })
 class GuardedModule {}
+
+@Controller('/payloads')
+class PayloadController {
+  @Post('/')
+  echo(@Body() payload: { message: string }) {
+    return payload;
+  }
+
+  @Post('/message')
+  project(@Body('message') message: string) {
+    return { message };
+  }
+
+  @Get('/params/:id')
+  byId(@Param('id') id: string) {
+    return { id };
+  }
+
+  @Get('/query')
+  search(@Query('term') term: string | null) {
+    return { term };
+  }
+
+  @Get('/headers')
+  readHeader(@Headers('x-flag') flag: string | null) {
+    return { flag };
+  }
+
+  @Get('/request/:id')
+  inspectRequest(@Req() request: Request, @Param('id') id: string) {
+    return { id, url: request.url };
+  }
+
+  @Get('/context')
+  exposeContext(@Context() ctx: RequestContext) {
+    return { path: ctx.route.definition.path };
+  }
+}
+
+@Module({
+  controllers: [PayloadController],
+})
+class PayloadModule {}
 
 describe('HTTP Application', () => {
   let appUnderTest: Awaited<ReturnType<typeof createHttpApplication>>;
@@ -238,5 +288,57 @@ describe('HTTP Application', () => {
     });
     expect(allowed.status).toBe(200);
     expect(await allowed.json()).toEqual({ message: 'Hello world' });
+  });
+
+  it('injects request data via parameter decorators', async () => {
+    appUnderTest = await createHttpApplication(PayloadModule, { port: 0 });
+    const server = await appUnderTest.listen();
+
+    const echo = await fetch(`http://127.0.0.1:${server.port}/payloads`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ message: 'hello' }),
+    });
+    expect(echo.status).toBe(200);
+    expect(await echo.json()).toEqual({ message: 'hello' });
+
+    const projected = await fetch(`http://127.0.0.1:${server.port}/payloads/message`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ message: 'projected' }),
+    });
+    expect(projected.status).toBe(200);
+    expect(await projected.json()).toEqual({ message: 'projected' });
+
+    const params = await fetch(`http://127.0.0.1:${server.port}/payloads/params/123`);
+    expect(params.status).toBe(200);
+    expect(await params.json()).toEqual({ id: '123' });
+
+    const query = await fetch(`http://127.0.0.1:${server.port}/payloads/query?term=bun`);
+    expect(query.status).toBe(200);
+    expect(await query.json()).toEqual({ term: 'bun' });
+
+    const headers = await fetch(`http://127.0.0.1:${server.port}/payloads/headers`, {
+      headers: {
+        'x-flag': 'true',
+      },
+    });
+    expect(headers.status).toBe(200);
+    expect(await headers.json()).toEqual({ flag: 'true' });
+
+    const requestInspection = await fetch(`http://127.0.0.1:${server.port}/payloads/request/alpha`);
+    expect(requestInspection.status).toBe(200);
+    expect(await requestInspection.json()).toEqual({
+      id: 'alpha',
+      url: `http://127.0.0.1:${server.port}/payloads/request/alpha`,
+    });
+
+    const contextExposure = await fetch(`http://127.0.0.1:${server.port}/payloads/context`);
+    expect(contextExposure.status).toBe(200);
+    expect(await contextExposure.json()).toEqual({ path: '/context' });
   });
 });
