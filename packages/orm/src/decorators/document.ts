@@ -24,7 +24,7 @@ export const Document = (options: DocumentOptions = {}): ClassDecorator => (targ
   documentRegistry.set(documentClass, metadata);
 };
 
-export const getDocumentMetadata = <T extends Record<string, unknown>>(
+export const getDocumentMetadata = <T extends object>(
   target: DocumentClass<T>,
 ): DocumentMetadata => {
   const existing = documentRegistry.get(target);

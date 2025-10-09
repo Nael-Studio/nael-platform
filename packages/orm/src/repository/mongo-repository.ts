@@ -9,15 +9,13 @@ import type {
 } from 'mongodb';
 import { ObjectId } from 'mongodb';
 import type { DocumentMetadata, BaseDocument, DocumentClass } from '../interfaces/document';
-import { OrmRepository } from '../interfaces/repository';
+import { OrmRepository, type OrmEntityDocument } from '../interfaces/repository';
 
 export interface FindManyOptions<T> extends FindOptions<T & BaseDocument> {
   withDeleted?: boolean;
 }
 
 export interface FindOneOptions<T> extends FindManyOptions<T> {}
-
-export type EntityDocument<T> = WithId<(T & BaseDocument) & { id: string }>;
 
 const buildNotDeletedFilter = <T>(): Filter<T & BaseDocument> =>
   ({
@@ -31,7 +29,7 @@ export class MongoRepository<T extends object> extends OrmRepository<
   FindOneOptions<T>,
   OptionalUnlessRequiredId<T>,
   Partial<T>,
-  EntityDocument<T>
+  OrmEntityDocument<T>
 > {
   constructor(
     private readonly collection: Collection<T & BaseDocument>,
@@ -48,17 +46,17 @@ export class MongoRepository<T extends object> extends OrmRepository<
     return this.metadata.target as DocumentClass<T>;
   }
 
-  async find(filter: Filter<T> = {}, options: FindManyOptions<T> = {}): Promise<Array<EntityDocument<T>>> {
+  async find(filter: Filter<T> = {}, options: FindManyOptions<T> = {}): Promise<Array<OrmEntityDocument<T>>> {
     const { withDeleted, ...mongoOptions } = options;
     const cursor = this.collection.find(this.applyFilter(filter, withDeleted), mongoOptions);
     const results = await cursor.toArray();
-    return results.map((doc) => this.mapDocument(doc as WithId<T & BaseDocument>));
+  return results.map((doc) => this.mapDocument(doc as WithId<T & BaseDocument>));
   }
 
   async findOne(
     filter: Filter<T> = {},
     options: FindOneOptions<T> = {},
-  ): Promise<EntityDocument<T> | null> {
+  ): Promise<OrmEntityDocument<T> | null> {
     const { withDeleted, ...mongoOptions } = options;
     const document = (await this.collection.findOne(
       this.applyFilter(filter, withDeleted),
@@ -67,7 +65,7 @@ export class MongoRepository<T extends object> extends OrmRepository<
     return document ? this.mapDocument(document) : null;
   }
 
-  async findById(id: string | ObjectId, options: FindOneOptions<T> = {}): Promise<EntityDocument<T> | null> {
+  async findById(id: string | ObjectId, options: FindOneOptions<T> = {}): Promise<OrmEntityDocument<T> | null> {
     return this.findOne(this.buildIdFilter(id), options);
   }
 
@@ -76,7 +74,7 @@ export class MongoRepository<T extends object> extends OrmRepository<
     return this.collection.countDocuments(this.applyFilter(filter, withDeleted), mongoOptions);
   }
 
-  async insertOne(doc: OptionalUnlessRequiredId<T>): Promise<EntityDocument<T>> {
+  async insertOne(doc: OptionalUnlessRequiredId<T>): Promise<OrmEntityDocument<T>> {
     const prepared = this.prepareForInsert(doc);
     const result = await this.collection.insertOne(prepared);
     const persisted = {
@@ -86,7 +84,7 @@ export class MongoRepository<T extends object> extends OrmRepository<
     return this.mapDocument(persisted);
   }
 
-  async insertMany(docs: OptionalUnlessRequiredId<T>[]): Promise<Array<EntityDocument<T>>> {
+  async insertMany(docs: OptionalUnlessRequiredId<T>[]): Promise<Array<OrmEntityDocument<T>>> {
     const prepared = docs.map((doc) => this.prepareForInsert(doc));
     const result = await this.collection.insertMany(prepared);
     return prepared.map((doc, index) =>
@@ -97,7 +95,7 @@ export class MongoRepository<T extends object> extends OrmRepository<
     );
   }
 
-  async save(entity: Partial<T> & { id?: string; _id?: string | ObjectId }): Promise<EntityDocument<T>> {
+  async save(entity: Partial<T> & { id?: string; _id?: string | ObjectId }): Promise<OrmEntityDocument<T>> {
     const identifier = entity.id ?? entity._id;
 
     if (identifier) {
@@ -189,7 +187,7 @@ export class MongoRepository<T extends object> extends OrmRepository<
 
   private prepareForInsert(doc: OptionalUnlessRequiredId<T>): OptionalUnlessRequiredId<T & BaseDocument> {
     const now = new Date();
-    const prepared: Record<string, unknown> = { ...(doc as Record<string, unknown>) };
+  const prepared: Record<string, unknown> = { ...(doc as Record<string, unknown>) };
 
     this.ensureIdentifiers(prepared);
 
@@ -206,7 +204,7 @@ export class MongoRepository<T extends object> extends OrmRepository<
   }
 
   private prepareForUpdate(update: Partial<T>): UpdateFilter<T & BaseDocument> {
-    const prepared: Record<string, unknown> = { ...(update as Record<string, unknown>) };
+  const prepared: Record<string, unknown> = { ...(update as Record<string, unknown>) };
 
     if (this.metadata.timestamps) {
       prepared.updatedAt = new Date();
@@ -295,7 +293,7 @@ export class MongoRepository<T extends object> extends OrmRepository<
     return String(value);
   }
 
-  private mapDocument(doc: WithId<T & BaseDocument>): EntityDocument<T> {
+  private mapDocument(doc: WithId<T & BaseDocument>): OrmEntityDocument<T> {
     const id = typeof (doc as Record<string, unknown>).id === 'string'
       ? ((doc as Record<string, unknown>).id as string)
       : this.normalizeIdValue(doc._id);
@@ -303,7 +301,7 @@ export class MongoRepository<T extends object> extends OrmRepository<
     return {
       ...(doc as object),
       id,
-    } as EntityDocument<T>;
+    } as OrmEntityDocument<T>;
   }
 
   private buildIdFilter(id: string | ObjectId): Filter<T> {

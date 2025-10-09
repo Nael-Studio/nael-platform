@@ -92,7 +92,7 @@ export class MongoConnection implements OrmConnection {
     return this.database;
   }
 
-  async getCollection<T extends Record<string, unknown>>(
+  async getCollection<T extends object>(
     document: DocumentClass<T>,
   ): Promise<Collection<T & BaseDocument>> {
     await this.ensureConnection();

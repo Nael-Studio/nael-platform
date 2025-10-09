@@ -1,6 +1,6 @@
-import type { DocumentClass } from './document';
+import type { DocumentClass, BaseDocument } from './document';
 
-export type OrmEntityDocument<T extends object> = Omit<T, '_id'> & {
+export type OrmEntityDocument<T extends object> = Omit<T, 'id' | '_id'> & BaseDocument & {
   id: string;
   _id: unknown;
 };
