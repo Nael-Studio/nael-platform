@@ -4,18 +4,21 @@ export type OrmEntityDocument<T extends Record<string, unknown>> = T & BaseDocum
   _id: unknown;
 };
 
-export interface OrmRepository<T extends Record<string, unknown>> {
-  readonly collectionName: string;
-  readonly entity: DocumentClass<T>;
-  find(filter?: unknown, options?: unknown): Promise<unknown>;
-  findOne(filter?: unknown, options?: unknown): Promise<unknown>;
-  findById(id: unknown, options?: unknown): Promise<unknown>;
-  count(filter?: unknown, options?: unknown): Promise<number>;
-  insertOne(doc: unknown): Promise<unknown>;
-  insertMany(docs: unknown[]): Promise<unknown>;
-  save(entity: unknown): Promise<unknown>;
-  updateMany(filter: unknown, update: unknown): Promise<number>;
-  softDelete(filter: unknown): Promise<number>;
-  restore(filter: unknown): Promise<number>;
-  deleteHard(filter: unknown): Promise<number>;
+export abstract class OrmRepository<T extends Record<string, unknown>> {
+  abstract get collectionName(): string;
+  abstract get entity(): DocumentClass<T>;
+
+  abstract find(filter?: unknown, options?: unknown): Promise<unknown>;
+  abstract findOne(filter?: unknown, options?: unknown): Promise<unknown>;
+  abstract findById(id: unknown, options?: unknown): Promise<unknown>;
+  abstract count(filter?: unknown, options?: unknown): Promise<number>;
+  abstract insertOne(doc: unknown): Promise<unknown>;
+  abstract insertMany(docs: unknown[]): Promise<unknown>;
+  abstract save(entity: unknown): Promise<unknown>;
+  abstract updateMany(filter: unknown, update: unknown): Promise<number>;
+  abstract softDelete(filter: unknown): Promise<number>;
+  abstract restore(filter: unknown): Promise<number>;
+  abstract deleteHard(filter: unknown): Promise<number>;
 }
+
+export type OrmRepositoryContract<T extends Record<string, unknown>> = OrmRepository<T>;
