@@ -189,7 +189,7 @@ export class MongoRepository<T extends object> extends OrmRepository<
 
   private prepareForInsert(doc: OptionalUnlessRequiredId<T>): OptionalUnlessRequiredId<T & BaseDocument> {
     const now = new Date();
-  const prepared: Record<string, unknown> = { ...(doc as Record<string, unknown>) };
+    const prepared: Record<string, unknown> = { ...(doc as Record<string, unknown>) };
 
     this.ensureIdentifiers(prepared);
 
