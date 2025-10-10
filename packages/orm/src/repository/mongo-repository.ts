@@ -95,15 +95,15 @@ export class MongoRepository<T extends object> extends OrmRepository<
     );
   }
 
-  async save(entity: Partial<T> & { id?: string; }): Promise<OrmEntityDocument<T>> {
-    const identifier = entity.id;
+  async save(entity: Partial<T> & { id?: string; _id?: string | ObjectId }): Promise<OrmEntityDocument<T>> {
+    const identifier = entity.id ?? entity._id;
 
-    if (identifier) {
-      const { id, ...rest } = entity;
+    if (identifier !== undefined && identifier !== null) {
+      const filter = this.buildIdFilter(identifier);
+      const { id, _id, ...rest } = entity;
       const update = this.prepareForUpdate(rest as Partial<T>);
-      const filter = this.buildIdFilter(identifier as string | ObjectId);
       await this.collection.updateOne(filter as Filter<T & BaseDocument>, update);
-      const updated = await this.findOne({ id: identifier } as Filter<T & BaseDocument>, { withDeleted: true });
+      const updated = await this.findOne(filter, { withDeleted: true });
       if (!updated) {
         throw new Error('Failed to load entity after update');
       }

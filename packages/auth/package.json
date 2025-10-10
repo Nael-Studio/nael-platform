@@ -1,6 +1,6 @@
 {
   "name": "@nl-framework/auth",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Better Auth integration for NL Framework with DI-friendly configuration and HTTP middleware.",
   "type": "module",
   "main": "dist/index.js",
@@ -29,10 +29,10 @@
     "better-auth": "^1.3.23"
   },
   "peerDependencies": {
-    "@nl-framework/core": "^0.2.5",
-    "@nl-framework/http": "^0.2.5",
-    "@nl-framework/graphql": "^0.2.5",
-    "@nl-framework/logger": "^0.2.5",
-    "@nl-framework/orm": "^0.2.5"
+    "@nl-framework/core": "^0.2.6",
+    "@nl-framework/http": "^0.2.6",
+    "@nl-framework/graphql": "^0.2.6",
+    "@nl-framework/logger": "^0.2.6",
+    "@nl-framework/orm": "^0.2.6"
   }
 }

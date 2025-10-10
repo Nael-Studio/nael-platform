@@ -1,6 +1,6 @@
 {
   "name": "@nl-framework/scheduler",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Task scheduling utilities for nl-framework with cron, interval, and timeout decorators powered by Bun workers.",
   "keywords": [
     "bun",
@@ -28,8 +28,8 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@nl-framework/core": "^0.2.5",
-    "@nl-framework/logger": "^0.2.5",
+    "@nl-framework/core": "^0.2.6",
+    "@nl-framework/logger": "^0.2.6",
     "cron-parser": "^5.0.3",
     "reflect-metadata": "^0.2.2"
   }

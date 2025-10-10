@@ -179,6 +179,38 @@ describe('MongoRepository', () => {
     expect(store.get(stringId)?.name).toBe('Updated');
   });
 
+  it('updates using _id when id is missing on the input entity', async () => {
+    const metadata: DocumentMetadata = {
+      target: TestDoc,
+      collection: 'test',
+      timestamps: true,
+      softDelete: false,
+    };
+
+    const objectId = new ObjectId();
+    const store = new Map<string | ObjectId, StoredEntity>([
+      [
+        objectId,
+        {
+          _id: objectId,
+          id: objectId.toHexString(),
+          name: 'Initial name',
+        },
+      ],
+    ]);
+
+    const collection = createCollection(store) as unknown as Collection<TestEntity & BaseDocument>;
+    const repository = new MongoRepository<TestEntity>(collection, metadata);
+
+    const updated = await repository.save({ _id: objectId, name: 'Updated name' });
+
+    expect(updated).not.toBeNull();
+    expect(updated?.id).toBe(objectId.toHexString());
+    expect(updated?._id instanceof ObjectId).toBe(true);
+    expect(updated?.name).toBe('Updated name');
+    expect(store.get(objectId)?.name).toBe('Updated name');
+  });
+
   it('finds by id when persisted value is an ObjectId but caller passes hex string', async () => {
     const metadata: DocumentMetadata = {
       target: TestDoc,
