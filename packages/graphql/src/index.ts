@@ -44,6 +44,11 @@ export {
 } from './decorators/resolver';
 export { ID, Int, Float, BooleanScalar, StringScalar, DateTime } from './scalars';
 export {
+  registerEnumType,
+  type RegisterEnumTypeOptions,
+  type RegisterEnumTypeValueOptions,
+} from './register-enum-type';
+export {
   registerGraphqlGuard,
   registerGraphqlGuards,
   listGraphqlGuards,

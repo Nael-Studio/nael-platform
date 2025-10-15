@@ -6,6 +6,7 @@ export interface TypeResolution {
   typeName: string;
   isList: boolean;
   target?: ClassType;
+  isEnum?: boolean;
 }
 
 const storage = GraphqlMetadataStorage.get();
@@ -127,6 +128,21 @@ const normalize = (raw: unknown): TypeResolution => {
   }
 
   if (typeof raw === 'object') {
+    const enumDefinition = storage.getEnumTypeByRef(raw as object);
+    if (enumDefinition) {
+      return {
+        typeName: enumDefinition.name,
+        isList: false,
+        isEnum: true,
+      };
+    }
+
+    if (!('name' in (raw as Record<string, unknown>))) {
+      throw new Error(
+        'Unsupported GraphQL type reference. If this is an enum, call registerEnumType() first.',
+      );
+    }
+
     return {
       typeName: resolveScalarName(raw as ScalarResolvable | ScalarToken),
       isList: false,

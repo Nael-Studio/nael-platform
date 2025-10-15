@@ -1,0 +1,32 @@
+[
+		{
+			"id": 1,
+			"title": "Assess registerEnumType support",
+			"description": "Search codebase to determine if GraphQL utilities expose registerEnumType",
+			"status": "completed"
+		},
+		{
+			"id": 2,
+			"title": "Summarize findings",
+			"description": "Report whether registerEnumType exists and how to use it or alternatives",
+				"status": "completed"
+			},
+			{
+				"id": 3,
+				"title": "Review GraphQL architecture",
+				"description": "Inspect packages/graphql to understand where to add registerEnumType",
+					"status": "completed"
+			},
+			{
+				"id": 4,
+				"title": "Implement registerEnumType",
+				"description": "Add helper mirroring NestJS behavior and export it",
+					"status": "completed"
+			},
+			{
+				"id": 5,
+				"title": "Add tests/documentation",
+				"description": "Cover new helper with tests or documentation updates",
+					"status": "completed"
+		}
+]
