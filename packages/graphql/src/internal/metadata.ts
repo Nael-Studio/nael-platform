@@ -19,6 +19,7 @@ export interface ObjectTypeOptions {
   description?: string;
   directives?: string[];
   federation?: FederationObjectOptions;
+  isAbstract?: boolean;
 }
 
 export interface ObjectTypeDefinition extends ObjectTypeOptions {

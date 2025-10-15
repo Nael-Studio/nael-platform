@@ -8,6 +8,7 @@ const resolveOptions = (target: ClassType, options: ObjectTypeOptions = {}): Obj
   description: options.description,
   directives: options.directives,
   federation: options.federation,
+  isAbstract: options.isAbstract,
 });
 
 export const ObjectType = (options: ObjectTypeOptions = {}): ClassDecorator => (target) => {

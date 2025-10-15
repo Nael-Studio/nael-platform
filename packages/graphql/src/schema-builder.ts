@@ -482,8 +482,12 @@ export class GraphqlSchemaBuilder {
 
     const guardRuntime = options.guards;
 
-    const objectTypes = this.storage.getObjectTypes();
-    const inputTypes = this.storage.getInputTypes();
+    const objectTypes = this.storage
+      .getObjectTypes()
+      .filter((definition) => definition.isAbstract !== true);
+    const inputTypes = this.storage
+      .getInputTypes()
+      .filter((definition) => definition.isAbstract !== true);
     const resolverClasses = this.storage
       .getResolverClasses()
       .filter((resolver) => resolverMap.has(resolver.target));
