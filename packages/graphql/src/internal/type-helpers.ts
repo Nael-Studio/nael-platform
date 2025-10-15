@@ -133,6 +133,10 @@ const normalize = (raw: unknown): TypeResolution => {
   }
 
   if (typeof raw === 'object') {
+    if (raw === null) {
+      throw new Error('Unsupported GraphQL type reference: null');
+    }
+
     const enumDefinition = storage.getEnumTypeByRef(raw as object);
     if (enumDefinition) {
       return {
@@ -142,14 +146,16 @@ const normalize = (raw: unknown): TypeResolution => {
       };
     }
 
-    if (!('name' in (raw as Record<string, unknown>))) {
+    if (raw === null || typeof (raw as { name?: unknown }).name !== 'string') {
       throw new Error(
         'Unsupported GraphQL type reference. If this is an enum, call registerEnumType() first.',
       );
     }
 
+    const candidate = raw as ScalarResolvable | ScalarToken;
+
     return {
-      typeName: resolveScalarName(raw as ScalarResolvable | ScalarToken),
+      typeName: resolveScalarName(candidate),
       isList: false,
     };
   }
