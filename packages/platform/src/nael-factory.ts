@@ -1,4 +1,3 @@
-import type { Server } from 'bun';
 import type { ApplicationOptions, ClassType, Token, ApplicationContext } from '@nl-framework/core';
 import { Application } from '@nl-framework/core';
 import type { ConfigService } from '@nl-framework/config';
@@ -103,7 +102,7 @@ export interface NaelListenOptions {
 }
 
 export interface NaelListenResults {
-  http?: Server;
+  http?: ReturnType<typeof Bun.serve>;
   graphql?: GraphqlListenResult;
   gateway?: FederationGatewayListenResult;
 }
