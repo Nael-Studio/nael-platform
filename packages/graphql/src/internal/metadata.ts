@@ -1,4 +1,5 @@
 import type { ClassType } from '@nl-framework/core';
+import type { GraphQLScalarType } from 'graphql';
 
 export type TypeThunk = () => unknown;
 
@@ -65,6 +66,12 @@ export interface EnumTypeDefinition {
   name: string;
   description?: string;
   values: EnumValueDefinition[];
+}
+
+export interface ScalarTypeDefinition {
+  name: string;
+  description?: string;
+  scalar: GraphQLScalarType;
 }
 
 export type ResolverKind = 'query' | 'mutation' | 'field';
@@ -151,6 +158,7 @@ export class GraphqlMetadataStorage {
   private readonly resolverParams = new Map<string, ResolverParamDefinition[]>();
   private readonly enumTypes = new Map<object, EnumTypeDefinition>();
   private readonly enumTypesByName = new Map<string, EnumTypeDefinition>();
+  private readonly scalarTypesByName = new Map<string, ScalarTypeDefinition>();
 
   private constructor() {}
 
@@ -271,6 +279,29 @@ export class GraphqlMetadataStorage {
     return Array.from(this.enumTypesByName.values());
   }
 
+  addScalarType(definition: ScalarTypeDefinition, { overwrite = false } = {}): ScalarTypeDefinition {
+    const existing = this.scalarTypesByName.get(definition.name);
+    if (existing && !overwrite) {
+      if (existing.scalar !== definition.scalar || existing.description !== definition.description) {
+        throw new Error(
+          `GraphQL scalar "${definition.name}" is already registered. Pass overwrite: true to replace it.`,
+        );
+      }
+      return existing;
+    }
+
+    this.scalarTypesByName.set(definition.name, definition);
+    return definition;
+  }
+
+  getScalarType(name: string): ScalarTypeDefinition | undefined {
+    return this.scalarTypesByName.get(name);
+  }
+
+  getScalarTypes(): ScalarTypeDefinition[] {
+    return Array.from(this.scalarTypesByName.values());
+  }
+
   getObjectTypes(): Array<ObjectTypeDefinition & { fields: FieldDefinition[] }> {
     return Array.from(this.objectTypes.values()).map((definition) => ({
       ...definition,
@@ -316,6 +347,7 @@ export class GraphqlMetadataStorage {
     this.resolverParams.clear();
     this.enumTypes.clear();
     this.enumTypesByName.clear();
+    this.scalarTypesByName.clear();
     const globalObject = getMetadataGlobal();
     globalObject[GLOBAL_GRAPHQL_METADATA_KEY] = this;
   }

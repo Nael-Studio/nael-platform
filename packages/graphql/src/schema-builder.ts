@@ -457,6 +457,20 @@ const createResolverInvoker = (
 export class GraphqlSchemaBuilder {
   constructor(private readonly storage = GraphqlMetadataStorage.get()) {}
 
+  private ensureScalarRegistered(name: string): void {
+    if (BUILT_IN_TYPES.has(name)) {
+      return;
+    }
+
+    if (this.storage.getScalarType(name)) {
+      return;
+    }
+
+    throw new Error(
+      `GraphQL scalar "${name}" has not been registered. Call registerScalarType() before using it in your schema.`,
+    );
+  }
+
   build(resolverInstances: unknown[], options: GraphqlBuildOptions = {}): GraphqlBuildArtifacts {
     const resolverMap = new Map<ClassType, unknown>();
     for (const instance of resolverInstances) {
@@ -642,6 +656,7 @@ export class GraphqlSchemaBuilder {
     }
 
     const enumSections: string[] = [];
+    const registeredScalars = this.storage.getScalarTypes();
     const registeredEnums = this.storage.getEnumTypes();
     for (const enumDef of registeredEnums) {
       if (!usedEnumTypes.has(enumDef.name)) {
@@ -707,6 +722,13 @@ export class GraphqlSchemaBuilder {
       resolvers[typeName] = resolver;
     }
 
+    for (const scalarDef of registeredScalars) {
+      if (!usedCustomScalars.has(scalarDef.name)) {
+        continue;
+      }
+      resolvers[scalarDef.name] = scalarDef.scalar;
+    }
+
     for (const enumDef of registeredEnums) {
       if (!usedEnumTypes.has(enumDef.name)) {
         continue;
@@ -734,7 +756,8 @@ export class GraphqlSchemaBuilder {
     const resolution = resolveTypeReference(field.typeThunk, field.designType);
     if (resolution.isEnum) {
       usage.enumTypes.add(resolution.typeName);
-    } else if (!BUILT_IN_TYPES.has(resolution.typeName)) {
+    } else if (!resolution.target && !BUILT_IN_TYPES.has(resolution.typeName)) {
+      this.ensureScalarRegistered(resolution.typeName);
       usage.customScalars.add(resolution.typeName);
     }
 
@@ -805,7 +828,8 @@ export class GraphqlSchemaBuilder {
     const resolution = resolveTypeReference(method.typeThunk, method.designReturnType);
     if (resolution.isEnum) {
       usage.enumTypes.add(resolution.typeName);
-    } else if (!BUILT_IN_TYPES.has(resolution.typeName)) {
+    } else if (!resolution.target && !BUILT_IN_TYPES.has(resolution.typeName)) {
+      this.ensureScalarRegistered(resolution.typeName);
       usage.customScalars.add(resolution.typeName);
     }
     const typeExpression = renderGraphqlType(resolution, {
@@ -827,7 +851,8 @@ export class GraphqlSchemaBuilder {
       const argResolution = resolveTypeReference(param.typeThunk, param.designType);
       if (argResolution.isEnum) {
         usage.enumTypes.add(argResolution.typeName);
-      } else if (!BUILT_IN_TYPES.has(argResolution.typeName)) {
+      } else if (!argResolution.target && !BUILT_IN_TYPES.has(argResolution.typeName)) {
+        this.ensureScalarRegistered(argResolution.typeName);
         usage.customScalars.add(argResolution.typeName);
       }
       const argType = renderGraphqlType(argResolution, {

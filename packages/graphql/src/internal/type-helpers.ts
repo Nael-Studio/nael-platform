@@ -1,4 +1,5 @@
 import type { ClassType } from '@nl-framework/core';
+import { GraphQLScalarType } from 'graphql';
 import { GraphqlMetadataStorage, type TypeThunk } from './metadata';
 import { ScalarToken, type ScalarResolvable, DateTime, ID, Int, Float, BooleanScalar, StringScalar } from '../scalars';
 
@@ -13,6 +14,10 @@ const storage = GraphqlMetadataStorage.get();
 
 const resolveScalarName = (value: ScalarResolvable | ScalarToken): string => {
   if (value instanceof ScalarToken) {
+    return value.name;
+  }
+
+  if (value instanceof GraphQLScalarType) {
     return value.name;
   }
 
