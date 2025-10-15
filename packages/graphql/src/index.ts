@@ -42,7 +42,16 @@ export {
   Parent,
   Info,
 } from './decorators/resolver';
-export { ID, Int, Float, BooleanScalar, StringScalar, DateTime } from './scalars';
+export { ID, Int, Float, BooleanScalar, StringScalar, DateTime, JSONScalar, GraphQLJSON } from './scalars';
+export {
+  registerScalarType,
+  type RegisterScalarTypeOptions,
+} from './register-scalar-type';
+export {
+  registerEnumType,
+  type RegisterEnumTypeOptions,
+  type RegisterEnumTypeValueOptions,
+} from './register-enum-type';
 export {
   registerGraphqlGuard,
   registerGraphqlGuards,

@@ -2,7 +2,7 @@ import type { PackageDocumentation } from '../../types';
 
 export const ormDocumentation: PackageDocumentation = {
   name: '@nl-framework/orm',
-  version: '0.1.0',
+  version: '0.2.7',
   description:
     'MongoDB Object Data Mapper with decorators, repositories, and transaction helpers built for the Nael Framework.',
   installation: 'bun add @nl-framework/orm mongodb',
@@ -22,15 +22,20 @@ export const ormDocumentation: PackageDocumentation = {
       description: 'Execute multi-operation transactions effortlessly with session helpers.',
       icon: '💳',
     },
+    {
+      title: 'Consistent Identifier Handling',
+      description: '`repository.save` keeps `id` and `_id` synchronized whether you use strings or ObjectIds.',
+      icon: '🆔',
+    },
   ],
   quickStart: {
     description: 'Define a schema and interact with MongoDB via an injected repository.',
     steps: [
       'Decorate a class with `@Collection` and property decorators to map fields.',
       'Register the ORM module with a Mongo connection string.',
-      'Inject the repository into services and execute queries.',
+      'Inject the repository into services and execute queries with the high-level helpers.',
     ],
-    code: `import { Module } from '@nl-framework/core';
+  code: `import { Module, Injectable } from '@nl-framework/core';
 import { Collection, Field, InjectRepository, MongoOrmModule, Repository } from '@nl-framework/orm';
 
 @Collection('users')
@@ -47,7 +52,9 @@ class UsersService {
   constructor(@InjectRepository(UserDocument) private readonly repo: Repository<UserDocument>) {}
 
   async create(email: string) {
-    return this.repo.insertOne({ _id: crypto.randomUUID(), email });
+    const saved = await this.repo.save({ email });
+    // saved.id is a string; saved._id is an ObjectId
+    return saved;
   }
 }
 
@@ -111,6 +118,10 @@ class UserDocument {}
           title: 'Use DTOs for mutations',
           description: 'Validate input using DTOs before persisting to Mongo.',
         },
+        {
+          title: 'Prefer repository.save for upserts',
+          description: 'The helper normalizes identifiers and timestamps for you, reducing manual driver usage.',
+        },
       ],
       dont: [
         {
@@ -126,6 +137,13 @@ class UserDocument {}
       symptoms: ['Unhandled MongoNetworkError'],
       solution:
         'Check MongoDB availability and ensure the URI is accessible from the running environment.',
+    },
+    {
+      issue: 'Reloaded documents lose their string id',
+      symptoms: ['Follow-up `findById` returns `_id` but missing `id`', 'String ids no longer match collection data'],
+      solution:
+        'Upgrade to v0.2.7+ and rely on `repository.save` which synchronizes `id` and `_id`. Run `bun run packages/orm/tests/scripts/save-reload-real-mongo.ts` against your database to verify.',
+      relatedTopics: ['repository.save'],
     },
   ],
   relatedPackages: ['@nl-framework/core', '@nl-framework/config'],

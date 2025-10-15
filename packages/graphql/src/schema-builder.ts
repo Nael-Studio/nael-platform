@@ -40,6 +40,11 @@ export interface GraphqlBuildArtifacts {
 
 const BUILT_IN_TYPES = new Set(['String', 'Float', 'Int', 'Boolean', 'ID']);
 
+interface TypeUsageSets {
+  customScalars: Set<string>;
+  enumTypes: Set<string>;
+}
+
 export interface GraphqlGuardRuntimeOptions {
   resolve<T>(token: Token<T>): Promise<T>;
 }
@@ -452,6 +457,20 @@ const createResolverInvoker = (
 export class GraphqlSchemaBuilder {
   constructor(private readonly storage = GraphqlMetadataStorage.get()) {}
 
+  private ensureScalarRegistered(name: string): void {
+    if (BUILT_IN_TYPES.has(name)) {
+      return;
+    }
+
+    if (this.storage.getScalarType(name)) {
+      return;
+    }
+
+    throw new Error(
+      `GraphQL scalar "${name}" has not been registered. Call registerScalarType() before using it in your schema.`,
+    );
+  }
+
   build(resolverInstances: unknown[], options: GraphqlBuildOptions = {}): GraphqlBuildArtifacts {
     const resolverMap = new Map<ClassType, unknown>();
     for (const instance of resolverInstances) {
@@ -463,8 +482,12 @@ export class GraphqlSchemaBuilder {
 
     const guardRuntime = options.guards;
 
-    const objectTypes = this.storage.getObjectTypes();
-    const inputTypes = this.storage.getInputTypes();
+    const objectTypes = this.storage
+      .getObjectTypes()
+      .filter((definition) => definition.isAbstract !== true);
+    const inputTypes = this.storage
+      .getInputTypes()
+      .filter((definition) => definition.isAbstract !== true);
     const resolverClasses = this.storage
       .getResolverClasses()
       .filter((resolver) => resolverMap.has(resolver.target));
@@ -473,7 +496,8 @@ export class GraphqlSchemaBuilder {
     inputTypes.forEach((definition) => ensureUniqueFieldName(definition.fields));
 
     const federationDirectives = new Set<string>();
-    const usedCustomScalars = new Set<string>();
+  const usedCustomScalars = new Set<string>();
+  const usedEnumTypes = new Set<string>();
 
     const typeSections: string[] = [];
 
@@ -486,7 +510,11 @@ export class GraphqlSchemaBuilder {
       }
       lines.push(`input ${typeName} {`);
       for (const field of input.fields) {
-        lines.push(this.renderFieldDefinition(field, usedCustomScalars, { withinInput: true }));
+        lines.push(
+          this.renderFieldDefinition(field, { customScalars: usedCustomScalars, enumTypes: usedEnumTypes }, {
+            withinInput: true,
+          }),
+        );
       }
       lines.push('}');
       typeSections.push(lines.join('\n'));
@@ -537,7 +565,13 @@ export class GraphqlSchemaBuilder {
       lines.push(header);
 
       for (const field of objectType.fields) {
-        lines.push(this.renderFieldDefinition(field, usedCustomScalars, { withinInput: false, federationDirectives }));
+        lines.push(
+          this.renderFieldDefinition(
+            field,
+            { customScalars: usedCustomScalars, enumTypes: usedEnumTypes },
+            { withinInput: false, federationDirectives },
+          ),
+        );
       }
 
       lines.push('}');
@@ -559,7 +593,12 @@ export class GraphqlSchemaBuilder {
       const objectTypeName = objectDefinition?.name ?? objectTarget?.name;
 
       for (const method of resolver.queries) {
-        queryFields.push(this.renderOperationDefinition('  ', method, usedCustomScalars));
+        queryFields.push(
+          this.renderOperationDefinition('  ', method, {
+            customScalars: usedCustomScalars,
+            enumTypes: usedEnumTypes,
+          }),
+        );
         rootQueryResolvers[method.schemaName] = createResolverInvoker(
           instance,
           method,
@@ -569,7 +608,12 @@ export class GraphqlSchemaBuilder {
       }
 
       for (const method of resolver.mutations) {
-        mutationFields.push(this.renderOperationDefinition('  ', method, usedCustomScalars));
+        mutationFields.push(
+          this.renderOperationDefinition('  ', method, {
+            customScalars: usedCustomScalars,
+            enumTypes: usedEnumTypes,
+          }),
+        );
         rootMutationResolvers[method.schemaName] = createResolverInvoker(
           instance,
           method,
@@ -615,6 +659,44 @@ export class GraphqlSchemaBuilder {
       }
     }
 
+    const enumSections: string[] = [];
+    const registeredScalars = this.storage.getScalarTypes();
+    const registeredEnums = this.storage.getEnumTypes();
+    for (const enumDef of registeredEnums) {
+      if (!usedEnumTypes.has(enumDef.name)) {
+        continue;
+      }
+
+      const lines: string[] = [];
+      const enumDescription = formatDescription(enumDef.description);
+      if (enumDescription) {
+        lines.push(enumDescription.trimEnd());
+      }
+
+      lines.push(`enum ${enumDef.name} {`);
+      for (const value of enumDef.values) {
+        const valueDescription = formatDescription(value.description);
+        if (valueDescription) {
+          lines.push(
+            valueDescription
+              .trimEnd()
+              .split('\n')
+              .map((line) => `  ${line}`)
+              .join('\n'),
+          );
+        }
+
+        const directives: string[] = [];
+        if (value.deprecationReason) {
+          directives.push(`@deprecated(reason: "${value.deprecationReason}")`);
+        }
+        const directiveSegment = directives.length ? ` ${directives.join(' ')}` : '';
+        lines.push(`  ${value.name}${directiveSegment}`);
+      }
+      lines.push('}');
+      enumSections.push(lines.join('\n'));
+    }
+
     const parts: string[] = [];
 
     if (options.federation?.enabled) {
@@ -629,7 +711,7 @@ export class GraphqlSchemaBuilder {
       parts.push(`extend schema @link(url: \"${version}\"${importSegment})`);
     }
 
-    parts.push(...scalarDefinitions, ...typeSections);
+  parts.push(...scalarDefinitions, ...enumSections, ...typeSections);
 
     const sdl = parts.join('\n\n');
 
@@ -644,6 +726,24 @@ export class GraphqlSchemaBuilder {
       resolvers[typeName] = resolver;
     }
 
+    for (const scalarDef of registeredScalars) {
+      if (!usedCustomScalars.has(scalarDef.name)) {
+        continue;
+      }
+      resolvers[scalarDef.name] = scalarDef.scalar;
+    }
+
+    for (const enumDef of registeredEnums) {
+      if (!usedEnumTypes.has(enumDef.name)) {
+        continue;
+      }
+      const entries: Record<string, string | number> = {};
+      for (const value of enumDef.values) {
+        entries[value.name] = value.value;
+      }
+      resolvers[enumDef.name] = entries;
+    }
+
     return {
       typeDefs: sdl,
       document: parse(sdl),
@@ -654,12 +754,15 @@ export class GraphqlSchemaBuilder {
 
   private renderFieldDefinition(
     field: FieldDefinition,
-    customScalars: Set<string>,
+    usage: TypeUsageSets,
     context: { withinInput: boolean; federationDirectives?: Set<string> },
   ): string {
     const resolution = resolveTypeReference(field.typeThunk, field.designType);
-    if (!BUILT_IN_TYPES.has(resolution.typeName)) {
-      customScalars.add(resolution.typeName);
+    if (resolution.isEnum) {
+      usage.enumTypes.add(resolution.typeName);
+    } else if (!resolution.target && !BUILT_IN_TYPES.has(resolution.typeName)) {
+      this.ensureScalarRegistered(resolution.typeName);
+      usage.customScalars.add(resolution.typeName);
     }
 
     const typeExpression = renderGraphqlType(resolution, {
@@ -724,11 +827,14 @@ export class GraphqlSchemaBuilder {
   private renderOperationDefinition(
     indent: string,
     method: ResolverMethodDefinition,
-    customScalars: Set<string>,
+    usage: TypeUsageSets,
   ): string {
     const resolution = resolveTypeReference(method.typeThunk, method.designReturnType);
-    if (!BUILT_IN_TYPES.has(resolution.typeName)) {
-      customScalars.add(resolution.typeName);
+    if (resolution.isEnum) {
+      usage.enumTypes.add(resolution.typeName);
+    } else if (!resolution.target && !BUILT_IN_TYPES.has(resolution.typeName)) {
+      this.ensureScalarRegistered(resolution.typeName);
+      usage.customScalars.add(resolution.typeName);
     }
     const typeExpression = renderGraphqlType(resolution, {
       nullable: method.options.nullable,
@@ -747,8 +853,11 @@ export class GraphqlSchemaBuilder {
         );
       }
       const argResolution = resolveTypeReference(param.typeThunk, param.designType);
-      if (!BUILT_IN_TYPES.has(argResolution.typeName)) {
-        customScalars.add(argResolution.typeName);
+      if (argResolution.isEnum) {
+        usage.enumTypes.add(argResolution.typeName);
+      } else if (!argResolution.target && !BUILT_IN_TYPES.has(argResolution.typeName)) {
+        this.ensureScalarRegistered(argResolution.typeName);
+        usage.customScalars.add(argResolution.typeName);
       }
       const argType = renderGraphqlType(argResolution, {
         nullable: param.options.nullable,

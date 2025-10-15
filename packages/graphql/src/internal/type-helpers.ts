@@ -1,4 +1,5 @@
 import type { ClassType } from '@nl-framework/core';
+import { GraphQLScalarType } from 'graphql';
 import { GraphqlMetadataStorage, type TypeThunk } from './metadata';
 import { ScalarToken, type ScalarResolvable, DateTime, ID, Int, Float, BooleanScalar, StringScalar } from '../scalars';
 
@@ -6,12 +7,17 @@ export interface TypeResolution {
   typeName: string;
   isList: boolean;
   target?: ClassType;
+  isEnum?: boolean;
 }
 
 const storage = GraphqlMetadataStorage.get();
 
 const resolveScalarName = (value: ScalarResolvable | ScalarToken): string => {
   if (value instanceof ScalarToken) {
+    return value.name;
+  }
+
+  if (value instanceof GraphQLScalarType) {
     return value.name;
   }
 
@@ -127,8 +133,29 @@ const normalize = (raw: unknown): TypeResolution => {
   }
 
   if (typeof raw === 'object') {
+    if (raw === null) {
+      throw new Error('Unsupported GraphQL type reference: null');
+    }
+
+    const enumDefinition = storage.getEnumTypeByRef(raw as object);
+    if (enumDefinition) {
+      return {
+        typeName: enumDefinition.name,
+        isList: false,
+        isEnum: true,
+      };
+    }
+
+    if (raw === null || typeof (raw as { name?: unknown }).name !== 'string') {
+      throw new Error(
+        'Unsupported GraphQL type reference. If this is an enum, call registerEnumType() first.',
+      );
+    }
+
+    const candidate = raw as ScalarResolvable | ScalarToken;
+
     return {
-      typeName: resolveScalarName(raw as ScalarResolvable | ScalarToken),
+      typeName: resolveScalarName(candidate),
       isList: false,
     };
   }

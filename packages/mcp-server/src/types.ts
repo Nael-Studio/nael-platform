@@ -46,6 +46,12 @@ export interface PackageDocumentation {
         required: boolean;
       }>;
     }>;
+    functions?: Array<{
+      name: string;
+      signature: string;
+      description: string;
+      examples?: string[];
+    }>;
   };
   examples: Array<{
     title: string;

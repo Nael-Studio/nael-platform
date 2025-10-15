@@ -64,4 +64,73 @@ export class PostsResolver {
     tags: ['graphql', 'auth'],
     relatedPackages: ['@nl-framework/auth'],
   },
+  {
+    id: 'graphql-register-enum-type',
+    category: 'graphql',
+    title: 'Register a TypeScript Enum',
+    description: 'Expose a TypeScript enum via the GraphQL helper so decorators can reference it.',
+    code: `import { registerEnumType } from '@nl-framework/graphql';
+
+export enum Visibility {
+  PUBLIC = 'PUBLIC',
+  PRIVATE = 'PRIVATE',
+}
+
+registerEnumType(Visibility, {
+  name: 'Visibility',
+  description: 'Controls access to a document.',
+  valuesMap: {
+    PUBLIC: { description: 'Available to everyone.' },
+    PRIVATE: { description: 'Restricted to owners only.' },
+  },
+});
+`,
+    tags: ['graphql', 'enum'],
+    relatedPackages: ['@nl-framework/graphql'],
+  },
+  {
+    id: 'graphql-json-scalar',
+    category: 'graphql',
+    title: 'Return Arbitrary JSON',
+    description: 'Use the bundled JSON scalar to return structured diagnostics data.',
+    code: `import { Resolver, Query, GraphQLJSON } from '@nl-framework/graphql';
+
+@Resolver('Diagnostics')
+export class DiagnosticsResolver {
+  @Query(() => GraphQLJSON)
+  status() {
+    return {
+      ok: true,
+      at: new Date().toISOString(),
+      env: process.env.APP_ENV ?? 'local',
+    };
+  }
+}
+`,
+    tags: ['graphql', 'scalar'],
+    relatedPackages: ['@nl-framework/graphql'],
+  },
+  {
+    id: 'graphql-abstract-type',
+    category: 'graphql',
+    title: 'Mark Base Types as Abstract',
+    description: 'Share decorated fields between classes without emitting the base type in SDL.',
+    code: `import { ObjectType, Field } from '@nl-framework/graphql';
+
+@ObjectType({ isAbstract: true })
+abstract class BaseModel {
+  @Field()
+  id!: string;
+}
+
+@ObjectType()
+class Product extends BaseModel {
+  @Field()
+  name!: string;
+}
+`,
+    explanation: '`isAbstract: true` keeps the `BaseModel` out of your schema while letting subclasses inherit its fields.',
+    tags: ['graphql', 'object-type'],
+    relatedPackages: ['@nl-framework/graphql'],
+  },
 ];

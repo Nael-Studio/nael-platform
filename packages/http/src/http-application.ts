@@ -2,7 +2,6 @@ import 'reflect-metadata';
 import type { ClassType, ApplicationOptions, Token, ApplicationContext } from '@nl-framework/core';
 import { Application, getControllerPrefix } from '@nl-framework/core';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
-import type { Server } from 'bun';
 import { Router } from './router/router';
 import type { MiddlewareHandler, HttpMethod, RequestContext } from './interfaces/http';
 import { getRouteDefinitions } from './decorators/routes';
@@ -35,7 +34,7 @@ const createDynamicRouteController = (
 
 export class HttpApplication {
   private readonly router = new Router();
-  private server?: Server;
+  private server?: ReturnType<typeof Bun.serve>;
   private logger: Logger;
   private customRouteCounter = 0;
   private readonly routeRegistrarPromise: Promise<void>;
@@ -135,7 +134,7 @@ export class HttpApplication {
     this.logger.debug('Registered custom HTTP route handler', { method, path });
   }
 
-  async listen(port?: number): Promise<Server> {
+  async listen(port?: number): Promise<ReturnType<typeof Bun.serve>> {
     await this.routeRegistrarPromise;
     const listenPort = port ?? this.options.port ?? 3000;
     const hostname = this.options.host ?? '0.0.0.0';

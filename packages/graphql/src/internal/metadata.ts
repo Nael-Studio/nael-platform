@@ -1,4 +1,5 @@
 import type { ClassType } from '@nl-framework/core';
+import type { GraphQLScalarType } from 'graphql';
 
 export type TypeThunk = () => unknown;
 
@@ -18,6 +19,7 @@ export interface ObjectTypeOptions {
   description?: string;
   directives?: string[];
   federation?: FederationObjectOptions;
+  isAbstract?: boolean;
 }
 
 export interface ObjectTypeDefinition extends ObjectTypeOptions {
@@ -51,6 +53,26 @@ export interface FieldDefinition {
   typeThunk?: TypeThunk;
   designType?: unknown;
   options: FieldOptions;
+}
+
+export interface EnumValueDefinition {
+  name: string;
+  description?: string;
+  deprecationReason?: string;
+  value: string | number;
+}
+
+export interface EnumTypeDefinition {
+  enumRef: object;
+  name: string;
+  description?: string;
+  values: EnumValueDefinition[];
+}
+
+export interface ScalarTypeDefinition {
+  name: string;
+  description?: string;
+  scalar: GraphQLScalarType;
 }
 
 export type ResolverKind = 'query' | 'mutation' | 'field';
@@ -135,6 +157,9 @@ export class GraphqlMetadataStorage {
   private readonly fieldDefinitions = new Map<ClassType, FieldDefinition[]>();
   private readonly resolverClasses = new Map<ClassType, ResolverClassDefinition>();
   private readonly resolverParams = new Map<string, ResolverParamDefinition[]>();
+  private readonly enumTypes = new Map<object, EnumTypeDefinition>();
+  private readonly enumTypesByName = new Map<string, EnumTypeDefinition>();
+  private readonly scalarTypesByName = new Map<string, ScalarTypeDefinition>();
 
   private constructor() {}
 
@@ -210,6 +235,74 @@ export class GraphqlMetadataStorage {
     this.resolverParams.set(key, params);
   }
 
+  addEnumType(enumRef: object, definition: Omit<EnumTypeDefinition, 'enumRef'>): EnumTypeDefinition {
+    if (typeof enumRef !== 'object' || enumRef === null) {
+      throw new Error('registerEnumType requires a non-null enum reference object');
+    }
+
+    const existingByRef = this.enumTypes.get(enumRef);
+    if (existingByRef) {
+      if (existingByRef.name !== definition.name) {
+        throw new Error(
+          `Enum has already been registered under the name "${existingByRef.name}". ` +
+            'Use a unique name per enum reference.',
+        );
+      }
+      this.enumTypes.set(enumRef, { ...existingByRef, ...definition, enumRef });
+      this.enumTypesByName.set(definition.name, { ...existingByRef, ...definition, enumRef });
+      return this.enumTypes.get(enumRef)!;
+    }
+
+    const existingByName = this.enumTypesByName.get(definition.name);
+    if (existingByName && existingByName.enumRef !== enumRef) {
+      throw new Error(`GraphQL enum name "${definition.name}" is already registered to a different enum.`);
+    }
+
+    const stored: EnumTypeDefinition = {
+      ...definition,
+      enumRef,
+    };
+
+    this.enumTypes.set(enumRef, stored);
+    this.enumTypesByName.set(definition.name, stored);
+    return stored;
+  }
+
+  getEnumTypeByRef(enumRef: object): EnumTypeDefinition | undefined {
+    return this.enumTypes.get(enumRef);
+  }
+
+  getEnumTypeByName(name: string): EnumTypeDefinition | undefined {
+    return this.enumTypesByName.get(name);
+  }
+
+  getEnumTypes(): EnumTypeDefinition[] {
+    return Array.from(this.enumTypesByName.values());
+  }
+
+  addScalarType(definition: ScalarTypeDefinition, { overwrite = false } = {}): ScalarTypeDefinition {
+    const existing = this.scalarTypesByName.get(definition.name);
+    if (existing && !overwrite) {
+      if (existing.scalar !== definition.scalar || existing.description !== definition.description) {
+        throw new Error(
+          `GraphQL scalar "${definition.name}" is already registered. Pass overwrite: true to replace it.`,
+        );
+      }
+      return existing;
+    }
+
+    this.scalarTypesByName.set(definition.name, definition);
+    return definition;
+  }
+
+  getScalarType(name: string): ScalarTypeDefinition | undefined {
+    return this.scalarTypesByName.get(name);
+  }
+
+  getScalarTypes(): ScalarTypeDefinition[] {
+    return Array.from(this.scalarTypesByName.values());
+  }
+
   getObjectTypes(): Array<ObjectTypeDefinition & { fields: FieldDefinition[] }> {
     return Array.from(this.objectTypes.values()).map((definition) => ({
       ...definition,
@@ -253,6 +346,9 @@ export class GraphqlMetadataStorage {
     this.fieldDefinitions.clear();
     this.resolverClasses.clear();
     this.resolverParams.clear();
+    this.enumTypes.clear();
+    this.enumTypesByName.clear();
+    this.scalarTypesByName.clear();
     const globalObject = getMetadataGlobal();
     globalObject[GLOBAL_GRAPHQL_METADATA_KEY] = this;
   }

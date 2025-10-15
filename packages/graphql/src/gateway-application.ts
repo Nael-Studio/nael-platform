@@ -1,4 +1,3 @@
-import type { Server } from 'bun';
 import type { ApplicationOptions, ClassType, Token, ApplicationContext } from '@nl-framework/core';
 import { Application } from '@nl-framework/core';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
@@ -44,7 +43,7 @@ export class FederationGatewayApplication {
   private logger: Logger;
   private apolloServer?: ApolloServer;
   private gateway?: ApolloGateway;
-  private server?: Server;
+  private server?: ReturnType<typeof Bun.serve>;
   private started = false;
   private subgraphs: FederationSubgraphDefinition[] = [];
   private httpIntegrated = false;
@@ -276,7 +275,7 @@ export class FederationGatewayApplication {
     return this.logger;
   }
 
-  getHttpIntegrationUrl(server: Server): string {
+  getHttpIntegrationUrl(server: ReturnType<typeof Bun.serve>): string {
     const mountPath = this.mountPath;
     const hostname = server.hostname ?? '0.0.0.0';
     const accessibleHost = hostname === '0.0.0.0' ? 'localhost' : hostname;

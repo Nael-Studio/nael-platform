@@ -4,6 +4,7 @@ import { graphqlExamples } from './graphql-examples';
 import { httpExamples } from './http-examples';
 import { microservicesExamples } from './microservices-examples';
 import { schedulerExamples } from './scheduler-examples';
+import { ormExamples } from './orm-examples';
 import type { ExampleCatalogEntry } from '../../types';
 
 export const exampleCatalog: ExampleCatalogEntry[] = [
@@ -13,6 +14,7 @@ export const exampleCatalog: ExampleCatalogEntry[] = [
   ...microservicesExamples,
   ...cliExamples,
   ...schedulerExamples,
+  ...ormExamples,
 ];
 
 export function findExampleById(id: string): ExampleCatalogEntry | undefined {
