@@ -1,6 +1,6 @@
 {
   "name": "@nl-framework/orm",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "MongoDB-first ORM module for Nael Platform with TypeORM-style registration and seeding support.",
   "type": "module",
   "main": "dist/index.js",
@@ -29,7 +29,7 @@
     "mongodb": "^6.9.0"
   },
   "peerDependencies": {
-    "@nl-framework/core": "^0.2.6",
-    "@nl-framework/logger": "^0.2.6"
+    "@nl-framework/core": "^0.2.7",
+    "@nl-framework/logger": "^0.2.7"
   }
 }
