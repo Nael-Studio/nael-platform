@@ -2,6 +2,7 @@ import { Inject } from '@nl-framework/core';
 import { Resolver, Mutation, Query, Arg, Context, type GraphqlContext } from '@nl-framework/graphql';
 import { GraphQLError } from 'graphql';
 import { BetterAuthService } from '../../service';
+import { Public } from '../../http/public.decorator';
 import { BETTER_AUTH_HTTP_OPTIONS } from '../../http/constants';
 import type { NormalizedBetterAuthHttpOptions } from '../../http/options';
 import {
@@ -318,6 +319,7 @@ export class AuthResolver {
     }
   }
 
+  @Public()
   @Query(() => AuthSession, {
     nullable: true,
     description: 'Returns the active Better Auth session for the current request, if one exists.',
@@ -355,6 +357,7 @@ export class AuthResolver {
     return normalizeAccountInfo(payload);
   }
 
+  @Public()
   @Mutation(() => AuthMutationResult)
   async signInWithEmail(
     @Arg('input') input: SignInEmailInput,
@@ -364,6 +367,7 @@ export class AuthResolver {
     return normalizeMutationResult(payload);
   }
 
+  @Public()
   @Mutation(() => AuthMutationResult)
   async signUpWithEmail(
     @Arg('input') input: SignUpEmailInput,
@@ -373,6 +377,7 @@ export class AuthResolver {
     return normalizeMutationResult(payload);
   }
 
+  @Public()
   @Mutation(() => SocialLoginUrlResult, {
     description: 'Creates a social login URL while keeping cookies/configuration aligned with Better Auth.',
   })
@@ -408,6 +413,7 @@ export class AuthResolver {
     } satisfies SocialLoginUrlResult;
   }
 
+  @Public()
   @Mutation(() => AuthMutationResult, {
     description: 'Completes a social login flow, handling both redirect and token-based flows.',
   })
@@ -425,6 +431,7 @@ export class AuthResolver {
     return normalizeStatus(payload);
   }
 
+  @Public()
   @Mutation(() => AuthStatusResult)
   async requestPasswordReset(
     @Arg('input') input: RequestPasswordResetInput,
@@ -434,6 +441,7 @@ export class AuthResolver {
     return normalizeStatus(payload);
   }
 
+  @Public()
   @Mutation(() => AuthStatusResult)
   async requestPasswordResetCallback(
     @Arg('input') input: PasswordResetCallbackInput,
@@ -452,6 +460,7 @@ export class AuthResolver {
     return { success: true, message: null } satisfies AuthStatusResult;
   }
 
+  @Public()
   @Mutation(() => AuthStatusResult)
   async forgetPassword(
     @Arg('input') input: ForgetPasswordInput,
@@ -461,6 +470,7 @@ export class AuthResolver {
     return normalizeStatus(payload);
   }
 
+  @Public()
   @Mutation(() => AuthStatusResult)
   async forgetPasswordCallback(
     @Arg('input') input: PasswordResetCallbackInput,
@@ -479,6 +489,7 @@ export class AuthResolver {
     return { success: true, message: null } satisfies AuthStatusResult;
   }
 
+  @Public()
   @Mutation(() => AuthStatusResult)
   async resetPassword(
     @Arg('input') input: ResetPasswordInput,
@@ -488,6 +499,7 @@ export class AuthResolver {
     return normalizeStatus(payload);
   }
 
+  @Public()
   @Mutation(() => AuthStatusResult)
   async verifyEmail(
     @Arg('input') input: VerifyEmailInput,

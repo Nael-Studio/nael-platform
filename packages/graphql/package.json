@@ -1,6 +1,6 @@
 {
   "name": "@nl-framework/graphql",
-  "version": "0.2.12",
+  "version": "0.2.13",
   "description": "GraphQL module for nl-framework with code-first schema generation and Apollo Federation support.",
   "keywords": [
     "bun",
@@ -32,9 +32,9 @@
     "@apollo/server": "^5.0.0",
     "@apollo/subgraph": "^2.7.4",
     "@apollo/gateway": "^2.7.4",
-    "@nl-framework/core": "^0.2.12",
-    "@nl-framework/http": "^0.2.12",
-    "@nl-framework/logger": "^0.2.12",
+    "@nl-framework/core": "^0.2.13",
+    "@nl-framework/http": "^0.2.13",
+    "@nl-framework/logger": "^0.2.13",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
     "graphql": "^16.8.1"
