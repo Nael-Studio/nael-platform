@@ -247,7 +247,7 @@ const normalizeAccountInfo = (payload: unknown): AuthAccountInfo => {
 
   return {
     user,
-    raw: record.data !== undefined ? JSON.stringify(record.data) : null,
+    raw: record.data !== undefined ? record.data : null,
   } satisfies AuthAccountInfo;
 };
 
