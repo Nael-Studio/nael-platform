@@ -43,6 +43,15 @@ const resolveScalarName = (value: ScalarResolvable | ScalarToken): string => {
 };
 
 const resolveClassName = (value: ClassType): string => {
+  // Map bare JavaScript Object to JSON scalar. This happens when a field is
+  // declared with a broad TS type like `object`, `Record<string, unknown>`,
+  // `unknown`, or `any` without an explicit type thunk. Reflect metadata emits
+  // `Object` in these cases, which is not a valid GraphQL type. We normalize it
+  // to our registered JSON scalar instead.
+  if (value === Object) {
+    return 'JSON';
+  }
+
   if (value === String) {
     return 'String';
   }
@@ -122,6 +131,11 @@ const normalize = (raw: unknown): TypeResolution => {
 
   if (raw === DateTime) {
     return { typeName: 'String', isList: false };
+  }
+
+  // If reflect metadata reports the bare Object constructor, treat it as the JSON scalar.
+  if (raw === Object) {
+    return { typeName: 'JSON', isList: false };
   }
 
   if (typeof raw === 'function') {
