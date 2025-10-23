@@ -148,10 +148,10 @@ export class AuthMutationResult {
   @Field({ description: 'Indicates whether the mutation completed successfully.' })
   success!: boolean;
 
-  @Field({ nullable: true, description: 'Indicates whether the client should redirect to complete the flow.' })
+  @Field(() => Boolean, { nullable: true, description: 'Indicates whether the client should redirect to complete the flow.' })
   requiresRedirect?: boolean | null;
 
-  @Field({ nullable: true, description: 'Optional redirect URL returned by Better Auth.' })
+  @Field(() => String, { nullable: true, description: 'Optional redirect URL returned by Better Auth.' })
   redirectURL?: string | null;
 }
 
@@ -160,7 +160,7 @@ export class AuthStatusResult {
   @Field({ description: 'Indicates whether the operation succeeded.' })
   success!: boolean;
 
-  @Field({ nullable: true, description: 'Optional status or error message.' })
+  @Field(() => String, { nullable: true, description: 'Optional status or error message.' })
   message?: string | null;
 }
 
@@ -274,7 +274,7 @@ export class AuthLinkedAccount {
   @Field()
   providerId!: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   accountId?: string | null;
 
   @Field(() => [String])
@@ -316,10 +316,10 @@ export class AuthUserSession {
   @Field(() => Date, { nullable: true })
   updatedAt?: Date | null;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   ipAddress?: string | null;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   userAgent?: string | null;
 }
 
@@ -475,13 +475,13 @@ export class AuthAccessTokenResult {
   @Field()
   accessToken!: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   refreshToken?: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   tokenType?: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   idToken?: string;
 
   @Field(() => Date, { nullable: true })
