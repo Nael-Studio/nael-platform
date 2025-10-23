@@ -1,6 +1,6 @@
 {
   "name": "@nl-framework/core",
-  "version": "0.2.12",
+  "version": "0.2.13",
   "description": "Core runtime for the nl-framework Bun ecosystem: dependency injection, module system, configuration, lifecycle.",
   "keywords": [
     "bun",
@@ -28,7 +28,7 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@nl-framework/logger": "^0.2.12",
+    "@nl-framework/logger": "^0.2.13",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
     "reflect-metadata": "^0.2.2",
