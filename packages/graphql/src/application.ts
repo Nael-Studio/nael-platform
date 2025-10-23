@@ -7,6 +7,8 @@ import { buildSubgraphSchema } from '@apollo/subgraph';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { RequestContext } from '@nl-framework/http';
 import { GraphqlSchemaBuilder, type GraphqlBuildOptions } from './schema-builder';
+// Ensure built-in scalars (e.g., JSON) are registered even when this module is deep-imported.
+import './scalars';
 
 export interface GraphqlServerOptions {
   host?: string;
