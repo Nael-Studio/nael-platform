@@ -18,10 +18,10 @@ export class AuthUser {
   @Field()
   emailVerified!: boolean;
 
-  @Field()
+  @Field(() => Date)
   createdAt!: Date;
 
-  @Field()
+  @Field(() => Date)
   updatedAt!: Date;
 }
 
@@ -280,10 +280,10 @@ export class AuthLinkedAccount {
   @Field(() => [String])
   scopes!: string[];
 
-  @Field({ nullable: true })
+  @Field(() => Date, { nullable: true })
   createdAt?: Date | null;
 
-  @Field({ nullable: true })
+  @Field(() => Date, { nullable: true })
   updatedAt?: Date | null;
 }
 
@@ -307,13 +307,13 @@ export class AuthUserSession {
   @Field()
   token!: string;
 
-  @Field()
+  @Field(() => Date)
   expiresAt!: Date;
 
-  @Field({ nullable: true })
+  @Field(() => Date, { nullable: true })
   createdAt?: Date | null;
 
-  @Field({ nullable: true })
+  @Field(() => Date, { nullable: true })
   updatedAt?: Date | null;
 
   @Field({ nullable: true })
@@ -484,10 +484,10 @@ export class AuthAccessTokenResult {
   @Field({ nullable: true })
   idToken?: string;
 
-  @Field({ nullable: true })
+  @Field(() => Date, { nullable: true })
   accessTokenExpiresAt?: Date;
 
-  @Field({ nullable: true })
+  @Field(() => Date, { nullable: true })
   refreshTokenExpiresAt?: Date;
 
   @Field(() => [String], { nullable: true })
