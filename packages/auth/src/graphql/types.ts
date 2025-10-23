@@ -1,4 +1,5 @@
-import { Field, ObjectType, InputType } from '@nl-framework/graphql';
+import { Field, ObjectType, InputType, GraphQLJSON } from '@nl-framework/graphql';
+import { IsString, IsOptional, IsBoolean, IsNumber, IsArray } from 'class-validator';
 import type { BetterAuthSessionPayload } from '../types';
 
 @ObjectType({ description: 'User profile information returned by Better Auth.' })
@@ -6,13 +7,13 @@ export class AuthUser {
   @Field()
   id!: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   email!: string | null;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   name!: string | null;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   image!: string | null;
 
   @Field()
@@ -298,8 +299,8 @@ export class AuthAccountInfo {
   @Field(() => AuthUser)
   user!: AuthUser;
 
-  @Field({ nullable: true, description: 'Raw provider data serialised as JSON.' })
-  raw!: string | null;
+  @Field(() => GraphQLJSON, { nullable: true, description: 'Raw provider data serialised as JSON.' })
+  raw!: any;
 }
 
 @ObjectType()
@@ -338,48 +339,76 @@ export class RevokeSessionInput {
 @InputType()
 export class SocialLoginIdTokenInput {
   @Field()
+  @IsString()
   token!: string;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
   nonce?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
   accessToken?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
   refreshToken?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsNumber()
   expiresAt?: number;
 
   @Field(() => [String], { nullable: true })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
   scopes?: string[];
 }
 
 @InputType()
 export class SocialLoginUrlInput {
   @Field()
+  @IsString()
   provider!: string;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
   callbackURL?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
   newUserCallbackURL?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
   errorCallbackURL?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsBoolean()
   requestSignUp?: boolean;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsBoolean()
   disableRedirect?: boolean;
 
   @Field(() => [String], { nullable: true })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
   scopes?: string[];
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
   loginHint?: string;
 }
 
@@ -398,75 +427,116 @@ export class SocialLoginUrlResult {
 @InputType()
 export class SocialLoginCallbackInput {
   @Field()
+  @IsString()
   provider!: string;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
   callbackURL?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
   newUserCallbackURL?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
   errorCallbackURL?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsBoolean()
   requestSignUp?: boolean;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsBoolean()
   disableRedirect?: boolean;
 
   @Field(() => [String], { nullable: true })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
   scopes?: string[];
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
   loginHint?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
   code?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
   state?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
   error?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
   errorDescription?: string;
 
   @Field(() => SocialLoginIdTokenInput, { nullable: true })
+  @IsOptional()
   idToken?: SocialLoginIdTokenInput;
 }
 
 @InputType()
 export class LinkSocialAccountInput {
   @Field()
+  @IsString()
   provider!: string;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
   callbackURL?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
   errorCallbackURL?: string;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsBoolean()
   requestSignUp?: boolean;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsBoolean()
   disableRedirect?: boolean;
 
   @Field(() => [String], { nullable: true })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
   scopes?: string[];
 
   @Field(() => SocialLoginIdTokenInput, { nullable: true })
+  @IsOptional()
   idToken?: SocialLoginIdTokenInput;
 }
 
 @InputType()
 export class UnlinkSocialAccountInput {
   @Field()
+  @IsString()
   providerId!: string;
 
   @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
   accountId?: string;
 }
 
