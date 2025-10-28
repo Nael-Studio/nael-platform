@@ -1,6 +1,6 @@
 {
   "name": "@nl-framework/microservices",
-  "version": "0.2.13",
+  "version": "0.2.14",
   "description": "Microservices module for nl-framework with Dapr integration, NestJS-style message patterns, and pub/sub abstractions.",
   "keywords": [
     "bun",
@@ -29,8 +29,8 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@nl-framework/core": "^0.2.13",
-    "@nl-framework/logger": "^0.2.13",
+    "@nl-framework/core": "^0.2.14",
+    "@nl-framework/logger": "^0.2.14",
     "reflect-metadata": "^0.2.2"
   },
   "devDependencies": {

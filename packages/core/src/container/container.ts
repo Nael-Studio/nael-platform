@@ -6,6 +6,7 @@ import type {
   ValueProvider,
   FactoryProvider,
 } from '../interfaces/provider';
+import { isForwardRef } from '../interfaces/provider';
 import { isInjectable } from '../decorators/injectable';
 import { getModuleMetadata } from '../decorators/module';
 import { getParamInjectionTokens, ParameterInjectionMap } from '../decorators/inject';
@@ -153,12 +154,29 @@ export class Container {
   }
 
   async resolve<T>(token: Token<T>): Promise<T> {
+    return this.internalResolve(token, []);
+  }
+
+  private async internalResolve<T>(token: Token<T>, path: Token[]): Promise<T> {
+    // Unwrap forward refs lazily
+    if (isForwardRef(token)) {
+      token = token.forwardRef();
+    }
+
     if (this.providerInstances.has(token)) {
       return this.providerInstances.get(token) as T;
     }
 
     if (this.providerPromises.has(token)) {
       return (await this.providerPromises.get(token)) as T;
+    }
+
+    // Detect circular dependency in the resolution path to avoid deadlocks
+    if (path.includes(token)) {
+      const chain = [...path, token]
+        .map((t) => (typeof t === 'function' ? t.name : String(t)))
+        .join(' -> ');
+      throw new Error(`Circular dependency detected: ${chain}`);
     }
 
     let effectiveToken: Token = token;
@@ -188,7 +206,7 @@ export class Container {
       throw MODULE_NOT_FOUND(token);
     }
 
-    const creation = this.instantiateProvider(definition).then((instance) => {
+    const creation = this.instantiateProvider(definition, [...path, effectiveToken]).then((instance) => {
       this.providerInstances.set(effectiveToken, instance);
       if (typeof token !== typeof effectiveToken || token !== effectiveToken) {
         this.providerInstances.set(token, instance);
@@ -201,20 +219,20 @@ export class Container {
     return (await creation) as T;
   }
 
-  private async instantiateProvider(definition: NormalizedProvider): Promise<unknown> {
+  private async instantiateProvider(definition: NormalizedProvider, path: Token[]): Promise<unknown> {
     switch (definition.type) {
       case 'value':
         return definition.useValue;
       case 'factory': {
         const dependencies = await Promise.all(
-          definition.inject.map((token) => this.resolve(token)),
+          definition.inject.map((t) => this.internalResolve(isForwardRef(t) ? t.forwardRef() : t, path)),
         );
         const instance = await definition.useFactory(...dependencies);
         this.handleLifecycle(instance);
         return instance;
       }
       case 'class': {
-        const instance = await this.instantiateClass(definition.useClass);
+        const instance = await this.instantiateClass(definition.useClass, path);
         return instance;
       }
       default:
@@ -222,18 +240,21 @@ export class Container {
     }
   }
 
-  private async instantiateClass<T>(Cls: ClassType<T>): Promise<T> {
+  private async instantiateClass<T>(Cls: ClassType<T>, path: Token[]): Promise<T> {
     const paramTypes: ClassType[] =
       (getMetadata('design:paramtypes', Cls) as ClassType[]) ?? [];
     const injectTokens: ParameterInjectionMap = getParamInjectionTokens(Cls);
 
     const dependencies = await Promise.all(
       paramTypes.map(async (paramType, index) => {
-        const token = injectTokens.get(index) ?? paramType;
+        let token = (injectTokens.get(index) ?? paramType) as Token;
         if (!token) {
           throw new Error(`Cannot resolve dependency at index ${index} for ${Cls.name}`);
         }
-        return this.resolve(token);
+        if (isForwardRef(token)) {
+          token = token.forwardRef();
+        }
+        return this.internalResolve(token, path);
       }),
     );
 

@@ -1,6 +1,19 @@
 export type ClassType<T = any> = new (...args: any[]) => T;
 
-export type Token<T = any> = string | symbol | ClassType<T>;
+/**
+ * Forward reference wrapper to defer resolving a token until it is actually needed.
+ * Useful for breaking import-time cycles when declaring injections.
+ */
+export interface ForwardRef<T = any> {
+  forwardRef: () => Token<T>;
+}
+
+export const isForwardRef = (value: unknown): value is ForwardRef =>
+  Boolean(value && typeof (value as ForwardRef).forwardRef === 'function');
+
+export const forwardRef = <T = any>(fn: () => Token<T>): ForwardRef<T> => ({ forwardRef: fn });
+
+export type Token<T = any> = string | symbol | ClassType<T> | ForwardRef<T>;
 
 export interface ClassProvider<T = any> {
   provide: Token<T>;
