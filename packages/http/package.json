@@ -1,6 +1,6 @@
 {
   "name": "@nl-framework/http",
-  "version": "0.2.14",
+  "version": "0.2.15",
   "description": "HTTP server adapter for nl-framework built on Bun, with routing, middleware, and controller integration.",
   "keywords": [
     "bun",
@@ -28,8 +28,8 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@nl-framework/core": "^0.2.14",
-    "@nl-framework/logger": "^0.2.14",
+    "@nl-framework/core": "^0.2.15",
+    "@nl-framework/logger": "^0.2.15",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
     "reflect-metadata": "^0.2.2"
