@@ -15,6 +15,7 @@ export type {
   Token,
   ClassType,
 } from './interfaces/provider';
+export { forwardRef, isForwardRef } from './interfaces/provider';
 export { ConfigLoader } from './config/config-loader';
 export { ConfigService } from './config/config.service';
 export type { ConfigLoadOptions } from './config/config-loader';
