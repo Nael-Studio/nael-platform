@@ -64,7 +64,7 @@ export const GraphQLJSON = new GraphQLScalarType({
     parseJsonLiteral(ast, variables, 0),
 });
 
-registerScalarType(GraphQLJSON);
+registerScalarType(GraphQLJSON, { overwrite: true });
 
 export const JSONScalar = new ScalarToken('JSON');
 
