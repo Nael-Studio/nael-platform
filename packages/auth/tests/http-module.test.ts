@@ -230,4 +230,63 @@ describe('BetterAuth HTTP route registration', () => {
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.test');
     expect(service.handled).toHaveLength(0);
   });
+
+  it('reconstructs request URLs using trusted forwarded headers', async () => {
+    const service = new StubBetterAuthService();
+    const options = normalizeBetterAuthHttpOptions({
+      trustedProxy: {
+        protocols: ['https', 'http'],
+        hosts: ['public.example.com'],
+      },
+    });
+
+    registerBetterAuthHttpRoutes(service as unknown as BetterAuthService, options);
+
+    const registrars = listHttpRouteRegistrars();
+    expect(registrars).toHaveLength(1);
+
+    const registeredRoutes: Array<{
+      method: string;
+      path: string;
+      handler: (context: RequestContext) => Promise<Response> | Response;
+    }> = [];
+
+    const registrar = registrars[0];
+    expect(registrar).toBeDefined();
+    await registrar!({
+      logger: new Logger({ context: 'Test' }),
+      registerRoute: (method, path, handler) => {
+        registeredRoutes.push({ method, path, handler });
+      },
+      resolve: async () => {
+        throw new Error('not implemented');
+      },
+    });
+
+    const postHandler = registeredRoutes.find((route) => route.method === 'POST');
+    expect(postHandler).toBeDefined();
+
+    const headers = new Headers({
+      host: 'internal.example:8080',
+      'x-forwarded-host': 'public.example.com',
+      'x-forwarded-proto': 'https',
+      origin: 'https://app.test',
+    });
+
+    const response = await postHandler!.handler(
+      createContext({
+        headers,
+        request: new Request('http://internal.example:8080/api/auth/sign-up/email', {
+          method: 'POST',
+          headers,
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(service.handled).toHaveLength(1);
+    expect(service.handled[0].url).toBe(
+      'https://public.example.com:8080/api/auth/sign-up/email',
+    );
+  });
 });

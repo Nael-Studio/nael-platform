@@ -36,7 +36,7 @@ describe('normalizeBetterAuthHttpOptions', () => {
     const normalized = normalizeBetterAuthHttpOptions();
     expect(normalized.prefix).toBe('/api/auth');
     expect(normalized.handleOptions).toBe(true);
-    expect(normalized.trustedProxy.protocols).toEqual(['http']);
+    expect(normalized.trustedProxy.protocols).toEqual(['http', 'https']);
     expect(normalized.trustedProxy.hosts).toBeNull();
 
     const context = createContext({
@@ -109,6 +109,6 @@ describe('normalizeBetterAuthHttpOptions', () => {
     });
 
     expect(normalized.trustedProxy.hosts).toBeNull();
-    expect(normalized.trustedProxy.protocols).toEqual(['http']);
+    expect(normalized.trustedProxy.protocols).toEqual(['http', 'https']);
   });
 });

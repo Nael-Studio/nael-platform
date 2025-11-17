@@ -2,6 +2,7 @@ import type { HttpMethod, HttpRouteRegistrar, RequestContext } from '@nl-framewo
 import { registerHttpRouteRegistrar } from '@nl-framework/http';
 import type { NormalizedBetterAuthHttpOptions } from './options';
 import type { BetterAuthService } from '../service';
+import { resolveTrustedHost, sanitizeForwardedHost, sanitizeForwardedProtocol } from './forwarded-headers';
 
 const SUPPORTED_METHODS: HttpMethod[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'];
 
@@ -35,12 +36,38 @@ class RequestSerializationError extends Error {
   }
 }
 
-const reconstructRequest = (context: RequestContext): Request => {
+const resolveEffectiveUrl = (
+  request: Request,
+  options: NormalizedBetterAuthHttpOptions,
+): string => {
+  const current = new URL(request.url);
+
+  const forwardedProtoHeader = request.headers.get('x-forwarded-proto') ?? undefined;
+  const protocol = sanitizeForwardedProtocol(forwardedProtoHeader, options.trustedProxy.protocols);
+
+  const hostHeader = request.headers.get('host') ?? current.host;
+  const fallbackHost = sanitizeForwardedHost(hostHeader) ?? current.host;
+  const forwardedHostHeader = request.headers.get('x-forwarded-host') ?? undefined;
+  const forwardedHost = sanitizeForwardedHost(forwardedHostHeader);
+  const host = resolveTrustedHost(forwardedHost, fallbackHost, options.trustedProxy.hosts);
+
+  current.protocol = `${protocol}:`;
+  current.host = host;
+  return current.toString();
+};
+
+const reconstructRequest = (
+  context: RequestContext,
+  options: NormalizedBetterAuthHttpOptions,
+): Request => {
   const original = context.request;
   const method = original.method.toUpperCase();
 
   if (method === 'GET' || method === 'HEAD') {
-    return original;
+    return new Request(resolveEffectiveUrl(original, options), {
+      method,
+      headers: new Headers(original.headers),
+    });
   }
 
   let body: BodyInit | undefined;
@@ -64,7 +91,7 @@ const reconstructRequest = (context: RequestContext): Request => {
     headers.set('content-type', 'application/json');
   }
 
-  return new Request(original.url, {
+  return new Request(resolveEffectiveUrl(original, options), {
     method,
     headers,
     body,
@@ -186,7 +213,7 @@ export const createBetterAuthRouteRegistrar = (
         registered.add(dedupeKey);
         registerRoute(normalizedMethod, fullPath, async (context) => {
           try {
-            const request = reconstructRequest(context);
+            const request = reconstructRequest(context, options);
             const response = await service.handle(request);
             return applyCorsHeaders(response, context, options.cors);
           } catch (error) {

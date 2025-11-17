@@ -14,6 +14,11 @@ import { LoggerFactory, type Logger } from '@nl-framework/logger';
 import type { IncomingMessage } from 'node:http';
 import { getRequestAuth, setRequestAuth } from './middleware';
 import type { NormalizedBetterAuthHttpOptions } from './options';
+import {
+  resolveTrustedHost,
+  sanitizeForwardedHost,
+  sanitizeForwardedProtocol,
+} from './forwarded-headers';
 import { BetterAuthService } from '../service';
 import type { BetterAuthSessionPayload } from '../types';
 import { isPublicRoute } from './public.decorator';
@@ -47,65 +52,6 @@ const setGraphqlAuth = (context: GraphqlContext, payload: BetterAuthSessionPaylo
 
 const pickHeaderValue = (value: string | string[] | undefined): string | undefined =>
   Array.isArray(value) ? value[0] : value;
-
-const FORWARDED_CONTROL_PATTERN = /[\u0000-\u001F\s]/u;
-const FORWARDED_INVALID_HOST_PATTERN = /[\/#?]/;
-
-const sanitizeForwardedProtocol = (
-  value: string | undefined,
-  allowed: ReadonlyArray<'http' | 'https'>,
-): 'http' | 'https' => {
-  const fallback = allowed[0] ?? 'http';
-  if (!value) {
-    return fallback;
-  }
-
-  const normalized = value.trim().toLowerCase();
-  if (normalized === 'https' && allowed.includes('https')) {
-    return 'https';
-  }
-
-  if (normalized === 'http' && allowed.includes('http')) {
-    return 'http';
-  }
-
-  return fallback;
-};
-
-const sanitizeForwardedHost = (value: string | undefined): string | null => {
-  if (!value) {
-    return null;
-  }
-
-  const trimmed = value.trim();
-  if (!trimmed || trimmed.length > 255) {
-    return null;
-  }
-
-  if (FORWARDED_CONTROL_PATTERN.test(trimmed) || FORWARDED_INVALID_HOST_PATTERN.test(trimmed)) {
-    return null;
-  }
-
-  try {
-    const url = new URL(`http://${trimmed}`);
-    const host = url.host;
-    return host ? host.toLowerCase() : null;
-  } catch {
-    return null;
-  }
-};
-
-const resolveTrustedHost = (
-  forwardedHost: string | null,
-  fallbackHost: string,
-  allowedHosts: string[] | null,
-): string => {
-  if (forwardedHost && allowedHosts && allowedHosts.includes(forwardedHost)) {
-    return forwardedHost;
-  }
-
-  return fallbackHost;
-};
 
 const createRequestFromIncomingMessage = (
   req: IncomingMessage,

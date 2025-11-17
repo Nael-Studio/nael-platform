@@ -1,6 +1,6 @@
 {
   "name": "@nl-framework/config",
-  "version": "0.2.16",
+  "version": "0.2.17",
   "description": "Configuration module for nl-framework with DI integration and YAML loading utilities.",
   "type": "module",
   "main": "dist/index.js",
@@ -25,6 +25,6 @@
     "dependency-injection"
   ],
   "peerDependencies": {
-    "@nl-framework/core": "^0.2.16"
+    "@nl-framework/core": "^0.2.17"
   }
 }
