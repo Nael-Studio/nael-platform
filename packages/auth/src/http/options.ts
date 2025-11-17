@@ -46,7 +46,7 @@ export interface NormalizedBetterAuthHttpOptions {
 
 const CONTROL_CHAR_PATTERN = /[\u0000-\u001F\s]/u;
 const INVALID_HOST_CHAR_PATTERN = /[\/#?]/;
-const DEFAULT_TRUSTED_PROTOCOLS: ('http' | 'https')[] = ['http'];
+const DEFAULT_TRUSTED_PROTOCOLS: ('http' | 'https')[] = ['http', 'https'];
 
 const normalizePrefix = (value?: string): string => {
   if (!value) {

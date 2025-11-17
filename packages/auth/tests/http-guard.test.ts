@@ -224,7 +224,7 @@ describe('Auth guard forwarded header handling', () => {
     const result = await guard.canActivate(context);
 
     expect(result instanceof Response).toBe(true);
-    expect(service.lastRequest?.url).toBe('http://internal.example:4000/graphql');
+    expect(service.lastRequest?.url).toBe('https://internal.example:4000/graphql');
   });
 
   it('honors trusted forwarded protocol and host overrides', async () => {
