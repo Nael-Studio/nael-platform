@@ -2,9 +2,9 @@ import type { PackageDocumentation } from '../../types';
 
 export const authDocumentation: PackageDocumentation = {
   name: '@nl-framework/auth',
-  version: '0.1.0',
+  version: '0.2.17',
   description:
-    'Authentication toolkit built around Better Auth. Ships with HTTP routes, guards, middleware, and GraphQL helpers for session-aware applications.',
+    'Authentication toolkit built around Better Auth. Ships with HTTP routes, guards, middleware, GraphQL helpers, and multi-tenant utilities for session-aware applications.',
   installation: 'bun add @nl-framework/auth better-auth',
   features: [
     {
@@ -14,28 +14,28 @@ export const authDocumentation: PackageDocumentation = {
     },
     {
       title: 'GraphQL Integration',
-      description: 'Directive-based auth controls and field-level guard helpers for resolvers.',
+      description: 'Guard-based GraphQL integration plus a GraphQL proxy for the native Better Auth API.',
       icon: '🔗',
     },
     {
-      title: 'Strategy Extensibility',
-      description: 'Plug in custom adapters or extend existing providers through dependency injection.',
-      icon: '🧱',
+      title: 'Multi-tenant',
+      description: 'Resolve tenants per request, hydrate Better Auth options from a store, and isolate cookies per tenant.',
+      icon: '🏢',
     },
   ],
   quickStart: {
-    description: 'Mount Better Auth HTTP routes and secure a controller with the session guard.',
+    description: 'Mount Better Auth HTTP routes and secure a controller with the auth guard.',
     steps: [
-      'Configure Better Auth with providers and session storage.',
-      'Call `registerBetterAuthHttpRoutes` inside the HTTP module setup.',
-      'Apply `SessionGuard` or GraphQL directives to protect resources.',
+      'Configure Better Auth with providers and database adapter.',
+      'Import `BetterAuthHttpModule.register({ prefix: "/api/auth" })` to expose native routes.',
+      'Apply `AuthGuard` (HTTP/GraphQL) or middleware to protect resources.',
     ],
     code: `import { Module } from '@nl-framework/core';
-import { registerBetterAuthHttpRoutes, SessionGuard, AuthModule } from '@nl-framework/auth';
+import { BetterAuthModule, BetterAuthHttpModule, AuthGuard } from '@nl-framework/auth';
 import { Controller, Get, UseGuards } from '@nl-framework/http';
 
 @Controller('/profile')
-@UseGuards(SessionGuard)
+@UseGuards(AuthGuard)
 class ProfileController {
   @Get('/')
   me() {
@@ -44,37 +44,89 @@ class ProfileController {
 }
 
 @Module({
-  imports: [AuthModule.forRoot({
-    providers: ['email'],
-  })],
+  imports: [
+    BetterAuthModule.forRoot({
+      betterAuth: {
+        secret: process.env.BETTER_AUTH_SECRET!,
+        emailAndPassword: { enabled: true },
+      },
+      database: /* adapter factory here */,
+    }),
+    BetterAuthHttpModule.register({ prefix: '/api/auth' }),
+  ],
   controllers: [ProfileController],
 })
-export class AppModule {
-  constructor() {
-    registerBetterAuthHttpRoutes();
-  }
-}
+export class AppModule {}
 `,
   },
   api: {
-    decorators: [
-      {
-        name: '@AuthUser',
-        signature: '@AuthUser(): ParameterDecorator',
-        description: 'Inject the authenticated Better Auth user into controllers or resolvers.',
-      },
-    ],
+    decorators: [],
     classes: [
       {
-        name: 'SessionGuard',
-        description: 'HTTP guard that validates the Better Auth session token and populates the request context.',
+        name: 'AuthGuard',
+        description:
+          'HTTP/GraphQL guard that resolves Better Auth sessions and populates the request or GraphQL context.',
         methods: [
           {
             name: 'canActivate',
-            signature: 'canActivate(context: RequestContext): Promise<boolean>',
-            description: 'Return `true` when a valid session exists, otherwise throw an HTTP exception.',
+            signature: 'canActivate(context: HttpExecutionContext | GraphqlExecutionContext): Promise<GuardDecision>',
+            description: 'Return `true` when a valid session exists, otherwise return a 401 response.',
           },
         ],
+      },
+      {
+        name: 'MultiTenantAuthGuard',
+        description: 'Multi-tenant variant that resolves the tenant per request and checks the matching Better Auth instance.',
+        methods: [
+          {
+            name: 'canActivate',
+            signature: 'canActivate(context: HttpExecutionContext | GraphqlExecutionContext): Promise<GuardDecision>',
+            description: 'Resolves tenant, hydrates session for that tenant, and authorizes the request.',
+          },
+        ],
+      },
+      {
+        name: 'BetterAuthMultiTenantService',
+        description:
+          'Creates and caches Better Auth instances per tenant using a resolver + loader (e.g., DB-backed configs).',
+        methods: [
+          {
+            name: 'getInstance',
+            signature: 'getInstance(context: BetterAuthTenantContext): Promise<BetterAuthInstance>',
+            description: 'Resolves tenant and returns (or initializes) the Better Auth instance for that tenant.',
+          },
+          {
+            name: 'getSessionOrNull',
+            signature:
+              'getSessionOrNull(input: Request | Headers, context?: BetterAuthTenantContext, options?): Promise<BetterAuthSessionPayload | null>',
+            description: 'Fetches the Better Auth session for the resolved tenant without throwing.',
+          },
+        ],
+      },
+    ],
+    functions: [
+      {
+        name: 'createBetterAuthMiddleware',
+        signature: 'createBetterAuthMiddleware(service: BetterAuthService, options?): MiddlewareHandler',
+        description: 'HTTP middleware that resolves a session and optionally attaches it to the request context.',
+      },
+      {
+        name: 'createBetterAuthMultiTenantMiddleware',
+        signature:
+          'createBetterAuthMultiTenantMiddleware(service: BetterAuthMultiTenantService, options?): MiddlewareHandler',
+        description: 'Multi-tenant HTTP middleware that resolves tenant + session per request.',
+      },
+      {
+        name: 'registerBetterAuthHttpRoutes',
+        signature: 'registerBetterAuthHttpRoutes(service: BetterAuthService, options: NormalizedBetterAuthHttpOptions)',
+        description: 'Registers native Better Auth HTTP routes for single-tenant setups.',
+      },
+      {
+        name: 'registerBetterAuthMultiTenantHttpRoutes',
+        signature:
+          'registerBetterAuthMultiTenantHttpRoutes(service: BetterAuthMultiTenantService, options: NormalizedBetterAuthHttpOptions, bootstrapTenant: BetterAuthTenantResolution)',
+        description:
+          'Registers native Better Auth HTTP routes for multi-tenant setups (bootstrap tenant used to read API registry).',
       },
     ],
   },
@@ -87,6 +139,22 @@ export class AppModule {
 }
 `,
     },
+    {
+      title: 'Multi-tenant HTTP guard + middleware',
+      description: 'Resolve tenant from a header and protect a controller.',
+      code: `import { Controller, Get, UseGuards } from '@nl-framework/http';
+import { MultiTenantAuthGuard, createBetterAuthMultiTenantMiddleware } from '@nl-framework/auth';
+
+@Controller('/profile')
+@UseGuards(MultiTenantAuthGuard)
+class ProfileController {
+  @Get('/')
+  me(@Context() ctx) {
+    return ctx.auth;
+  }
+}
+// In bootstrap: httpApp.use(createBetterAuthMultiTenantMiddleware(authService));`,
+    },
   ],
   bestPractices: [
     {
@@ -95,6 +163,10 @@ export class AppModule {
         {
           title: 'Rotate session keys regularly',
           description: 'Provide new secrets in Better Auth configuration and roll sessions without downtime.',
+        },
+        {
+          title: 'Isolate tenant cookies',
+          description: 'Set unique cookie prefixes/domains per tenant via Better Auth advanced options or deriveCookiePrefix.',
         },
       ],
       dont: [
@@ -110,7 +182,7 @@ export class AppModule {
       issue: 'Session token rejected',
       symptoms: ['401 unauthenticated response'],
       solution:
-        'Confirm the Better Auth instance uses the same secret used on the client and that cookies are forwarded when using proxies.',
+        'Confirm the Better Auth instance uses the same secret used on the client and that cookies are forwarded when using proxies. In multi-tenant setups, ensure the correct tenant is resolved and cookies use tenant-specific prefixes/domains.',
     },
   ],
   relatedPackages: ['@nl-framework/http', '@nl-framework/graphql', '@nl-framework/logger'],

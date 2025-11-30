@@ -4,6 +4,7 @@ import { mergePluginCollections, resolvePluginKey, resetPluginKeyCounter } from 
 export const BETTER_AUTH_OPTIONS = Symbol.for('@nl-framework/auth/options');
 export const BETTER_AUTH_INSTANCE = Symbol.for('@nl-framework/auth/instance');
 export const BETTER_AUTH_ADAPTER = Symbol.for('@nl-framework/auth/adapter');
+export const BETTER_AUTH_MULTI_TENANT_OPTIONS = Symbol.for('@nl-framework/auth/multi-tenant/options');
 
 const globalPluginRegistry = new Map<string, BetterAuthPlugin>();
 

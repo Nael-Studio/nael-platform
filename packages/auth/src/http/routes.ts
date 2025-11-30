@@ -2,6 +2,8 @@ import type { HttpMethod, HttpRouteRegistrar, RequestContext } from '@nl-framewo
 import { registerHttpRouteRegistrar } from '@nl-framework/http';
 import type { NormalizedBetterAuthHttpOptions } from './options';
 import type { BetterAuthService } from '../service';
+import type { BetterAuthMultiTenantService } from '../multi-tenant.service';
+import type { BetterAuthTenantResolution } from '../interfaces/multi-tenant-options';
 import { resolveTrustedHost, sanitizeForwardedHost, sanitizeForwardedProtocol } from './forwarded-headers';
 
 const SUPPORTED_METHODS: HttpMethod[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'];
@@ -265,4 +267,111 @@ export const registerBetterAuthHttpRoutes = (
   options: NormalizedBetterAuthHttpOptions,
 ): void => {
   registerHttpRouteRegistrar(createBetterAuthRouteRegistrar(service, options));
+};
+
+export const createBetterAuthMultiTenantRouteRegistrar = (
+  service: BetterAuthMultiTenantService,
+  options: NormalizedBetterAuthHttpOptions,
+  bootstrapTenant: BetterAuthTenantResolution,
+): HttpRouteRegistrar => {
+  if (!bootstrapTenant?.tenantKey) {
+    throw new Error(
+      'createBetterAuthMultiTenantRouteRegistrar requires a bootstrap tenant (tenantKey) to discover Better Auth API routes.',
+    );
+  }
+
+  return async ({ registerRoute, logger }) => {
+    const instance = await service.getInstanceForTenant(bootstrapTenant);
+    const betterAuth = instance as BetterAuthApi;
+    const registry = Array.isArray(betterAuth.api)
+      ? betterAuth.api
+      : Object.values(betterAuth.api ?? {});
+
+    const registered = new Set<string>();
+
+    for (const entry of registry) {
+      if (!entry?.path) {
+        continue;
+      }
+
+      const methodsRaw = entry.options?.method;
+      const methods = Array.isArray(methodsRaw)
+        ? methodsRaw
+        : methodsRaw
+          ? [methodsRaw]
+          : ['GET'];
+      const fullPath = normalizePath(options.prefix, entry.path);
+      const normalizedMethods = methods.map((method) => method.toUpperCase());
+
+      for (const method of normalizedMethods) {
+        const normalizedMethod = method as HttpMethod;
+        if (!SUPPORTED_METHODS.includes(normalizedMethod)) {
+          continue;
+        }
+
+        const dedupeKey = `${normalizedMethod} ${fullPath}`;
+        if (registered.has(dedupeKey)) {
+          continue;
+        }
+
+        registered.add(dedupeKey);
+        registerRoute(normalizedMethod, fullPath, async (context) => {
+          try {
+            const request = reconstructRequest(context, options);
+            const tenantContext = { request, headers: request.headers };
+            const response = await service.handle(request, tenantContext);
+            return applyCorsHeaders(response, context, options.cors);
+          } catch (error) {
+            if (error instanceof RequestSerializationError) {
+              logger.error('Failed to forward Better Auth request due to serialization error.', {
+                method: normalizedMethod,
+                path: fullPath,
+                message: error.message,
+              });
+
+              const errorResponse = new Response(
+                JSON.stringify({ message: 'Invalid request payload' }),
+                {
+                  status: 400,
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                },
+              );
+
+              return applyCorsHeaders(errorResponse, context, options.cors);
+            }
+
+            throw error;
+          }
+        });
+      }
+
+      if (options.handleOptions && !normalizedMethods.includes('OPTIONS')) {
+        const optionsKey = `OPTIONS ${fullPath}`;
+        if (!registered.has(optionsKey)) {
+          registered.add(optionsKey);
+          registerRoute('OPTIONS', fullPath, (context) =>
+            createOptionsResponse(context, options.cors),
+          );
+        }
+      }
+    }
+
+    logger.info('Better Auth multi-tenant routes registered', {
+      prefix: options.prefix,
+      routes: registered.size,
+      bootstrapTenant: bootstrapTenant.tenantKey,
+    });
+  };
+};
+
+export const registerBetterAuthMultiTenantHttpRoutes = (
+  service: BetterAuthMultiTenantService,
+  options: NormalizedBetterAuthHttpOptions,
+  bootstrapTenant: BetterAuthTenantResolution,
+): void => {
+  registerHttpRouteRegistrar(
+    createBetterAuthMultiTenantRouteRegistrar(service, options, bootstrapTenant),
+  );
 };

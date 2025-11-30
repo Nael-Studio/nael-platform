@@ -79,8 +79,8 @@ export const packageList: Array<{
   {
     key: 'auth',
     name: '@nl-framework/auth',
-    description: 'Better Auth integration for session management, guards, and GraphQL directives.',
-    highlights: ['Session routes', 'Guards', 'Resolvers'],
+    description: 'Better Auth integration for session management, guards, GraphQL helpers, and multi-tenant support.',
+    highlights: ['Session routes', 'Guards', 'Multi-tenant'],
   },
   {
     key: 'microservices',

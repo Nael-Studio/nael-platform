@@ -39,6 +39,8 @@ Explore the `examples/` folder for runnable samples that demonstrate the current
 - `examples/basic-http` – minimal REST-style greeting controller
 - `examples/auth-http` – HTTP API with authentication flows, ORM-backed user persistence, and role-protected routes via `@nl-framework/auth`
 - `examples/auth-graphql` – unified REST + GraphQL auth example exposing the Better Auth APIs through GraphQL resolvers
+- `examples/auth-multi-tenant-http` – Better Auth multi-tenant HTTP example with per-tenant config, guard, middleware, and native route proxy
+- `examples/auth-multi-tenant-graphql` – Better Auth multi-tenant GraphQL example using the multi-tenant guard and shared HTTP auth routes
 - `examples/basic-graphql` – standalone GraphQL server with resolver discovery
 - `examples/federated-graphql` – subgraph service suitable for Apollo Federation
 - `examples/federation-gateway` – single-port HTTP + GraphQL gateway using NaelFactory
@@ -602,6 +604,66 @@ export class AppModule {}
 // Access Better Auth API in GraphQL
 // query { betterAuth { session { user { id name email } } } }
 // mutation { betterAuth { signIn(input: {email: "...", password: "..."}) { success } } }
+```
+
+**Multi-tenant (experimental):**
+
+Resolve tenants per request and hydrate Better Auth options from a data store. The `BetterAuthMultiTenantService` lazily creates and caches an auth instance per tenant.
+
+```typescript
+import { BetterAuthMultiTenantModule } from '@nl-framework/auth';
+
+@Module({
+  imports: [
+    BetterAuthMultiTenantModule.registerAsync({
+      inject: [TenantConfigService],
+      useFactory: (tenantConfig: TenantConfigService) => ({
+        resolver: {
+          resolve: ({ headers }) => {
+            const tenant = headers?.get('x-tenant-id');
+            return tenant ? { tenantKey: tenant } : null;
+          },
+        },
+        loader: {
+          load: async ({ tenantKey }) => {
+            const cfg = await tenantConfig.load(tenantKey);
+            return {
+              betterAuth: {
+                secret: cfg.secret,
+                emailAndPassword: { enabled: cfg.enableLocal },
+                socialProviders: cfg.socialProviders,
+              },
+              database: cfg.databaseAdapter, // e.g. createMongoAdapterFromDb(...)
+              extendPlugins: cfg.plugins,
+            };
+          },
+        },
+        cache: { ttlMs: 300_000, maxEntries: 100 },
+      }),
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+- For HTTP, use `createBetterAuthMultiTenantMiddleware` or `MultiTenantAuthGuard` to resolve sessions per request based on the tenant resolver/loader. For GraphQL guards, register `MultiTenantAuthGuard`.
+- Ensure your loader sets unique cookie prefixes/domains per tenant (e.g., via `betterAuth.advanced.cookiePrefix`), or supply `deriveCookiePrefix` when registering `BetterAuthMultiTenantModule` to avoid session collisions.
+- To expose the native Better Auth HTTP API for multiple tenants, register the multi-tenant route proxy with a bootstrap tenant (used only to read the API registry; all requests still resolve tenants dynamically):
+
+```typescript
+import {
+  BetterAuthMultiTenantModule,
+  registerBetterAuthMultiTenantHttpRoutes,
+  BetterAuthMultiTenantService,
+  BETTER_AUTH_HTTP_OPTIONS,
+} from '@nl-framework/auth';
+
+// inside bootstrap after creating the app context
+const authService = appContext.get(BetterAuthMultiTenantService);
+const httpOptions = appContext.get(BETTER_AUTH_HTTP_OPTIONS);
+registerBetterAuthMultiTenantHttpRoutes(authService, httpOptions, {
+  tenantKey: 'default', // bootstrap tenant for route discovery (routes are shared across tenants)
+});
 ```
 
 ---

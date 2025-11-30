@@ -1,6 +1,8 @@
 import type { MiddlewareHandler, RequestContext } from '@nl-framework/http';
 import type { BetterAuthSessionPayload } from '../types';
 import type { BetterAuthService, BetterAuthSessionOptions } from '../service';
+import type { BetterAuthMultiTenantService } from '../multi-tenant.service';
+import type { BetterAuthTenantContext } from '../interfaces/multi-tenant-options';
 
 const REQUEST_AUTH_STATE = Symbol.for('@nl-framework/auth/request-state');
 
@@ -13,6 +15,10 @@ export interface BetterAuthMiddlewareOptions extends BetterAuthSessionOptions {
   requireSession?: boolean;
   onResolved?: (session: BetterAuthSessionPayload | null, context: RequestContext) => void | Promise<void>;
   onUnauthorized?: (context: RequestContext) => Response | Promise<Response>;
+}
+
+export interface BetterAuthMultiTenantMiddlewareOptions extends BetterAuthMiddlewareOptions {
+  resolveContext?: (context: RequestContext) => BetterAuthTenantContext;
 }
 
 export const setRequestAuth = (
@@ -40,6 +46,42 @@ export const createBetterAuthMiddleware = (
 
   return async (context, next) => {
     const session = await service.getSessionOrNull(context.request, options);
+
+    if (!session && requireSession) {
+      if (options.onUnauthorized) {
+        return options.onUnauthorized(context);
+      }
+      return new Response('Unauthorized', { status: 401 });
+    }
+
+    if (attach) {
+      setRequestAuth(context, session);
+    }
+
+    if (options.onResolved) {
+      await options.onResolved(session, context);
+    }
+
+    return next();
+  };
+};
+
+const defaultTenantContext = (context: RequestContext): BetterAuthTenantContext => ({
+  request: context.request,
+  headers: context.request.headers,
+});
+
+export const createBetterAuthMultiTenantMiddleware = (
+  service: BetterAuthMultiTenantService,
+  options: BetterAuthMultiTenantMiddlewareOptions = {},
+): MiddlewareHandler => {
+  const attach = options.attach ?? true;
+  const requireSession = options.requireSession ?? false;
+  const resolveContext = options.resolveContext ?? defaultTenantContext;
+
+  return async (context, next) => {
+    const tenantContext = resolveContext(context);
+    const session = await service.getSessionOrNull(context.request, tenantContext, options);
 
     if (!session && requireSession) {
       if (options.onUnauthorized) {
