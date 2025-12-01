@@ -34,9 +34,6 @@ export function SiteHeader() {
           <Link className="font-semibold tracking-tight" href="/">
             Nael Platform Docs
           </Link>
-          <div className="hidden w-80 md:block">
-            <CommandSearch />
-          </div>
           <nav className="hidden items-center gap-4 text-sm font-medium md:flex">
             {navItems.map((item) => (
               <Link
@@ -53,7 +50,7 @@ export function SiteHeader() {
           </nav>
         </div>
         <div className="flex items-center gap-2">
-          <div className="block w-48 md:hidden">
+          <div className="w-48 sm:w-64">
             <CommandSearch />
           </div>
           {/* #sym:kibo-ui Theme Switcher for global appearance */}

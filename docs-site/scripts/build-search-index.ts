@@ -8,6 +8,7 @@ type SearchDoc = {
   section: string;
   headings?: string[];
   content?: string;
+  codeBlocks?: string[];
 };
 
 const DOCS_ROOT = path.join(process.cwd(), "src", "app", "docs");
@@ -57,8 +58,40 @@ const extractParagraph = (content: string) => {
   return "";
 };
 
+const extractCodeBlocks = (content: string): string[] => {
+  const codeBlocks: string[] = [];
+  
+  // Extract from export const blocks (template literals)
+  const exportConstRegex = /export const \w+\s*=\s*`([\s\S]*?)`\s*;/g;
+  let match;
+  while ((match = exportConstRegex.exec(content)) !== null) {
+    if (match[1]) {
+      codeBlocks.push(match[1].trim());
+    }
+  }
+  
+  // Extract from markdown code blocks
+  const lines = content.split("\n");
+  let inCodeBlock = false;
+  let currentBlock: string[] = [];
+  
+  for (const line of lines) {
+    if (line.trim().startsWith("```")) {
+      if (inCodeBlock && currentBlock.length > 0) {
+        codeBlocks.push(currentBlock.join("\n").trim());
+        currentBlock = [];
+      }
+      inCodeBlock = !inCodeBlock;
+    } else if (inCodeBlock) {
+      currentBlock.push(line);
+    }
+  }
+  
+  return codeBlocks;
+};
+
 const extractContent = (content: string) => {
-  // Extract text content from MDX, removing code blocks, imports, exports, JSX tags
+  // Extract text content from MDX, including documentation text
   const lines = content.split("\n");
   const textLines: string[] = [];
   let inCodeBlock = false;
@@ -117,7 +150,7 @@ const extractContent = (content: string) => {
     }
   }
 
-  return textLines.join(" ").slice(0, 1500); // Limit to 1500 chars for search
+  return textLines.join(" ");
 };
 
 async function walk(dir: string, acc: string[] = []): Promise<string[]> {
@@ -147,6 +180,7 @@ async function build() {
     const sectionParts = href.split("/").filter(Boolean);
     const section = sectionParts.length > 1 ? sectionParts[1] ?? "Docs" : "Docs";
     const pageContent = extractContent(content);
+    const codeBlocks = extractCodeBlocks(content);
 
     docs.push({
       title,
@@ -155,6 +189,7 @@ async function build() {
       section,
       headings,
       content: pageContent,
+      codeBlocks,
     });
   }
 

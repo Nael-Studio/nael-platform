@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "bun run build:search && next dev --webpack",
-    "build": "next build --webpack",
+    "build": "bun run build:search && next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "build:search": "bun run scripts/build-search-index.ts"

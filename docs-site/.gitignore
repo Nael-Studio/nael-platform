@@ -20,6 +20,9 @@
 # production
 /build
 
+# search index (generated during build)
+/public/search-index.json
+
 # misc
 .DS_Store
 *.pem

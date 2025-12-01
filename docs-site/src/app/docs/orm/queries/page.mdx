@@ -11,14 +11,14 @@ import { getRepositoryToken, type OrmRepository } from '@nl-framework/orm';
 
 @Injectable()
 export class DirectoryService {
-constructor(@Inject(getRepositoryToken(User)) private readonly users: OrmRepository<User>) {}
+  constructor(@Inject(getRepositoryToken(User)) private readonly users: OrmRepository<User>) {}
 
-async search(term: string) {
-const pattern = new RegExp(term.replace(/[-/\\^$\*+?.()|[\]{}]/g, '.'), 'i');
-return this.users.find({
-$or: [{ email: { $regex: pattern } }, { name: { $regex: pattern } }],
-});
-}
+  async search(term: string) {
+    const pattern = new RegExp(term.replace(/[-/\\^$\*+?.()|[\]{}]/g, '.'), 'i');
+    return this.users.find({
+      $or: [{ email: { $regex: pattern } }, { name: { $regex: pattern } }],
+    });
+  }
 }`;
 
 export const partialSnippet = `await this.users.find(
@@ -36,20 +36,20 @@ import type { Db } from 'mongodb';
 
 @Injectable()
 export class RevenueService {
-constructor(@Inject(getDatabaseToken('billing')) private readonly db: Db) {}
+  constructor(@Inject(getDatabaseToken('billing')) private readonly db: Db) {}
 
-async monthlyTotals() {
-return this.db.collection('invoices').aggregate([
-{ $match: { paidAt: { $exists: true } } },
-{
-$group: {
-_id: { $dateTrunc: { date: '$paidAt', unit: 'month' } },
-total: { $sum: '$amount' },
-},
-},
-{ $sort: { _id: 1 } },
-]).toArray();
-}
+  async monthlyTotals() {
+    return this.db.collection('invoices').aggregate([
+      { $match: { paidAt: { $exists: true } } },
+      {
+        $group: {
+          _id: { $dateTrunc: { date: '$paidAt', unit: 'month' } },
+          total: { $sum: '$amount' },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]).toArray();
+  }
 }`;
 
 export const pipelineWithRepositorySnippet = `import { Inject, Injectable } from '@nl-framework/core';
@@ -58,17 +58,17 @@ import type { Collection } from 'mongodb';
 
 @Injectable()
 export class AgingService {
-private collection: Collection<Invoice>;
+  private collection: Collection<Invoice>;
 
-constructor(
-@Inject(getConnectionToken()) private readonly connection: OrmConnection,
-@Inject(getRepositoryToken(Invoice)) private readonly invoices: OrmRepository<Invoice>,
-) {}
+  constructor(
+    @Inject(getConnectionToken()) private readonly connection: OrmConnection,
+    @Inject(getRepositoryToken(Invoice)) private readonly invoices: OrmRepository<Invoice>,
+  ) {}
 
-async agingBuckets() {
-if (!this.collection) {
-this.collection = await this.connection.getCollection(Invoice);
-}
+  async agingBuckets() {
+    if (!this.collection) {
+      this.collection = await this.connection.getCollection(Invoice);
+    }
 
     return this.collection.aggregate([
       { $match: { status: 'unpaid' } },
@@ -90,17 +90,17 @@ this.collection = await this.connection.getCollection(Invoice);
       },
     ]).toArray();
 
-}
+  }
 }`;
 
 export const bestPracticesSnippet = `// Request-scoped service keeping tenant context
     await this.moduleRef.resolve(getRepositoryToken(User, tenantConnection), { strict: false });
 
 // Prefer projection for large documents
-await this.users.find({ plan: 'enterprise' }, { projection: { email: 1, name: 1 } });
+    await this.users.find({ plan: 'enterprise' }, { projection: { email: 1, name: 1 } });
 
 // Combine soft-delete filters manually when reading archives
-await this.users.find({ deletedAt: { $ne: null } }, { withDeleted: true });`;
+    await this.users.find({ deletedAt: { $ne: null } }, { withDeleted: true });`;
 
 <article className="space-y-8">
       <div className="space-y-3">

@@ -5,6 +5,7 @@ export type SearchDoc = {
   section: string;
   headings?: string[];
   content?: string;
+  codeBlocks?: string[];
 };
 
 export const searchDocs: SearchDoc[] = [];

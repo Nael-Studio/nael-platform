@@ -11,14 +11,14 @@ import { getRepositoryToken, type OrmRepository } from '@nl-framework/orm';
 
 @Injectable()
 export class UsersService {
-constructor(
-@Inject(getRepositoryToken(User))
-private readonly users: OrmRepository<User>,
-) {}
+  constructor(
+    @Inject(getRepositoryToken(User))
+    private readonly users: OrmRepository<User>,
+  ) {}
 
-list() {
-return this.users.find();
-}
+  list() {
+    return this.users.find();
+  }
 }`;
 
 export const scopedSnippet = `import { Inject, Injectable, Scope } from '@nl-framework/core';
@@ -26,14 +26,14 @@ import { getRepositoryToken, type OrmRepository } from '@nl-framework/orm';
 
 @Injectable({ scope: Scope.REQUEST })
 export class TenantInvoicesService {
-constructor(
-private readonly tenantId: string,
-@Inject(getRepositoryToken(Invoice)) private readonly invoices: OrmRepository<Invoice>,
-) {}
+  constructor(
+    private readonly tenantId: string,
+    @Inject(getRepositoryToken(Invoice)) private readonly invoices: OrmRepository<Invoice>,
+  ) {}
 
-findForTenant() {
-return this.invoices.find({ tenantId: this.tenantId });
-}
+  findForTenant() {
+    return this.invoices.find({ tenantId: this.tenantId });
+  }
 }`;
 
 export const collectionNameSnippet = `import { Inject, Injectable } from '@nl-framework/core';
@@ -41,11 +41,11 @@ import { getRepositoryToken, type OrmRepository } from '@nl-framework/orm';
 
 @Injectable()
 export class MetadataService {
-constructor(@Inject(getRepositoryToken(User)) private readonly users: OrmRepository<User>) {}
+  constructor(@Inject(getRepositoryToken(User)) private readonly users: OrmRepository<User>) {}
 
-collection() {
-return this.users.collectionName;
-}
+  collection() {
+    return this.users.collectionName;
+  }
 }`;
 
 export const entitySnippet = `import { Inject, Injectable } from '@nl-framework/core';
@@ -53,11 +53,11 @@ import { getRepositoryToken, type OrmRepository } from '@nl-framework/orm';
 
 @Injectable()
 export class MetadataService {
-constructor(@Inject(getRepositoryToken(User)) private readonly users: OrmRepository<User>) {}
+  constructor(@Inject(getRepositoryToken(User)) private readonly users: OrmRepository<User>) {}
 
-entityCtor() {
-return this.users.entity.name;
-}
+  entityCtor() {
+    return this.users.entity.name;
+  }
 }`;
 
 export const findSnippet = `import { Inject, Injectable } from '@nl-framework/core';
@@ -65,14 +65,14 @@ import { getRepositoryToken, type OrmRepository } from '@nl-framework/orm';
 
 @Injectable()
 export class AdminsService {
-constructor(@Inject(getRepositoryToken(User)) private readonly users: OrmRepository<User>) {}
+  constructor(@Inject(getRepositoryToken(User)) private readonly users: OrmRepository<User>) {}
 
-listPremium() {
-return this.users.find(
-{ plan: 'pro' },
-{ sort: { createdAt: -1 }, limit: 20, projection: { email: 1, name: 1 } },
-);
-}
+  listPremium() {
+    return this.users.find(
+      { plan: 'pro' },
+      { sort: { createdAt: -1 }, limit: 20, projection: { email: 1, name: 1 } },
+    );
+  }
 }`;
 
 export const findOneSnippet = `import { Inject, Injectable } from '@nl-framework/core';
@@ -80,11 +80,11 @@ import { getRepositoryToken, type OrmRepository } from '@nl-framework/orm';
 
 @Injectable()
 export class UsersLookupService {
-constructor(@Inject(getRepositoryToken(User)) private readonly users: OrmRepository<User>) {}
+  constructor(@Inject(getRepositoryToken(User)) private readonly users: OrmRepository<User>) {}
 
-async byEmail(email: string) {
-return this.users.findOne({ email }, { withDeleted: true });
-}
+  async byEmail(email: string) {
+    return this.users.findOne({ email }, { withDeleted: true });
+  }
 }`;
 
 export const findByIdSnippet = `import { Inject, Injectable } from '@nl-framework/core';
@@ -92,11 +92,11 @@ import { getRepositoryToken, type OrmRepository } from '@nl-framework/orm';
 
 @Injectable()
 export class ProfilesService {
-constructor(@Inject(getRepositoryToken(User)) private readonly users: OrmRepository<User>) {}
+  constructor(@Inject(getRepositoryToken(User)) private readonly users: OrmRepository<User>) {}
 
-async getProfile(id: string) {
-return this.users.findById(id);
-}
+  async getProfile(id: string) {
+    return this.users.findById(id);
+  }
 }`;
 
 export const countSnippet = `import { Inject, Injectable } from '@nl-framework/core';
@@ -104,11 +104,11 @@ import { getRepositoryToken, type OrmRepository } from '@nl-framework/orm';
 
 @Injectable()
 export class StatsService {
-constructor(@Inject(getRepositoryToken(User)) private readonly users: OrmRepository<User>) {}
+  constructor(@Inject(getRepositoryToken(User)) private readonly users: OrmRepository<User>) {}
 
-async countAdmins() {
-return this.users.count({ role: 'admin' });
-}
+  async countAdmins() {
+    return this.users.count({ role: 'admin' });
+  }
 }`;
 
 export const insertOneSnippet = `import { Inject, Injectable } from '@nl-framework/core';
@@ -116,11 +116,11 @@ import { getRepositoryToken, type OrmRepository } from '@nl-framework/orm';
 
 @Injectable()
 export class RegistrationService {
-constructor(@Inject(getRepositoryToken(User)) private readonly users: OrmRepository<User>) {}
+  constructor(@Inject(getRepositoryToken(User)) private readonly users: OrmRepository<User>) {}
 
-async register(email: string, name: string) {
-return this.users.insertOne({ email, name, plan: 'free' });
-}
+  async register(email: string, name: string) {
+    return this.users.insertOne({ email, name, plan: 'free' });
+  }
 }`;
 
 export const insertManySnippet = `import { Inject, Injectable } from '@nl-framework/core';
@@ -128,11 +128,11 @@ import { getRepositoryToken, type OrmRepository } from '@nl-framework/orm';
 
 @Injectable()
 export class SeedService {
-constructor(@Inject(getRepositoryToken(User)) private readonly users: OrmRepository<User>) {}
+  constructor(@Inject(getRepositoryToken(User)) private readonly users: OrmRepository<User>) {}
 
-bulkInsert(batch: Array<Pick<User, 'email' | 'name'>>) {
-return this.users.insertMany(batch);
-}
+  bulkInsert(batch: Array<Pick<User, 'email' | 'name'>>) {
+    return this.users.insertMany(batch);
+  }
 }`;
 
 export const saveSnippet = `import { Inject, Injectable } from '@nl-framework/core';
@@ -140,11 +140,11 @@ import { getRepositoryToken, type OrmRepository } from '@nl-framework/orm';
 
 @Injectable()
 export class ProfilesService {
-constructor(@Inject(getRepositoryToken(User)) private readonly users: OrmRepository<User>) {}
+  constructor(@Inject(getRepositoryToken(User)) private readonly users: OrmRepository<User>) {}
 
-async upsertProfile(id: string, name: string) {
-return this.users.save({ id, name });
-}
+  async upsertProfile(id: string, name: string) {
+    return this.users.save({ id, name });
+  }
 }`;
 
 export const updateManySnippet = `import { Inject, Injectable } from '@nl-framework/core';
@@ -152,11 +152,11 @@ import { getRepositoryToken, type OrmRepository } from '@nl-framework/orm';
 
 @Injectable()
 export class BillingService {
-constructor(@Inject(getRepositoryToken(User)) private readonly users: OrmRepository<User>) {}
+  constructor(@Inject(getRepositoryToken(User)) private readonly users: OrmRepository<User>) {}
 
-async downgradeTrials() {
-return this.users.updateMany({ trialEnded: true }, { plan: 'free' });
-}
+  async downgradeTrials() {
+    return this.users.updateMany({ trialEnded: true }, { plan: 'free' });
+  }
 }`;
 
 export const softDeleteSnippet = `import { Inject, Injectable } from '@nl-framework/core';
@@ -164,11 +164,11 @@ import { getRepositoryToken, type OrmRepository } from '@nl-framework/orm';
 
 @Injectable()
 export class ArchiveService {
-constructor(@Inject(getRepositoryToken(User)) private readonly users: OrmRepository<User>) {}
+  constructor(@Inject(getRepositoryToken(User)) private readonly users: OrmRepository<User>) {}
 
-async archive(id: string) {
-return this.users.softDelete({ id });
-}
+  async archive(id: string) {
+    return this.users.softDelete({ id });
+  }
 }`;
 
 export const restoreSnippet = `import { Inject, Injectable } from '@nl-framework/core';
@@ -176,11 +176,11 @@ import { getRepositoryToken, type OrmRepository } from '@nl-framework/orm';
 
 @Injectable()
 export class ArchiveService {
-constructor(@Inject(getRepositoryToken(User)) private readonly users: OrmRepository<User>) {}
+  constructor(@Inject(getRepositoryToken(User)) private readonly users: OrmRepository<User>) {}
 
-async restore(id: string) {
-return this.users.restore({ id });
-}
+  async restore(id: string) {
+    return this.users.restore({ id });
+  }
 }`;
 
 export const deleteHardSnippet = `import { Inject, Injectable } from '@nl-framework/core';
@@ -188,11 +188,11 @@ import { getRepositoryToken, type OrmRepository } from '@nl-framework/orm';
 
 @Injectable()
 export class ComplianceService {
-constructor(@Inject(getRepositoryToken(User)) private readonly users: OrmRepository<User>) {}
+  constructor(@Inject(getRepositoryToken(User)) private readonly users: OrmRepository<User>) {}
 
-async purge(ids: string[]) {
-return this.users.deleteHard({ id: { $in: ids } });
-}
+  async purge(ids: string[]) {
+    return this.users.deleteHard({ id: { $in: ids } });
+  }
 }`;
 
 export const operationsSnippet = `async function archiveUser(users: OrmRepository<User>, id: string) {
@@ -204,7 +204,6 @@ export const operationsSnippet = `async function archiveUser(users: OrmRepositor
     await users.softDelete({ id });
 
     return users.find(
-
 { plan: document.plan },
 { projection: { email: 1 }, withDeleted: true },
 );
