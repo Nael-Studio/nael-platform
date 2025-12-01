@@ -1,0 +1,137 @@
+---
+title: 'CLI Reference · Nael Platform'
+description: 'Full reference for the nl CLI including generators, diagnostics, and workspace scripts.'
+---
+
+import Link from 'next/link';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
+export const installCli = `bun install --global @nl-framework/cli`;
+
+export const newService = `nl new shipping-service --template=graphql --features=auth,redis`;
+
+export const generateModule = `nl generate module billing --public`;
+
+export const runDoctor = `nl doctor --checks env,versions --fix`;
+
+export const runScripts = `nl dev          # starts Bun dev server\nnl start        # production boot\nnl build        # emits dist/ for all packages`;
+
+export const commandMatrix = [
+  {
+    name: 'nl new',
+    description: 'Scaffold a new service with HTTP, GraphQL, Better Auth, or worker templates.',
+    flags: '--template --features --package-manager --install',
+  },
+  {
+    name: 'nl generate',
+    description: 'Add modules, controllers, resolvers, providers, schedulers, or Dapr subscribers.',
+    flags: 'module|controller|resolver|provider|subscriber|cron',
+  },
+  {
+    name: 'nl sync',
+    description: 'Sync versions across packages, apply lint rules, and re-run project references.',
+    flags: '--workspace --dry-run',
+  },
+  {
+    name: 'nl doctor',
+    description: 'Run environment diagnostics (Bun version, Dapr, BetterAuth secrets, Docker).',
+    flags: '--checks --fix',
+  },
+];
+
+<div className="space-y-10">
+      <div className="space-y-3">
+        <div className="text-sm uppercase tracking-wide text-muted-foreground">Reference</div>
+        <h1 className="text-4xl font-semibold">`nl` CLI</h1>
+        <div className="max-w-2xl text-muted-foreground">
+          The CLI wraps Bun scripts, code generators, and project diagnostics so you can stay focused on
+          features. Every command mirrors NestJS naming while embracing Bun-native performance.
+        </div>
+      </div>
+
+      <section className="space-y-6">
+        <Card className="border-border/80">
+          <CardHeader>
+            <CardTitle>Install once</CardTitle>
+            <CardDescription>Available through Bun, npm, or pnpm.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <CodeBlock code={installCli} title="Global install" />
+            <div className="text-sm text-muted-foreground">
+              Prefer local devDependency? Run `bun add -D @nl-framework/cli` inside your repo and call via
+              ` bun x nl ...`.
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border/80">
+          <CardHeader>
+            <CardTitle>Scaffold services</CardTitle>
+            <CardDescription>Choose templates + opt-in features.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <CodeBlock code={newService} title="GraphQL template" />
+            <div className="text-sm text-muted-foreground">
+              Templates ship with sensible defaults: configuration module, structured logger, health checks, and
+              pluggable transports. Flags control stack pieces (Redis, queues, federation gateway, Dapr sidecars).
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Generate artifacts</h2>
+        <div className="text-muted-foreground">
+          Generators respect the current working directory and automatically register the new class inside the
+          parent module. Use `--public` to export from the index barrel.
+        </div>
+        <CodeBlock code={generateModule} title="Public billing module" />
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Everyday scripts</h2>
+        <div className="text-muted-foreground">
+          `nl` proxies core Bun scripts so CI stays simple. Call `nl dev` to boot the active service with
+          watch mode, or add `--cwd` to run from any example folder.
+        </div>
+        <CodeBlock code={runScripts} title="Script shorthands" />
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Command matrix</h2>
+        <div className="grid gap-4 md:grid-cols-2">
+          {commandMatrix.map((command) => (
+            <Card className="border-border/70" key={command.name}>
+              <CardHeader>
+                <CardTitle>{command.name}</CardTitle>
+                <CardDescription>{command.flags}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-sm text-muted-foreground">{command.description}</div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Diagnostics</h2>
+        <div className="text-muted-foreground">
+          `nl doctor` inspects Bun versions, ensures Postgres is reachable, validates Dapr sidecars, and confirms
+          Better Auth secrets exist before deployment. Pass `--fix` to auto-create missing files.
+        </div>
+        <CodeBlock code={runDoctor} title="Force checks" />
+        <div className="text-sm text-muted-foreground">
+          Need more? Wire your own health checks and register them via `DoctorRegistry.register()` inside
+          your service bootstrap.
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-2xl font-semibold">Where to go next</h2>
+        <div className="text-muted-foreground">
+          Review the <Link className="text-primary" href="/docs/installation">installation matrix</Link> or learn how we
+          build Better Auth experiences in the <Link className="text-primary" href="/docs/techniques/better-auth">techniques guide</Link>.
+        </div>
+      </section>
+    </div>

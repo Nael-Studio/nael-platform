@@ -1,0 +1,268 @@
+---
+title: 'Modules · Nael Platform'
+description: 'Learn how to organize your Nael application using modules for better code structure and reusability.'
+---
+
+import Link from 'next/link';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const featureModule = `// users/users.module.ts
+import { Module } from '@nl-framework/core';
+
+@Module({
+controllers: [UsersController],
+providers: [UsersService],
+})
+export class UsersModule {}`;
+
+export const sharedModule = `import { Module } from '@nl-framework/core';
+
+@Module({
+providers: [ConfigService],
+exports: [ConfigService],
+})
+export class SharedModule {}`;
+
+export const reExportModule = `import { Module } from '@nl-framework/core';
+
+@Module({
+imports: [ConfigModule, DatabaseModule],
+exports: [ConfigModule, DatabaseModule],
+})
+export class CoreModule {}`;
+
+export const dependencyInjection = `import { Module } from '@nl-framework/core';
+
+@Module({
+controllers: [UsersController],
+providers: [UsersService],
+})
+export class UsersModule {
+constructor(private authService: AuthService) {}
+}`;
+
+export const dynamicModule = `import { Module, DynamicModule } from '@nl-framework/core';
+
+@Module({})
+export class ConfigModule {
+static forRoot(options: ConfigOptions): DynamicModule {
+return {
+module: ConfigModule,
+providers: [
+{
+provide: 'CONFIG_OPTIONS',
+useValue: options,
+},
+ConfigService,
+],
+exports: [ConfigService],
+};
+}
+}`;
+
+export const useDynamicModule = `import { Module } from '@nl-framework/core';
+
+@Module({
+imports: [
+ConfigModule.forRoot({
+folder: './config',
+}),
+],
+})
+export class AppModule {}`;
+
+export const asyncDynamicModule = `import { Module, DynamicModule } from '@nl-framework/core';
+
+@Module({})
+export class DatabaseModule {
+static forRootAsync(options: {
+useFactory: (...args: any[]) => Promise<DatabaseOptions>;
+inject?: any[];
+}): DynamicModule {
+return {
+module: DatabaseModule,
+providers: [
+{
+provide: 'DATABASE_OPTIONS',
+useFactory: options.useFactory,
+inject: options.inject || [],
+},
+{
+provide: DatabaseConnection,
+useFactory: async (dbOptions) => {
+const connection = await createConnection(dbOptions);
+return connection;
+},
+inject: ['DATABASE_OPTIONS'],
+},
+DatabaseService,
+],
+exports: [DatabaseService],
+};
+}
+}`;
+
+export const useAsyncModule = `import { Module } from '@nl-framework/core';
+
+@Module({
+imports: [
+DatabaseModule.forRootAsync({
+useFactory: (config: ConfigService) => ({
+host: config.get('DB_HOST'),
+port: config.get('DB_PORT'),
+}),
+inject: [ConfigService],
+}),
+],
+})
+export class AppModule {}`;
+
+export const moduleStructure = `src/
+  app.module.ts
+  main.ts
+  users/
+    dto/
+      create-user.dto.ts
+      update-user.dto.ts
+    entities/
+      user.entity.ts
+    users.controller.ts
+    users.module.ts
+    users.service.ts
+  auth/
+    auth.controller.ts
+    auth.module.ts
+    auth.service.ts
+    guards/
+      jwt.guard.ts
+    strategies/
+      jwt.strategy.ts
+  common/
+    decorators/
+      roles.decorator.ts
+    guards/
+      roles.guard.ts
+    interceptors/
+      logging.interceptor.ts`;
+
+<>
+<div className="space-y-10">
+      <div className="space-y-3">
+        <div className="text-sm uppercase tracking-wide text-muted-foreground">Overview</div>
+        <h1 className="text-4xl font-semibold">Modules</h1>
+        <div className="max-w-2xl text-muted-foreground">
+          A module is a class annotated with a <code>@Module()</code> decorator. The <code>@Module()</code> decorator provides metadata that Nael makes use of to organize the application structure. Each application has at least one module, a root module. The root module is the starting point Nael uses to build the application graph.
+        </div>
+      </div>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Feature modules</h2>
+        <div className="text-muted-foreground">
+          The <code>UsersController</code> and <code>UsersService</code> belong to the same application domain. As they are closely related, it makes sense to move them into a feature module. A feature module simply organizes code relevant for a specific feature, keeping code organized and establishing clear boundaries. This helps us manage complexity and develop with SOLID principles, especially as the size of the application grows.
+        </div>
+        <CodeBlock code={featureModule} title="users.module.ts" />
+        <div className="text-sm text-muted-foreground">
+          We created <code>users.module.ts</code> and moved everything related to this module into the <code>users</code> directory. The last thing we need to do is import this module into the root module (the <code>AppModule</code>, defined in the <code>app.module.ts</code> file).
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Shared modules</h2>
+        <div className="text-muted-foreground">
+          In Nael, modules are singletons by default, and thus you can share the same instance of any provider between multiple modules effortlessly. Every module is automatically a shared module. Once created it can be reused by any module. Let&apos;s imagine that we want to share an instance of the <code>ConfigService</code> between several other modules.
+        </div>
+        <CodeBlock code={sharedModule} title="shared.module.ts" />
+        <div className="text-sm text-muted-foreground">
+          Now any module that imports the <code>SharedModule</code> has access to the <code>ConfigService</code> and will share the same instance with all other modules that import it as well.
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Module re-exporting</h2>
+        <div className="text-muted-foreground">
+          As seen above, Modules can export their internal providers. In addition, they can re-export modules that they import. In the example below, the <code>ConfigModule</code> is both imported into and exported from the <code>CoreModule</code>, making it available for other modules which import this one.
+        </div>
+        <CodeBlock code={reExportModule} title="core.module.ts" />
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Dependency injection</h2>
+        <div className="text-muted-foreground">
+          A module class can inject providers as well (e.g., for configuration purposes):
+        </div>
+        <CodeBlock code={dependencyInjection} title="users.module.ts" />
+        <div className="text-sm text-muted-foreground">
+          However, module classes themselves cannot be injected as providers due to circular dependency concerns.
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Dynamic modules</h2>
+        <div className="text-muted-foreground">
+          The Nael module system includes a powerful feature called dynamic modules. This feature enables you to easily create customizable modules that can register and configure providers dynamically. Dynamic modules are covered extensively in the <Link className="text-primary" href="/docs/fundamentals/dynamic-modules">Fundamentals chapter</Link>.
+        </div>
+        <div className="text-muted-foreground">
+          Following is an example of a dynamic module definition for a <code>ConfigModule</code>:
+        </div>
+        <CodeBlock code={dynamicModule} title="config.module.ts" />
+        <div className="text-sm text-muted-foreground">
+          This module defines the <code>ConfigService</code> provider by default, but additionally - depending on the options object passed - exposes a collection of providers. Note that the properties of the object returned by the dynamic module extend (rather than override) the base module metadata defined in the <code>@Module()</code> decorator.
+        </div>
+        <CodeBlock code={useDynamicModule} title="Using dynamic module" />
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Async configuration</h2>
+        <div className="text-muted-foreground">
+          Sometimes you may want to pass module options asynchronously instead of statically. In this case, use the <code>forRootAsync()</code> method, which provides several ways to deal with async configuration.
+        </div>
+        <CodeBlock code={asyncDynamicModule} title="database.module.ts" />
+        <div className="text-sm text-muted-foreground">
+          One approach is to use a factory function:
+        </div>
+        <CodeBlock code={useAsyncModule} title="Async module usage" />
+        <div className="text-sm text-muted-foreground">
+          Our factory function can be async and can inject dependencies through <code>inject</code>. In this case, the <code>ConfigService</code> will be injected and used to retrieve the database configuration.
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Module structure</h2>
+        <div className="text-muted-foreground">
+          Here&apos;s a recommended directory structure for organizing your modules:
+        </div>
+        <CodeBlock code={moduleStructure} title="Project structure" />
+        <div className="text-sm text-muted-foreground">
+          This structure helps maintain clean separation of concerns, with each module containing its own controllers, services, DTOs, and entities. Common functionality can be shared through a <code>common</code> directory.
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Module metadata</h2>
+        <div className="text-muted-foreground">
+          The <code>@Module()</code> decorator takes a single object whose properties describe the module:
+        </div>
+        <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
+          <li>
+            <code>providers</code> - the providers that will be instantiated by the Nael injector and that may be shared at least across this module
+          </li>
+          <li>
+            <code>controllers</code> - the set of controllers defined in this module which have to be instantiated
+          </li>
+          <li>
+            <code>imports</code> - the list of imported modules that export the providers which are required in this module
+          </li>
+          <li>
+            <code>exports</code> - the subset of <code>providers</code> that are provided by this module and should be available in other modules which import this module.
+            You can use either the provider itself or just its token (<code>provide</code> value)
+          </li>
+        </ul>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-2xl font-semibold">What&apos;s next?</h2>
+        <div className="text-muted-foreground">Learn about <Link className="text-primary" href="/docs/middleware">Middleware</Link> for request processing, or dive into <Link className="text-primary" href="/docs/fundamentals/dynamic-modules">Dynamic modules</Link> for advanced module patterns.</div>
+      </section>
+    </div>
+
+</>

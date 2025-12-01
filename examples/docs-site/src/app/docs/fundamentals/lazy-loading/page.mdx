@@ -1,0 +1,131 @@
+---
+title: 'Lazy-loading modules · Nael Platform'
+description: 'Load feature modules on demand with LazyModuleLoader and the ApplicationContext hooks.'
+---
+
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const lazyLoaderSnippet = `import { LazyModuleLoader } from '@nl-framework/core';
+import { createHttpApplication } from '@nl-framework/http';
+
+const http = await createHttpApplication(AppModule, { port: 0 });
+const loader = await http.get(LazyModuleLoader);
+
+await loader.load(async () => (await import('./reports/reports.module')).ReportsModule);
+`;
+
+export const listenerSnippet = `import { Application } from '@nl-framework/core';
+
+const app = new Application();
+const context = await app.bootstrap(AppModule);
+
+const unsubscribe = context.addModuleLoadListener(({ module, controllers }) => {
+console.log('Loaded module:', module.name, 'controllers:', controllers.length);
+});
+
+await context.loadModule(ReportsModule);
+unsubscribe();
+`;
+
+export const onDemandResolverSnippet = `import { LazyModuleLoader } from '@nl-framework/core';
+import { GraphqlApplication } from '@nl-framework/graphql';
+
+const graphql = await createGraphqlApplication(AppModule);
+const loader = await graphql.get(LazyModuleLoader);
+
+await loader.load(() => import('./billing/billing.module'));
+// Next request sees the rebuilt schema automatically.
+`;
+
+<article className="space-y-8">
+      <div className="space-y-3">
+        <Badge className="bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-50">Fundamentals</Badge>
+        <h1 className="text-4xl font-semibold tracking-tight">Lazy-loading modules</h1>
+        <div className="text-lg text-muted-foreground">
+          Skip eager initialization for heavy features and load them only when a tenant, route, or job actually needs them. Nael exposes a
+          <code className="mx-1">LazyModuleLoader</code> service plus new <code className="mx-1">ApplicationContext</code> hooks so platforms can register modules at runtime without rebooting the app.
+        </div>
+      </div>
+
+      <section className="space-y-4" id="when">
+        <h2 className="text-2xl font-semibold">When to lazy load</h2>
+        <div className="text-muted-foreground">
+          Reach for lazy loading when a feature pulls in expensive providers (ORM connections, external SDKs, giant resolvers) that only a subset of
+          users require. Instead of bloating startup time, keep those modules on the shelf and register them just-in-time once you have enough context
+          to know they are needed.
+        </div>
+        <ul className="list-disc pl-6 text-muted-foreground">
+          <li>Multi-tenant SaaS: initialize tenant-specific adapters when the first request for that tenant lands.</li>
+          <li>Admin-only workflows: keep reporting or billing modules cold until an administrator invokes them.</li>
+          <li>Background workers: hydrate specialized modules inside scheduled jobs without impacting the main HTTP bootstrap.</li>
+        </ul>
+      </section>
+
+      <section className="space-y-4" id="tenant-use-case">
+        <h2 className="text-2xl font-semibold">When to use LazyModuleLoader</h2>
+        <div className="text-muted-foreground">
+          Imagine a SaaS platform where only premium tenants can access the reporting suite. Instead of registering every reporting adapter and data
+          warehouse client on startup, keep the module cold and let the first premium request trigger the load. Subsequent requests from that tenant get
+          the warmed module instantly, while standard tenants never pay the cost.
+        </div>
+        <div className="text-muted-foreground">
+          Tie the loader into your tenant resolution logic (guards, middleware, schedulers) and call `loader.load(PremiumReportsModule)`
+          only when `tenant.plan === 'premium'`. This keeps memory predictable and shortens boot time for the common case without removing
+          capabilities for customers who need them.
+        </div>
+      </section>
+
+      <section className="space-y-4" id="loader">
+        <h2 className="text-2xl font-semibold">Loading modules with LazyModuleLoader</h2>
+        <div className="text-muted-foreground">
+          The `LazyModuleLoader` is injectable from any application context (core, HTTP, GraphQL, schedulers). Call `load()` with
+          either a module class or a factory that performs a dynamic import. The loader registers the module, instantiates its providers, and emits a
+          load event so other parts of the system can react.
+        </div>
+        <CodeBlock code={lazyLoaderSnippet} title="Load a module on the first HTTP hit" />
+        <div className="text-sm text-muted-foreground">
+          The loader understands default exports as well, so returning the raw `import()` promise works if your module file exports a
+          `default` class.
+        </div>
+      </section>
+
+      <section className="space-y-4" id="listeners">
+        <h2 className="text-2xl font-semibold">Reacting to module load events</h2>
+        <div className="text-muted-foreground">
+          The `ApplicationContext` now exposes `loadModule()` and `addModuleLoadListener()`. Use them to wire up your
+          own bookkeeping (analytics, cache warmers, telemetry) whenever new modules join the container.
+        </div>
+        <CodeBlock code={listenerSnippet} title="Track loaded modules" />
+        <div className="text-sm text-muted-foreground">
+          Listeners return an unsubscribe function. They run after the module&apos;s providers, controllers, and bootstrap tokens are fully instantiated.
+        </div>
+      </section>
+
+      <section className="space-y-4" id="platforms">
+        <h2 className="text-2xl font-semibold">Platform behavior</h2>
+        <div className="text-muted-foreground">
+          Built-in platforms already listen for module load events so routes, resolvers, and guards stay in sync:
+        </div>
+        <ul className="list-disc pl-6 text-muted-foreground">
+          <li>
+            <strong>HTTP</strong>: new controllers are registered with the router immediately—no need to restart the server. Custom middleware can
+            lazily grab services from the same context ID.
+          </li>
+          <li>
+            <strong>GraphQL</strong>: when a module adds resolvers, the schema is invalidated and rebuilt on the next request so clients see the new
+            queries and mutations without downtime.
+          </li>
+        </ul>
+        <CodeBlock code={onDemandResolverSnippet} title="Load GraphQL modules on demand" />
+      </section>
+
+      <section className="space-y-4" id="tips">
+        <h2 className="text-2xl font-semibold">Operational tips</h2>
+        <ul className="list-disc pl-6 text-muted-foreground">
+          <li>Lazy modules still respect request-scoped providers. The loader uses the active context ID of the caller when instantiating services.</li>
+          <li>Avoid circular lazy loads; rely on <code>forwardRef()</code> or split shared providers into a third module if two lazy modules depend on each other.</li>
+          <li>Keep an eye on memory. Once loaded, modules remain registered for the lifetime of the process.</li>
+        </ul>
+      </section>
+    </article>

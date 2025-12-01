@@ -1,0 +1,100 @@
+---
+title: 'ORM documents · Nael Platform'
+description: 'Use the @Document decorator to describe collections, timestamps, and soft-delete behavior.'
+---
+
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const basicDocumentSnippet = `import { Document } from '@nl-framework/orm';
+
+@Document()
+export class User {
+id!: string;
+email!: string;
+name!: string;
+createdAt!: Date;
+updatedAt!: Date;
+deletedAt?: Date | null;
+}`;
+
+export const optionsSnippet = `import { Document } from '@nl-framework/orm';
+
+@Document({ collection: 'tenants', timestamps: true, softDelete: false })
+export class Tenant {
+id!: string;
+slug!: string;
+plan!: 'free' | 'enterprise';
+}`;
+
+export const manualRegistrationSnippet = `import { Module } from '@nl-framework/core';
+import { OrmModule, createMongoDriver } from '@nl-framework/orm';
+
+@Module({
+imports: [
+OrmModule.forRoot({
+driver: createMongoDriver({ uri: process.env.MONGO_URI!, dbName: 'app-db' }),
+entities: [User, Tenant],
+}),
+],
+})
+export class AppModule {}`;
+
+<article className="space-y-8">
+      <div className="space-y-3">
+        <Badge className="bg-slate-100 text-slate-900 dark:bg-slate-900/30 dark:text-slate-50">ORM</Badge>
+        <h1 className="text-4xl font-semibold tracking-tight">Documents & metadata</h1>
+        <div className="text-lg text-muted-foreground">
+          Entities in the Nael ORM are simple classes annotated with `@Document()`. Metadata drives collection names, timestamps, soft-delete,
+          and auto-discovery so repositories know how to persist your models without extra boilerplate.
+        </div>
+      </div>
+
+      <section className="space-y-4" id="basics">
+        <h2 className="text-2xl font-semibold">Minimal document</h2>
+        <div className="text-muted-foreground">
+          Decorating a class registers it with the document registry. The default collection name is the kebab-case version of the class name
+          (`UserPreferences` → `user-preferences`). Timestamps and soft-delete columns are enabled automatically, so repositories
+          add `createdAt`, `updatedAt`, and `deletedAt` fields without additional code.
+        </div>
+        <CodeBlock code={basicDocumentSnippet} title="Smallest document" />
+        <div className="text-sm text-muted-foreground">
+          The `id` property is always surfaced as a string even though MongoDB stores `_id` internally. The repository keeps both in
+          sync so your domain logic can work purely with string identifiers.
+        </div>
+      </section>
+
+      <section className="space-y-4" id="options">
+        <h2 className="text-2xl font-semibold">Collection & lifecycle options</h2>
+        <div className="text-muted-foreground">
+          Customize behavior with the decorator options:
+        </div>
+        <ul className="list-disc pl-6 text-muted-foreground">
+          <li><code>collection</code>: override the inferred name when you need snake_case or shared collections.</li>
+          <li><code>timestamps</code>: disable automatic <code>createdAt</code>/<code>updatedAt</code> management if your driver sets them.</li>
+          <li><code>softDelete</code>: toggle logical deletes; repositories fall back to permanent deletes when this is <code>false</code>.</li>
+        </ul>
+        <CodeBlock code={optionsSnippet} title="Explicit collection with hard deletes" />
+      </section>
+
+      <section className="space-y-4" id="discovery">
+        <h2 className="text-2xl font-semibold">Auto-discovery vs manual registration</h2>
+        <div className="text-muted-foreground">
+          Any document that is imported before `OrmModule.forRoot()` runs is discovered automatically. Large apps sometimes prefer to pass an
+          explicit `entities` array to scope a connection to a subset of documents.
+        </div>
+        <CodeBlock code={manualRegistrationSnippet} title="Scope entities per connection" />
+        <div className="text-sm text-muted-foreground">
+          Even when you pass `entities`, decorators are still required so repositories know the collection metadata.
+        </div>
+      </section>
+
+      <section className="space-y-4" id="tips">
+        <h2 className="text-2xl font-semibold">Tips</h2>
+        <ul className="list-disc pl-6 text-muted-foreground">
+          <li>Keep entity files free of framework-specific imports beyond <code>@Document</code> to encourage reuse in tests.</li>
+          <li>Group aggregate helpers (validators, derived getters) directly on the class so repositories can return rich objects.</li>
+          <li>When sharing documents across connections, import them once at bootstrap to avoid duplicate registration warnings.</li>
+        </ul>
+      </section>
+    </article>

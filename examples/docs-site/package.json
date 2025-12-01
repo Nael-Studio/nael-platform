@@ -3,13 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "bun run build:search && next dev --webpack",
+    "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "build:search": "bun run scripts/build-search-index.ts"
   },
   "dependencies": {
     "@mdx-js/react": "^3.0.1",
+    "@mdx-js/loader": "^3.0.1",
     "@next/mdx": "^14.2.16",
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-slot": "^1.2.4",

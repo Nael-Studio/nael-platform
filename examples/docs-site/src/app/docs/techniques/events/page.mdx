@@ -1,0 +1,124 @@
+---
+title: 'Events · Techniques'
+description: 'Publish and handle domain events using the Nael microservices module and Dapr pub/sub.'
+---
+
+import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const install = `bun add @nl-framework/microservices @nl-framework/logger`;
+
+export const daprComponent = `# components/pubsub.yaml
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: redis-pubsub
+spec:
+  type: pubsub.redis
+  version: v1
+  metadata:
+    - name: redisHost
+      value: localhost:6379`;
+
+export const consumer = `import { Module, Injectable } from '@nl-framework/core';
+import { Logger } from '@nl-framework/logger';
+import { EventPattern, createMicroservicesModule } from '@nl-framework/microservices';
+
+@Injectable()
+export class NotificationsConsumer {
+constructor(private readonly logger: Logger) {}
+
+@EventPattern('notifications.email')
+async handleEmail(payload: { to: string; subject: string }) {
+this.logger.info('Sending email', payload);
+}
+
+@EventPattern({ topic: 'notifications.sms' })
+async handleSms(payload: { to: string; message: string }) {
+this.logger.info('Sending SMS', payload);
+}
+}
+
+@Module({
+imports: [
+createMicroservicesModule({
+controllers: [NotificationsConsumer],
+// transport defaults to Dapr pub/sub (redis-pubsub on localhost:3500)
+}),
+],
+providers: [NotificationsConsumer],
+})
+export class NotificationsModule {};`;
+
+export const producer = `import { Injectable } from '@nl-framework/core';
+import { MicroserviceClient } from '@nl-framework/microservices';
+
+@Injectable()
+export class OrdersService {
+constructor(private readonly client: MicroserviceClient) {}
+
+async place(order: { id: string; total: number }) {
+// ...persist the order...
+await this.client.emit('notifications.email', {
+to: 'user@example.com',
+subject: 'Order received',
+});
+}
+}
+`;
+
+export const runDapr = `dapr run --app-id notifications --app-port 4000 --components-path ./components -- bun run dev`;
+
+<article className="space-y-8">
+      <div className="space-y-3">
+        <Badge className="bg-violet-100 text-violet-900 dark:bg-violet-900/30 dark:text-violet-50">
+          Techniques
+        </Badge>
+        <h1 className="text-4xl font-semibold tracking-tight">Events</h1>
+        <div className="text-lg text-muted-foreground">
+          Decouple services with domain events. Nael uses the microservices module with Dapr pub/sub by default, giving
+          you decorators for consumers and a simple client for producers.
+        </div>
+      </div>
+
+      <section className="space-y-4" id="install">
+        <h2 className="text-2xl font-semibold">Install & configure Dapr</h2>
+        <div className="text-muted-foreground">
+          Add the microservices package and run a Dapr sidecar with a pub/sub component (Redis shown here). Override
+          `pubsubName`, host, or port via `DaprTransportOptions` when creating the microservices module.
+        </div>
+        <CodeBlock code={install} title="Install dependencies" />
+        <CodeBlock code={daprComponent} title="Dapr pub/sub component" />
+        <CodeBlock code={runDapr} title="Run Dapr sidecar" />
+      </section>
+
+      <section className="space-y-4" id="consume">
+        <h2 className="text-2xl font-semibold">Handle events with decorators</h2>
+        <div className="text-muted-foreground">
+          Use `@EventPattern` to subscribe to topics. Register controllers through `createMicroservicesModule`
+          so handlers are discovered and wired to the Dapr transport.
+        </div>
+        <CodeBlock code={consumer} title="notifications.module.ts" />
+      </section>
+
+      <section className="space-y-4" id="produce">
+        <h2 className="text-2xl font-semibold">Publish events</h2>
+        <div className="text-muted-foreground">
+          Inject `MicroserviceClient` and call `emit()` for fire-and-forget events. For request/response,
+          use `send()` (Dapr service invocation) when you need a reply.
+        </div>
+        <CodeBlock code={producer} title="orders.service.ts" />
+      </section>
+
+      <section className="space-y-3" id="tips">
+        <h2 className="text-2xl font-semibold">Best practices</h2>
+        <ul className="list-disc space-y-2 pl-6 text-muted-foreground">
+          <li>Keep events small and idempotent; Dapr may redeliver on failures.</li>
+          <li>Use stable topic names per bounded context (e.g., <code>orders.created</code>).</li>
+          <li>Log and handle poison messages—DLQ support can be added via Dapr component config.</li>
+          <li>Set transport options via config to target different pub/sub backends per environment.</li>
+          <li>Combine with <Link className="text-primary underline" href="/docs/techniques/logging">logging</Link> for traceability across services.</li>
+        </ul>
+      </section>
+    </article>

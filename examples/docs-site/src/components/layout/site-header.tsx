@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 import { ThemeSwitcher } from "@/components/kibo-ui/theme-switcher";
 import { Button } from "@/components/ui/button";
+import { SearchBox } from "@/components/search/search-box";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -17,6 +19,11 @@ type ThemeOption = "light" | "dark" | "system";
 export function SiteHeader() {
   const pathname = usePathname();
   const { theme, resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const currentTheme = (theme ?? resolvedTheme ?? "system") as ThemeOption;
 
@@ -27,6 +34,9 @@ export function SiteHeader() {
           <Link className="font-semibold tracking-tight" href="/">
             Nael Platform Docs
           </Link>
+          <div className="hidden w-80 md:block">
+            <SearchBox />
+          </div>
           <nav className="hidden items-center gap-4 text-sm font-medium md:flex">
             {navItems.map((item) => (
               <Link
@@ -43,12 +53,17 @@ export function SiteHeader() {
           </nav>
         </div>
         <div className="flex items-center gap-2">
+          <div className="block w-48 md:hidden">
+            <SearchBox />
+          </div>
           {/* #sym:kibo-ui Theme Switcher for global appearance */}
-          <ThemeSwitcher
-            className="hidden sm:flex"
-            onChange={(value) => setTheme(value)}
-            value={currentTheme}
-          />
+          {mounted && (
+            <ThemeSwitcher
+              className="hidden sm:flex"
+              onChange={(value) => setTheme(value)}
+              value={currentTheme}
+            />
+          )}
           <Button asChild className="hidden sm:inline-flex" variant="outline">
             <Link href="https://github.com/Nael-Studio/nael-platform" rel="noreferrer" target="_blank">
               Star on GitHub

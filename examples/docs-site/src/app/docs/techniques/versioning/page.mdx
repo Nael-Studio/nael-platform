@@ -1,0 +1,119 @@
+---
+title: 'Versioning · Techniques'
+description: 'Expose multiple API versions with route decorators and configurable negotiation strategies.'
+---
+
+import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const configSnippet = `# config/http.yaml
+http:
+  port: 3000
+  versioning:
+    enabled: true
+    strategies: ['uri', 'header']
+    defaultVersion: '1'
+    headerName: x-api-version
+    uriPrefix: v
+    responseHeader: api-version`;
+
+export const bootstrap = `import { createHttpApplication } from '@nl-framework/http';
+
+await createHttpApplication(AppModule, {
+port: 3000,
+versioning: {
+enabled: true,
+strategies: ['uri', 'header'],
+defaultVersion: '1',
+responseHeader: 'api-version',
+},
+}).then((app) => app.listen());`;
+
+export const controllerExample = `import { Controller, Get, Version } from '@nl-framework/http';
+
+@Controller('/users')
+@Version('1') // default for the controller
+export class UsersController {
+@Get('/')
+listV1() {
+return [{ id: 1, email: 'ada@example.com' }];
+}
+
+@Get('/')
+@Version('2')
+listV2() {
+return [{ id: 1, email: 'ada@example.com', active: true }];
+}
+
+@Get('/:id')
+@Version(['1', '2'])
+detail() {
+return { id: 1, email: 'ada@example.com' };
+}
+}`;
+
+export const calling = `# URI strategy (/v1 prefix)
+curl http://localhost:3000/v1/users
+
+# Custom header strategy
+
+curl -H "x-api-version: 2" http://localhost:3000/users
+
+# Media type strategy (if enabled)
+
+curl -H "accept: application/json;v=2" http://localhost:3000/users`;
+
+<article className="space-y-8">
+      <div className="space-y-3">
+        <Badge className="bg-indigo-100 text-indigo-900 dark:bg-indigo-900/30 dark:text-indigo-50">
+          Techniques
+        </Badge>
+        <h1 className="text-4xl font-semibold tracking-tight">Versioning</h1>
+        <div className="text-lg text-muted-foreground">
+          Serve multiple API versions side by side. Nael lets you declare versions on controllers or handlers and
+          negotiate them via URI prefixes, custom headers, or media-type parameters—all configurable through DI-friendly
+          options at bootstrap.
+        </div>
+      </div>
+
+      <section className="space-y-4" id="config">
+        <h2 className="text-2xl font-semibold">Configure negotiation</h2>
+        <div className="text-muted-foreground">
+          Enable versioning per HTTP app. Choose strategies, default version, and the response header that surfaces the
+          negotiated version. URI strategy strips a prefix like `/v1`; header strategy reads `x-api-version`;
+          media strategy looks for `v` in `Accept`.
+        </div>
+        <CodeBlock code={configSnippet} title="config/http.yaml" />
+        <CodeBlock code={bootstrap} title="Bootstrap with versioning" />
+      </section>
+
+      <section className="space-y-4" id="decorators">
+        <h2 className="text-2xl font-semibold">Declare versions on routes</h2>
+        <div className="text-muted-foreground">
+          Use `@Version()` on controllers for defaults and on handlers for overrides. The router picks the
+          best match for the requested version and falls back to unversioned routes when no specific match exists.
+        </div>
+        <CodeBlock code={controllerExample} title="Versioned controller" />
+      </section>
+
+      <section className="space-y-4" id="calling">
+        <h2 className="text-2xl font-semibold">Call different versions</h2>
+        <div className="text-muted-foreground">
+          With URI strategy, prefix routes (e.g., `/v1/users`). With header/media strategies, keep URLs stable
+          and pass version metadata in headers.
+        </div>
+        <CodeBlock code={calling} title="Requesting versions" />
+      </section>
+
+      <section className="space-y-3" id="guidance">
+        <h2 className="text-2xl font-semibold">Best practices</h2>
+        <ul className="list-disc space-y-2 pl-6 text-muted-foreground">
+          <li>Prefer additive changes and deprecate old versions quickly; keep defaultVersion pointing to the newest stable.</li>
+          <li>Use URI strategy for public APIs, header/media strategies for internal or gateway-managed clients.</li>
+          <li>Expose the matched version with <code>responseHeader</code> so clients can confirm what they hit.</li>
+          <li>Keep validation/serialization DTOs per version to avoid accidental leakage of new fields.</li>
+          <li>Pair with <Link className="text-primary underline" href="/docs/techniques/serialization">Serialization</Link> and <Link className="text-primary underline" href="/docs/techniques/validation">Validation</Link> for clean contracts.</li>
+        </ul>
+      </section>
+    </article>

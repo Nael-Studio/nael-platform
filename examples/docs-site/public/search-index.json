@@ -1,0 +1,336 @@
+[
+  {
+    "title": "Middleware · Nael Platform",
+    "description": "Learn how to use middleware for request processing, logging, authentication, and error handling in Nael applications.",
+    "href": "/docs/middleware",
+    "section": "middleware",
+    "headings": []
+  },
+  {
+    "title": "Interceptors - NL Framework",
+    "description": "Learn how to extend request/response behavior with interceptors in NL Framework.",
+    "href": "/docs/interceptors",
+    "section": "interceptors",
+    "headings": []
+  },
+  {
+    "title": "Lifecycle events · Nael Platform",
+    "description": "Use OnModuleInit, OnModuleDestroy, and bootstrap hooks to manage resources cleanly in Nael modules.",
+    "href": "/docs/fundamentals/lifecycle-events",
+    "section": "fundamentals",
+    "headings": []
+  },
+  {
+    "title": "Dynamic modules · Nael Platform",
+    "description": "Design modules that accept configuration via register/registerAsync so features can be reused across applications.",
+    "href": "/docs/fundamentals/dynamic-modules",
+    "section": "fundamentals",
+    "headings": []
+  },
+  {
+    "title": "Lazy-loading modules · Nael Platform",
+    "description": "Load feature modules on demand with LazyModuleLoader and the ApplicationContext hooks.",
+    "href": "/docs/fundamentals/lazy-loading",
+    "section": "fundamentals",
+    "headings": []
+  },
+  {
+    "title": "Custom providers · Nael Platform",
+    "description": "Understand provider tokens, alternative implementations, and factory patterns so you can adapt the IoC container to any integration.",
+    "href": "/docs/fundamentals/custom-providers",
+    "section": "fundamentals",
+    "headings": []
+  },
+  {
+    "title": "Async providers · Nael Platform",
+    "description": "Configure modules and tokens that depend on asynchronous work using useFactory, useClass, and useExisting patterns.",
+    "href": "/docs/fundamentals/async-providers",
+    "section": "fundamentals",
+    "headings": []
+  },
+  {
+    "title": "Execution context · Nael Platform",
+    "description": "Understand how Nael propagates context IDs across HTTP, GraphQL, and custom workloads for scoped providers.",
+    "href": "/docs/fundamentals/execution-context",
+    "section": "fundamentals",
+    "headings": []
+  },
+  {
+    "title": "Injection scopes · Nael Platform",
+    "description": "Understand singleton, request, and transient lifecycles in the Nael IoC container.",
+    "href": "/docs/fundamentals/injection-scopes",
+    "section": "fundamentals",
+    "headings": []
+  },
+  {
+    "title": "Module reference · Nael Platform",
+    "description": "Use ModuleRef to resolve providers dynamically, create scoped instances, and interact with module-scoped injectors.",
+    "href": "/docs/fundamentals/module-reference",
+    "section": "fundamentals",
+    "headings": []
+  },
+  {
+    "title": "Circular dependencies · Nael Platform",
+    "description": "Break circular references between providers and modules using forwardRef, ModuleRef, and lazy resolution patterns.",
+    "href": "/docs/fundamentals/circular-dependency",
+    "section": "fundamentals",
+    "headings": []
+  },
+  {
+    "title": "Providers · Nael Platform",
+    "description": "Learn about providers, dependency injection, and service management in Nael Platform.",
+    "href": "/docs/providers",
+    "section": "providers",
+    "headings": []
+  },
+  {
+    "title": "Installation · Nael Platform",
+    "description": "Install Nael Platform from the monorepo or by selectively adding @nl-framework packages to your Bun workspace.",
+    "href": "/docs/installation",
+    "section": "installation",
+    "headings": []
+  },
+  {
+    "title": "Exception Filters · Nael Platform",
+    "description": "Learn how to use exception filters for centralized error handling and custom error responses in Nael applications.",
+    "href": "/docs/exception-filters",
+    "section": "exception-filters",
+    "headings": []
+  },
+  {
+    "title": "CLI Reference · Nael Platform",
+    "description": "Full reference for the nl CLI including generators, diagnostics, and workspace scripts.",
+    "href": "/docs/cli",
+    "section": "cli",
+    "headings": []
+  },
+  {
+    "title": "Pipes · Nael Platform",
+    "description": "Learn how to use pipes for transforming and validating input data before it reaches route handlers in Nael applications.",
+    "href": "/docs/pipes",
+    "section": "pipes",
+    "headings": []
+  },
+  {
+    "title": "First Steps · Nael Platform",
+    "description": "Learn how to create your first Nael Platform application with Bun runtime.",
+    "href": "/docs/first-steps",
+    "section": "first-steps",
+    "headings": []
+  },
+  {
+    "title": "Getting Started · Nael Platform",
+    "description": "Scaffold and run Nael Platform services with the CLI or the monorepo examples.",
+    "href": "/docs/getting-started",
+    "section": "getting-started",
+    "headings": []
+  },
+  {
+    "title": "GraphQL Exception Handling - NL Framework",
+    "description": "Learn how to handle exceptions in GraphQL resolvers using NL Framework",
+    "href": "/docs/graphql/exception-handling",
+    "section": "graphql",
+    "headings": []
+  },
+  {
+    "title": "ORM multi-tenancy · Nael Platform",
+    "description": "Model one connection per region, tenant tier, or customer and resolve repositories dynamically.",
+    "href": "/docs/orm/multi-tenancy",
+    "section": "orm",
+    "headings": []
+  },
+  {
+    "title": "ORM complex queries · Nael Platform",
+    "description": "Pattern matching, aggregation pipelines, and advanced Mongo operators using the Nael ORM.",
+    "href": "/docs/orm/queries",
+    "section": "orm",
+    "headings": []
+  },
+  {
+    "title": "ORM seeding · Nael Platform",
+    "description": "Register seeds, track execution history, and run them automatically or on demand.",
+    "href": "/docs/orm/seeding",
+    "section": "orm",
+    "headings": []
+  },
+  {
+    "title": "ORM repositories · Nael Platform",
+    "description": "Inject repositories, scope them per request, and use helper methods for query, persistence, and soft-delete flows.",
+    "href": "/docs/orm/repositories",
+    "section": "orm",
+    "headings": []
+  },
+  {
+    "title": "Nael ORM overview · Nael Platform",
+    "description": "Install and register the Nael ORM, connect drivers, and expose connection tokens across your application.",
+    "href": "/docs/orm/overview",
+    "section": "orm",
+    "headings": []
+  },
+  {
+    "title": "ORM documents · Nael Platform",
+    "description": "Use the @Document decorator to describe collections, timestamps, and soft-delete behavior.",
+    "href": "/docs/orm/entities",
+    "section": "orm",
+    "headings": []
+  },
+  {
+    "title": "Custom decorators · Nael Platform",
+    "description": "Implement metadata and parameter decorators using SetMetadata, createHttpParamDecorator, and createGraphqlParamDecorator.",
+    "href": "/docs/custom-decorators",
+    "section": "custom-decorators",
+    "headings": []
+  },
+  {
+    "title": "Modules · Nael Platform",
+    "description": "Learn how to organize your Nael application using modules for better code structure and reusability.",
+    "href": "/docs/modules",
+    "section": "modules",
+    "headings": []
+  },
+  {
+    "title": "Controllers · Nael Platform",
+    "description": "Learn how to create and use controllers to handle incoming requests in Nael Platform.",
+    "href": "/docs/controllers",
+    "section": "controllers",
+    "headings": []
+  },
+  {
+    "title": "Overview · Nael Platform",
+    "description": "Learn about Nael Platform philosophy, installation options, Better Auth integration, GraphQL, and microservices support.",
+    "href": "/docs",
+    "section": "Docs",
+    "headings": []
+  },
+  {
+    "title": "Guards - NL Framework",
+    "description": "Learn how to use guards for authorization and access control in NL Framework",
+    "href": "/docs/guards",
+    "section": "guards",
+    "headings": []
+  },
+  {
+    "title": "Microservices & Scheduler · Techniques",
+    "description": "Wire Dapr pub/sub, background jobs, and queue consumers inside Nael services.",
+    "href": "/docs/techniques/microservices",
+    "section": "techniques",
+    "headings": []
+  },
+  {
+    "title": "Database techniques · Nael Platform",
+    "description": "Wire relational or document databases into Nael applications using DI-friendly modules and configuration.",
+    "href": "/docs/techniques/database",
+    "section": "techniques",
+    "headings": []
+  },
+  {
+    "title": "Configuration · Nael Platform",
+    "description": "Structure strongly typed configuration with ConfigModule, ConfigService, and feature slices.",
+    "href": "/docs/techniques/configuration",
+    "section": "techniques",
+    "headings": [
+      "config/production.yaml"
+    ]
+  },
+  {
+    "title": "Serialization · Techniques",
+    "description": "Control how responses are converted to JSON across HTTP and GraphQL using class-transformer with DI-driven settings.",
+    "href": "/docs/techniques/serialization",
+    "section": "techniques",
+    "headings": []
+  },
+  {
+    "title": "Task scheduling · Techniques",
+    "description": "Run cron, interval, and timeout jobs in Bun workers with decorator-driven registration.",
+    "href": "/docs/techniques/task-scheduling",
+    "section": "techniques",
+    "headings": []
+  },
+  {
+    "title": "GraphQL & Federation · Techniques",
+    "description": "Guidance for running GraphQL servers, Apollo subgraphs, and Bun-based gateways.",
+    "href": "/docs/techniques/graphql",
+    "section": "techniques",
+    "headings": []
+  },
+  {
+    "title": "File upload · Techniques",
+    "description": "Handle multipart/form-data uploads in Nael HTTP handlers using native FormData APIs.",
+    "href": "/docs/techniques/file-upload",
+    "section": "techniques",
+    "headings": []
+  },
+  {
+    "title": "Compression · Techniques",
+    "description": "Add response compression with HTTP middleware in Nael applications using Bun",
+    "href": "/docs/techniques/compression",
+    "section": "techniques",
+    "headings": []
+  },
+  {
+    "title": "Queues (Dapr) · Techniques",
+    "description": "Use Dapr pub/sub with the Nael microservices module to publish and consume queue-like workloads without extra brokers.",
+    "href": "/docs/techniques/queues",
+    "section": "techniques",
+    "headings": []
+  },
+  {
+    "title": "Better Auth · Techniques",
+    "description": "Best practices for wiring Better Auth across HTTP, GraphQL, and multi-tenant services.",
+    "href": "/docs/techniques/better-auth",
+    "section": "techniques",
+    "headings": []
+  },
+  {
+    "title": "ORM docs moved · Nael Platform",
+    "description": "This page now lives under the dedicated ORM section.",
+    "href": "/docs/techniques/orm",
+    "section": "techniques",
+    "headings": []
+  },
+  {
+    "title": "Versioning · Techniques",
+    "description": "Expose multiple API versions with route decorators and configurable negotiation strategies.",
+    "href": "/docs/techniques/versioning",
+    "section": "techniques",
+    "headings": [
+      "Custom header strategy",
+      "Media type strategy (if enabled)"
+    ]
+  },
+  {
+    "title": "Events · Techniques",
+    "description": "Publish and handle domain events using the Nael microservices module and Dapr pub/sub.",
+    "href": "/docs/techniques/events",
+    "section": "techniques",
+    "headings": []
+  },
+  {
+    "title": "Caching · Techniques",
+    "description": "Add response caching to HTTP and GraphQL handlers with pluggable stores and Redis support.",
+    "href": "/docs/techniques/caching",
+    "section": "techniques",
+    "headings": []
+  },
+  {
+    "title": "Logging · Techniques",
+    "description": "Structured logging with DI-friendly factories, request middleware, and transport customization in Nael.",
+    "href": "/docs/techniques/logging",
+    "section": "techniques",
+    "headings": []
+  },
+  {
+    "title": "Cookies · Techniques",
+    "description": "Read and write HTTP cookies safely in Nael apps, including multi-tenant prefixes with Better Auth.",
+    "href": "/docs/techniques/cookies",
+    "section": "techniques",
+    "headings": []
+  },
+  {
+    "title": "Validation · Techniques",
+    "description": "Validate and transform incoming data with class-validator and class-transformer across HTTP and GraphQL in Nael applications.",
+    "href": "/docs/techniques/validation",
+    "section": "techniques",
+    "headings": []
+  }
+]

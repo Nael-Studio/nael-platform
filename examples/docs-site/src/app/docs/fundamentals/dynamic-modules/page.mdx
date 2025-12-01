@@ -1,0 +1,147 @@
+---
+title: 'Dynamic modules · Nael Platform'
+description: 'Design modules that accept configuration via register/registerAsync so features can be reused across applications.'
+---
+
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const forRootSnippet = `import { DynamicModule, Module } from '@nl-framework/core';
+
+type MailerModuleOptions = {
+transport: string;
+defaults?: Record<string, unknown>;
+};
+
+@Module({})
+export class MailerModule {
+static register(options: MailerModuleOptions): DynamicModule {
+return {
+module: MailerModule,
+providers: [
+MailerService,
+{ provide: MAILER_OPTIONS, useValue: options },
+],
+exports: [MailerService],
+};
+}
+}`;
+
+export const forFeatureSnippet = `// feature/users/users.module.ts
+import { Module } from '@nl-framework/core';
+
+@Module({
+imports: [
+MailerModule.register({
+transport: 'smtp://send.example.com',
+defaults: { from: 'support@example.com' },
+}),
+],
+providers: [UsersService],
+})
+export class UsersModule {}`;
+
+export const asyncSnippet = `import { DynamicModule, Module } from '@nl-framework/core';
+import { ConfigModule, ConfigService } from '@nl-framework/config';
+
+type MailerModuleAsyncOptions = {
+imports?: DynamicModule[];
+inject?: any[];
+useFactory: (...args: any[]) => Promise<MailerModuleOptions> | MailerModuleOptions;
+};
+
+@Module({})
+export class MailerModule {
+static registerAsync(options: MailerModuleAsyncOptions): DynamicModule {
+return {
+module: MailerModule,
+imports: options.imports ?? [],
+providers: [
+MailerService,
+{
+provide: MAILER_OPTIONS,
+useFactory: options.useFactory,
+inject: options.inject ?? [],
+},
+],
+exports: [MailerService],
+};
+}
+}
+
+// root module
+@Module({
+imports: [
+ConfigModule.forRoot({ isGlobal: true }),
+MailerModule.registerAsync({
+imports: [ConfigModule],
+inject: [ConfigService],
+useFactory: async (config: ConfigService) => ({
+transport: config.get('smtp.url'),
+defaults: { from: config.get('smtp.from') },
+}),
+}),
+],
+})
+export class AppModule {}`;
+
+export const reExportSnippet = `@Module({
+  imports: [MailerModule.register({ transport: 'smtp://...' })],
+  exports: [MailerModule],
+})
+export class MessagingSharedModule {}
+
+@Module({
+imports: [MessagingSharedModule],
+})
+export class NotificationsModule {}`;
+
+<article className="space-y-8">
+      <div className="space-y-3">
+        <Badge className="bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-50">Fundamentals</Badge>
+        <h1 className="text-4xl font-semibold tracking-tight">Dynamic modules</h1>
+        <div className="text-lg text-muted-foreground">
+          Dynamic modules expose a factory API&mdash;usually called `register()` or `forRoot()`&mdash;so consumers can
+          configure providers on the fly. They are the building block for reusable libraries such as Config, Auth, or Scheduler.
+        </div>
+      </div>
+
+      <section className="space-y-4" id="for-root">
+        <h2 className="text-2xl font-semibold">Synchronous register/forRoot</h2>
+        <div className="text-muted-foreground">
+          Return a `DynamicModule` object with the `module`, `providers`, and `exports` fields.
+          The calling module decides the configuration, while your feature stays stateless.
+        </div>
+        <CodeBlock code={forRootSnippet} title="MailerModule.register" />
+      </section>
+
+      <section className="space-y-4" id="feature">
+        <h2 className="text-2xl font-semibold">Consuming dynamic modules</h2>
+        <div className="text-muted-foreground">
+          Feature modules import the configured version just like any other module. Each call to `register()` produces its own provider
+          graph, so different features can point to different transports without interfering with each other.
+        </div>
+        <CodeBlock code={forFeatureSnippet} title="UsersModule importing MailerModule" />
+      </section>
+
+      <section className="space-y-4" id="register-async">
+        <h2 className="text-2xl font-semibold">Asynchronous configuration</h2>
+        <div className="text-muted-foreground">
+          Use `registerAsync()`/`forRootAsync()` when you need to read environment variables, fetch secrets, or build the option
+          object asynchronously. You can delegate to `useFactory`, `useClass`, or `useExisting` just like any other provider.
+        </div>
+        <CodeBlock code={asyncSnippet} title="registerAsync with ConfigService" />
+      </section>
+
+      <section className="space-y-4" id="re-export">
+        <h2 className="text-2xl font-semibold">Sharing configured modules</h2>
+        <div className="text-muted-foreground">
+          If multiple feature modules need the same configuration (e.g., one SMTP transport), wrap the dynamic module in a shared module and export it.
+          Downstream modules simply import the shared module to reuse the providers.
+        </div>
+        <CodeBlock code={reExportSnippet} title="Re-export a configured module" />
+        <div className="text-sm text-muted-foreground">
+          This mirrors NestJS&rsquo;s `forRoot()`/`forFeature()` pattern and keeps your dependency graph explicit.
+        </div>
+      </section>
+    </article>

@@ -1,0 +1,501 @@
+---
+title: 'Exception Filters · Nael Platform'
+description: 'Learn how to use exception filters for centralized error handling and custom error responses in Nael applications.'
+---
+
+import Link from 'next/link';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const basicFilter = `import { ExceptionFilter, HttpException } from '@nl-framework/http';
+import type { RequestContext } from '@nl-framework/http';
+
+export class HttpExceptionFilter implements ExceptionFilter {
+  async catch(exception: Error, context: RequestContext): Promise<Response> {
+    if (exception instanceof HttpException) {
+      return new Response(
+        JSON.stringify({
+          statusCode: exception.status,
+          message: exception.message,
+          timestamp: new Date().toISOString(),
+          path: new URL(context.request.url).pathname,
+        }),
+        {
+          status: exception.status,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Handle other exceptions
+    return new Response(
+      JSON.stringify({
+        statusCode: 500,
+        message: 'Internal Server Error',
+        timestamp: new Date().toISOString(),
+      }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+
+}
+}`;
+
+export const registerFilter = `import { registerExceptionFilters } from '@nl-framework/http';
+
+// Register during application bootstrap
+registerExceptionFilters(new HttpExceptionFilter());`;
+
+export const httpException = `import { HttpException } from '@nl-framework/http';
+import { Controller, Get, Post, Body, Param } from '@nl-framework/http';
+
+@Controller('/posts')
+export class PostsController {
+@Get('/:id')
+async findOne(@Param('id') id: string) {
+const post = await this.findPostById(id);
+
+    if (!post) {
+      throw HttpException.notFound(\`Post with ID \${id} not found\`);
+    }
+
+    return post;
+
+}
+
+@Post('/')
+async create(@Body() data: CreatePostDto) {
+if (!data.title || data.title.length < 3) {
+throw HttpException.badRequest('Title must be at least 3 characters');
+}
+
+    const existingPost = await this.findByTitle(data.title);
+    if (existingPost) {
+      throw HttpException.conflict('Post with this title already exists');
+    }
+
+    return await this.createPost(data);
+
+}
+}`;
+
+export const staticMethods = `import { HttpException } from '@nl-framework/http';
+
+// 400 Bad Request
+throw HttpException.badRequest('Invalid input');
+
+// 401 Unauthorized
+throw HttpException.unauthorized('Authentication required');
+
+// 403 Forbidden
+throw HttpException.forbidden('Access denied');
+
+// 404 Not Found
+throw HttpException.notFound('Resource not found');
+
+// 409 Conflict
+throw HttpException.conflict('Resource already exists');
+
+// 422 Unprocessable Entity
+throw HttpException.unprocessableEntity('Validation failed');
+
+// 500 Internal Server Error
+throw HttpException.internalServerError('Something went wrong');
+
+// 503 Service Unavailable
+throw HttpException.serviceUnavailable('Service temporarily unavailable');
+
+// Custom status code
+throw new HttpException(418, "I'm a teapot");`;
+
+export const validationFilter = `import { ExceptionFilter } from '@nl-framework/http';
+import { ValidationException } from '@nl-framework/core';
+import type { RequestContext } from '@nl-framework/http';
+
+export class ValidationExceptionFilter implements ExceptionFilter {
+  async catch(exception: Error, context: RequestContext): Promise<Response> {
+    if (exception instanceof ValidationException) {
+      return new Response(
+        JSON.stringify({
+          statusCode: 400,
+          message: 'Validation failed',
+          errors: exception.issues.map((issue) => ({
+            field: issue.path.join('.'),
+            message: issue.message,
+          })),
+        }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Let other filters handle this
+    throw exception;
+
+}
+}`;
+
+export const problemJsonFilter = `import { ExceptionFilter, HttpException } from '@nl-framework/http';
+import type { RequestContext } from '@nl-framework/http';
+
+export class ProblemJsonFilter implements ExceptionFilter {
+  async catch(exception: Error, context: RequestContext): Promise<Response> {
+    const url = new URL(context.request.url);
+    
+    if (exception instanceof HttpException) {
+      return new Response(
+        JSON.stringify({
+          type: \`/errors/\${exception.status}\`,
+          title: this.getStatusText(exception.status),
+          status: exception.status,
+          detail: exception.message,
+          instance: url.pathname,
+        }),
+        {
+          status: exception.status,
+          headers: { 'Content-Type': 'application/problem+json' },
+        }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({
+        type: '/errors/500',
+        title: 'Internal Server Error',
+        status: 500,
+        detail: exception.message,
+        instance: url.pathname,
+      }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/problem+json' },
+      }
+    );
+
+}
+
+private getStatusText(status: number): string {
+const statusTexts: Record<number, string> = {
+400: 'Bad Request',
+401: 'Unauthorized',
+403: 'Forbidden',
+404: 'Not Found',
+409: 'Conflict',
+422: 'Unprocessable Entity',
+500: 'Internal Server Error',
+503: 'Service Unavailable',
+};
+return statusTexts[status] || 'Error';
+}
+}`;
+
+export const loggingFilter = `import { ExceptionFilter, HttpException } from '@nl-framework/http';
+import { Logger, LoggerFactory } from '@nl-framework/logger';
+import type { RequestContext } from '@nl-framework/http';
+
+export class LoggingExceptionFilter implements ExceptionFilter {
+  private readonly logger: Logger;
+
+constructor(loggerFactory: LoggerFactory) {
+this.logger = loggerFactory.create({ context: 'ExceptionFilter' });
+}
+
+async catch(exception: Error, context: RequestContext): Promise<Response> {
+const url = new URL(context.request.url);
+const status = exception instanceof HttpException ? exception.status : 500;
+
+    this.logger.error('Request exception', exception, {
+      method: context.request.method,
+      path: url.pathname,
+      status,
+    });
+
+    if (exception instanceof HttpException) {
+      return new Response(
+        JSON.stringify({
+          statusCode: exception.status,
+          message: exception.message,
+        }),
+        {
+          status: exception.status,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({
+        statusCode: 500,
+        message: 'Internal Server Error',
+      }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+
+}
+}`;
+
+export const multipleFilters = `import { registerExceptionFilters } from '@nl-framework/http';
+import { NaelFactory } from '@nl-framework/platform';
+import { LoggerFactory } from '@nl-framework/logger';
+
+const bootstrap = async () => {
+const app = await NaelFactory.create(AppModule);
+const loggerFactory = await app.get(LoggerFactory);
+
+// Register filters in order
+// First filter catches ValidationException
+// Second filter catches HttpException
+// Third filter catches everything else and logs
+registerExceptionFilters(
+new ValidationExceptionFilter(),
+new HttpExceptionFilter(),
+new LoggingExceptionFilter(loggerFactory),
+);
+
+await app.listen({ http: 3000 });
+};
+
+bootstrap().catch(console.error);`;
+
+export const customException = `export class DatabaseException extends Error {
+  constructor(
+    message: string,
+    public readonly query?: string,
+    public readonly cause?: Error,
+  ) {
+    super(message);
+    this.name = 'DatabaseException';
+  }
+}
+
+export class DatabaseExceptionFilter implements ExceptionFilter {
+  async catch(exception: Error, context: RequestContext): Promise<Response> {
+    if (exception instanceof DatabaseException) {
+      console.error('Database error:', {
+        message: exception.message,
+        query: exception.query,
+        cause: exception.cause,
+      });
+
+      return new Response(
+        JSON.stringify({
+          statusCode: 500,
+          message: 'Database operation failed',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Let other filters handle this
+    throw exception;
+
+}
+}`;
+
+export const catchAllFilter = `import { ExceptionFilter } from '@nl-framework/http';
+import type { RequestContext } from '@nl-framework/http';
+
+export class CatchAllFilter implements ExceptionFilter {
+  async catch(exception: Error, context: RequestContext): Promise<Response> {
+    // This catches everything that previous filters didn't handle
+    console.error('Unhandled exception:', exception);
+
+    // In production, don't expose internal error details
+    const isDevelopment = process.env.NODE_ENV === 'development';
+
+    return new Response(
+      JSON.stringify({
+        statusCode: 500,
+        message: 'Internal Server Error',
+        ...(isDevelopment && { error: exception.message, stack: exception.stack }),
+      }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+
+}
+}`;
+
+<div className="space-y-10">
+      <div className="space-y-3">
+        <div className="text-sm uppercase tracking-wide text-muted-foreground">Overview</div>
+        <h1 className="text-4xl font-semibold">Exception Filters</h1>
+        <div className="max-w-2xl text-muted-foreground">
+          Exception filters let you control the exact flow of error handling and format error responses sent to the client.
+          While <Link className="text-primary" href="/docs/middleware">middleware</Link> can catch errors, exception filters
+          provide a more structured approach with access to the request context and the ability to chain multiple filters.
+        </div>
+      </div>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Creating an exception filter</h2>
+        <div className="text-muted-foreground">
+          Exception filters implement the `ExceptionFilter` interface, which requires a single `catch()` method.
+          This method receives the exception and the request context, and must return a `Response` object.
+        </div>
+        <CodeBlock code={basicFilter} title="http-exception.filter.ts" />
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Registering exception filters</h2>
+        <div className="text-muted-foreground">
+          Exception filters are registered globally using the `registerExceptionFilters()` function, typically during
+          application bootstrap:
+        </div>
+        <CodeBlock code={registerFilter} title="main.ts" />
+        <div className="text-sm text-muted-foreground">
+          Filters are executed in the order they are registered. If a filter successfully handles an exception (returns a Response),
+          subsequent filters are not called. If a filter throws or re-throws the exception, the next filter in the chain is tried.
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">HTTP exceptions</h2>
+        <div className="text-muted-foreground">
+          The `HttpException` class provides a convenient way to throw HTTP errors with specific status codes.
+          It includes static factory methods for common HTTP error statuses:
+        </div>
+        <CodeBlock code={staticMethods} title="HTTP exception methods" />
+        <div className="text-sm text-muted-foreground">
+          Use `HttpException` in your controllers and services to indicate HTTP-level errors:
+        </div>
+        <CodeBlock code={httpException} title="posts.controller.ts" />
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Validation exception filter</h2>
+        <div className="text-muted-foreground">
+          Create specialized filters for specific exception types. Here&apos;s a filter that handles validation errors:
+        </div>
+        <CodeBlock code={validationFilter} title="validation-exception.filter.ts" />
+        <div className="text-sm text-muted-foreground">
+          Note that this filter re-throws the exception if it&apos;s not a `ValidationException`, allowing other
+          filters in the chain to handle it.
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">RFC 7807 Problem Details</h2>
+        <div className="text-muted-foreground">
+          Implement standardized error responses following{" "}
+          <a
+            href="https://datatracker.ietf.org/doc/html/rfc7807"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:underline"
+          >
+            RFC 7807
+          </a>{" "}
+          (Problem Details for HTTP APIs):
+        </div>
+        <CodeBlock code={problemJsonFilter} title="problem-json.filter.ts" />
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Logging exceptions</h2>
+        <div className="text-muted-foreground">
+          Exception filters can integrate with the logging system to track errors:
+        </div>
+        <CodeBlock code={loggingFilter} title="logging-exception.filter.ts" />
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Multiple filters</h2>
+        <div className="text-muted-foreground">
+          Register multiple exception filters to handle different types of errors. Filters are tried in order until one
+          successfully handles the exception:
+        </div>
+        <CodeBlock code={multipleFilters} title="main.ts" />
+        <div className="rounded-lg border border-blue-500/50 bg-blue-500/10 p-4">
+          <div className="text-sm text-blue-700 dark:text-blue-400">
+            <strong>Tip:</strong> Register more specific filters first (like `ValidationExceptionFilter`),
+            followed by more general filters. The last filter should be a catch-all that handles any unhandled exceptions.
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Custom exceptions</h2>
+        <div className="text-muted-foreground">
+          Create custom exception types and corresponding filters for domain-specific errors:
+        </div>
+        <CodeBlock code={customException} title="database-exception.filter.ts" />
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Catch-all filter</h2>
+        <div className="text-muted-foreground">
+          Always register a catch-all filter as the last filter to handle any unexpected errors:
+        </div>
+        <CodeBlock code={catchAllFilter} title="catch-all.filter.ts" />
+        <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-4">
+          <div className="text-sm text-amber-700 dark:text-amber-400">
+            <strong>Security Warning:</strong> Never expose internal error details (stack traces, database queries, etc.)
+            in production environments. Only include detailed error information in development mode.
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Filter execution order</h2>
+        <div className="text-muted-foreground">
+          Understanding how exception filters are executed is crucial for proper error handling:
+        </div>
+        <ol className="list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
+          <li>An exception is thrown in a controller, service, guard, or middleware</li>
+          <li>The router catches the exception</li>
+          <li>Exception filters are tried in registration order</li>
+          <li>
+            If a filter returns a `Response`, that response is sent to the client
+          </li>
+          <li>If a filter throws or re-throws, the next filter is tried</li>
+          <li>If no filter handles the exception, a default 500 error response is returned</li>
+        </ol>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Best practices</h2>
+        <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
+          <li>
+            <strong>Use specific exception types</strong> - Create custom exceptions for different error scenarios
+          </li>
+          <li>
+            <strong>Order matters</strong> - Register specific filters before general ones
+          </li>
+          <li>
+            <strong>Always have a catch-all</strong> - Ensure all exceptions are handled gracefully
+          </li>
+          <li>
+            <strong>Log errors</strong> - Track exceptions for debugging and monitoring
+          </li>
+          <li>
+            <strong>Don&apos;t leak sensitive data</strong> - Never expose internal details in production
+          </li>
+          <li>
+            <strong>Return consistent formats</strong> - Use a standard error response structure
+          </li>
+          <li>
+            <strong>Include request context</strong> - Add timestamps, request IDs, and paths to error responses
+          </li>
+        </ul>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-2xl font-semibold">What&apos;s next?</h2>
+        <div className="text-muted-foreground">
+          Learn about <Link className="text-primary" href="/docs/pipes">Pipes</Link> for data transformation and validation,
+          or explore <Link className="text-primary" href="/docs/guards">Guards</Link> for authentication and authorization.
+        </div>
+      </section>
+    </div>

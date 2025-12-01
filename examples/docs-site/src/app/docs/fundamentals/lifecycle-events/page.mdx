@@ -1,0 +1,125 @@
+---
+title: 'Lifecycle events · Nael Platform'
+description: 'Use OnModuleInit, OnModuleDestroy, and bootstrap hooks to manage resources cleanly in Nael modules.'
+---
+
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const initSnippet = `import { Injectable, OnModuleInit } from '@nl-framework/core';
+import { createClient } from 'redis';
+
+@Injectable()
+export class CacheService implements OnModuleInit {
+private client = createClient({ url: process.env.REDIS_URL });
+
+async onModuleInit() {
+await this.client.connect();
+}
+
+async get(key: string) {
+return this.client.get(key);
+}
+}`;
+
+export const destroySnippet = `import { Injectable, OnModuleDestroy } from '@nl-framework/core';
+import { Kafka } from 'kafkajs';
+
+@Injectable()
+export class EventBus implements OnModuleDestroy {
+private readonly kafka = new Kafka({ clientId: 'app', brokers: ['localhost:9092'] });
+private producer = this.kafka.producer();
+
+async onModuleInit() {
+await this.producer.connect();
+}
+
+async onModuleDestroy() {
+await this.producer.disconnect();
+}
+}`;
+
+export const httpCloseSnippet = `import { createHttpApplication } from '@nl-framework/http';
+
+const app = await createHttpApplication(AppModule, { port: 3000 });
+const server = await app.listen();
+
+process.on('SIGTERM', async () => {
+await app.close();
+process.exit(0);
+});`;
+
+export const bootstrapSnippet = `import { Module, Provider } from '@nl-framework/core';
+
+@Module({
+providers: [CacheService, StatsService],
+bootstrap: [CacheService],
+})
+export class MetricsModule {}
+`;
+
+<article className="space-y-8">
+      <div className="space-y-3">
+        <Badge className="bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-50">Fundamentals</Badge>
+        <h1 className="text-4xl font-semibold tracking-tight">Lifecycle events</h1>
+        <div className="text-lg text-muted-foreground">
+          Providers in Nael can perform setup and teardown logic through lifecycle interfaces. Knowing when these callbacks fire keeps long-lived
+          connections healthy, prevents resource leaks, and allows modules to prepare caches before the first request hits.
+        </div>
+      </div>
+
+      <section className="space-y-4" id="init">
+        <h2 className="text-2xl font-semibold">OnModuleInit</h2>
+        <div className="text-muted-foreground">
+          Implement `OnModuleInit` to run code immediately after the container creates your provider. This is ideal for establishing database
+          connections, warming caches, or scheduling background tasks that should start only once.
+        </div>
+        <CodeBlock code={initSnippet} title="Connect to Redis during bootstrap" />
+        <div className="text-sm text-muted-foreground">
+          The container awaits the promise returned by `onModuleInit`, so make sure long-running work (migrations, hydration) remains bounded
+          to avoid delaying the entire application.
+        </div>
+      </section>
+
+      <section className="space-y-4" id="destroy">
+        <h2 className="text-2xl font-semibold">OnModuleDestroy</h2>
+        <div className="text-muted-foreground">
+          Implement `OnModuleDestroy` to release external resources during shutdown. The container calls every registered handler as part of
+          `ApplicationContext.close()` and platform `close()` methods.
+        </div>
+        <CodeBlock code={destroySnippet} title="Disconnect from Kafka when exiting" />
+        <div className="text-sm text-muted-foreground">
+          Always wrap network cleanup in try/catch to log failures—shutdown should not crash the process.
+        </div>
+      </section>
+
+      <section className="space-y-4" id="bootstrap">
+        <h2 className="text-2xl font-semibold">Eager bootstrap providers</h2>
+        <div className="text-muted-foreground">
+          Modules can force specific providers to instantiate during startup via the `bootstrap` array in `@Module` metadata.
+          This is useful when the provider exposes a background loop or needs to populate shared state before handling traffic.
+        </div>
+        <CodeBlock code={bootstrapSnippet} title="Bootstrap metrics collectors" />
+        <div className="text-sm text-muted-foreground">
+          Bootstrapped providers still receive `onModuleInit` callbacks; the array merely guarantees they are resolved eagerly.
+        </div>
+      </section>
+
+      <section className="space-y-4" id="platforms">
+        <h2 className="text-2xl font-semibold">Finishing up with platform close()</h2>
+        <div className="text-muted-foreground">
+          HTTP and GraphQL applications expose `close()` methods that call the underlying `ApplicationContext.close()`. Invoke
+          them during process shutdown signals so `OnModuleDestroy` handlers run and servers stop accepting connections gracefully.
+        </div>
+        <CodeBlock code={httpCloseSnippet} title="Graceful shutdown for HTTP" />
+      </section>
+
+      <section className="space-y-4" id="tips">
+        <h2 className="text-2xl font-semibold">Best practices</h2>
+        <ul className="list-disc pl-6 text-muted-foreground">
+          <li>Keep lifecycle methods idempotent; Nael might instantiate providers more than once in transient or manual contexts.</li>
+          <li>Log lifecycle failures with enough context to troubleshoot (module name, target service, external host).</li>
+          <li>Pair every resource acquired in <code>onModuleInit</code> with a corresponding release in <code>onModuleDestroy</code>.</li>
+        </ul>
+      </section>
+    </article>
