@@ -1,0 +1,105 @@
+---
+title: 'Federation · GraphQL'
+description: 'Expose Nael GraphQL services as Apollo Federation subgraphs and gateways.'
+---
+
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+import Link from 'next/link';
+
+export const subgraphConfig = `import { Module } from '@nl-framework/core';
+import { GraphQLModule } from '@nl-framework/graphql';
+import { ProfileModule } from './modules/profile/profile.module';
+
+@Module({
+  imports: [
+    GraphQLModule.forRoot({
+      autoSchemaFile: 'schema.gql',
+      federation: true,
+      playground: true,
+    }),
+    ProfileModule,
+  ],
+})
+export class AppModule {}`;
+
+export const profileEntity = `import { ObjectType, Field, Directive, ID, Resolver, ResolveReference, Query } from '@nl-framework/graphql';
+
+@ObjectType()
+@Directive('@key(fields: "id")')
+export class Profile {
+  @Field(() => ID)
+  id!: string;
+
+  @Field({ nullable: true })
+  displayName?: string;
+}
+
+@Resolver(() => Profile)
+export class ProfileResolver {
+  constructor(private readonly service: ProfileService) {}
+
+  @Query(() => Profile)
+  me() {
+    return this.service.me();
+  }
+
+  @ResolveReference()
+  resolveReference(ref: { __typename: string; id: string }) {
+    return this.service.findById(ref.id);
+  }
+}`;
+
+export const gatewayNote = `// Nael ships subgraph support. For a gateway, compose subgraphs using Apollo Router/Supergraph tooling.
+// Steps:
+// 1) Build each subgraph (GraphQLModule.forRoot({ federation: true }))
+// 2) Generate supergraph schema (rover/supergraph compose)
+// 3) Run Apollo Router or another gateway with the composed supergraph
+`;
+
+<article className="space-y-8">
+  <div className="space-y-3">
+    <Badge className="bg-sky-100 text-sky-900 dark:bg-sky-900/30 dark:text-sky-50">GraphQL</Badge>
+    <h1 className="text-4xl font-semibold tracking-tight">Federation</h1>
+    <div className="text-lg text-muted-foreground max-w-3xl">
+      Turn a Nael GraphQL service into a Federation subgraph by enabling <code>federation</code> in
+      <code>GraphQLModule</code>, adding <code>@key</code> directives, and resolving references.
+    </div>
+  </div>
+
+  <section className="space-y-4" id="configure">
+    <h2 className="text-2xl font-semibold">Configure a subgraph</h2>
+    <div className="text-muted-foreground">
+      Enable <code>federation: true</code> to generate subgraph schema (with <code>@key</code>, <code>@external</code>,
+      etc.) and emit the federation SDL.
+    </div>
+    <CodeBlock code={subgraphConfig} title="app.module.ts" />
+  </section>
+
+  <section className="space-y-4" id="entities">
+    <h2 className="text-2xl font-semibold">Define entities</h2>
+    <div className="text-muted-foreground">
+      Add <code>@key</code> to entities and implement <code>@ResolveReference</code> to hydrate federated objects. Reuse
+      your services to fetch by ID/keys.
+    </div>
+    <CodeBlock code={profileEntity} title="profile.entity.ts" />
+  </section>
+
+  <section className="space-y-4" id="gateway">
+    <h2 className="text-2xl font-semibold">Gateway composition</h2>
+    <div className="text-muted-foreground">
+      Nael covers subgraphs. For the gateway, compose subgraphs with Apollo Router/Supergraph tools. Point the router at
+      your Nael subgraphs; they expose the federation SDL automatically when <code>federation</code> is enabled.
+    </div>
+    <CodeBlock code={gatewayNote} title="Gateway notes" />
+  </section>
+
+  <section className="space-y-4" id="next">
+    <h2 className="text-2xl font-semibold">Next steps</h2>
+    <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+      <li>Add more entity references with <code>@provides</code>/<code>@requires</code> as needed.</li>
+      <li>Align auth: use <Link className="text-primary underline" href="/docs/auth/graphql">BetterAuth guards</Link> in subgraphs.</li>
+      <li>Export SDL for composition via <code>GraphQLModule</code> build output.</li>
+    </ul>
+  </section>
+</article>

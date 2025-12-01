@@ -21,7 +21,7 @@ export function DocsLayout({ children }: { children: React.ReactNode }) {
     return (
       <>
         <DocsSidebarMobile />
-        <div className="grid w-full gap-10 lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)280px]">
+        <div className="grid w-full gap-10 lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)360px]">
           <DocsSidebar />
           <div className="min-w-0 space-y-16">{children}</div>
           <DocsRightRail />

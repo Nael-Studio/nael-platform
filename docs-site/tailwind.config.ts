@@ -83,11 +83,38 @@ const config: Config = {
           to: {
             height: '0'
           }
+        },
+        grid: {
+          from: {
+            transform: 'translateY(0)'
+          },
+          to: {
+            transform: 'translateY(50%)'
+          }
+        },
+        marquee: {
+          from: {
+            transform: 'translateX(0)'
+          },
+          to: {
+            transform: 'translateX(calc(-50% - var(--gap)))'
+          }
+        },
+        'marquee-vertical': {
+          from: {
+            transform: 'translateY(0)'
+          },
+          to: {
+            transform: 'translateY(-50%)'
+          }
         }
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
-        'accordion-up': 'accordion-up 0.2s ease-out'
+        'accordion-up': 'accordion-up 0.2s ease-out',
+        grid: 'grid 36s linear infinite',
+        marquee: 'marquee var(--duration, 40s) linear infinite',
+        'marquee-vertical': 'marquee-vertical var(--duration, 40s) linear infinite'
       }
     }
   },

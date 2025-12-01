@@ -60,7 +60,15 @@ export const docsNav: DocsNavSection[] = [
       { title: "Streaming files", href: "/docs/techniques/streaming-files" },
       { title: "HTTP module", href: "/docs/techniques/http-module" },
       { title: "Session", href: "/docs/techniques/session" },
-      { title: "Better Auth", href: "/docs/techniques/better-auth" },
+    ],
+  },
+  {
+    title: "Auth",
+    items: [
+      { title: "Overview", href: "/docs/auth" },
+      { title: "REST", href: "/docs/auth/rest" },
+      { title: "GraphQL", href: "/docs/auth/graphql" },
+      { title: "Multi-tenant", href: "/docs/auth/multi-tenant" },
     ],
   },
   {
@@ -83,8 +91,10 @@ export const docsNav: DocsNavSection[] = [
       { title: "Subscriptions", href: "/docs/graphql/subscriptions" },
       { title: "Scalars", href: "/docs/graphql/scalars" },
       { title: "Directives", href: "/docs/graphql/directives" },
+      { title: "Enums", href: "/docs/graphql/enums" },
       { title: "Plugins", href: "/docs/graphql/plugins" },
       { title: "Federation", href: "/docs/graphql/federation" },
+      { title: "Gateways", href: "/docs/graphql/gateways" },
       { title: "Exception handling", href: "/docs/graphql/exception-handling" },
     ],
   },

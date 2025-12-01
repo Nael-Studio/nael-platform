@@ -1,0 +1,123 @@
+---
+title: 'Microservices overview · Microservices'
+description: 'Build Dapr-backed microservices in Nael with message patterns, transport clients, and DI-friendly consumers.'
+---
+
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const installMicro = `bun add @nl-framework/microservices @nl-framework/logger`;
+
+export const consumer = `import { Injectable } from '@nl-framework/core';
+import { MessagePattern, EventPattern } from '@nl-framework/microservices';
+
+@Injectable()
+export class OrdersConsumer {
+  @MessagePattern('orders.created')
+  async handleOrderCreated(payload: { orderId: string }) {
+    // process command and return a response
+    return { ok: true, processed: payload.orderId };
+  }
+
+  @EventPattern('orders.events.shipped')
+  async onShipped(payload: { orderId: string }) {
+    // fire-and-forget event
+    console.log('Order shipped', payload.orderId);
+  }
+}`;
+
+export const moduleSetup = `import { Module } from '@nl-framework/core';
+import { createMicroservicesModule, DaprTransport } from '@nl-framework/microservices';
+import { OrdersConsumer } from './orders.consumer';
+
+// Build a MicroservicesModule instance
+export const MicroModule = createMicroservicesModule({
+  transport: new DaprTransport({
+    daprHost: 'localhost',
+    daprHttpPort: 3500,
+    pubsubName: 'redis-pubsub',
+  }),
+  controllers: [OrdersConsumer],
+});
+
+@Module({
+  imports: [MicroModule],
+})
+export class AppModule {}`;
+
+export const publisher = `import { Injectable } from '@nl-framework/core';
+import { MicroserviceClient } from '@nl-framework/microservices';
+
+@Injectable()
+export class OrdersService {
+  constructor(private readonly client: MicroserviceClient) {}
+
+  async create(order: { id: string }) {
+    // emit = fire-and-forget event (pubsub)
+    await this.client.emit('orders.events.created', order);
+  }
+
+  async invokeBilling(billing: { id: string; amount: number }) {
+    // send = request/response service invocation
+    const result = await this.client.send<{ ok: boolean }>('billing.charge', billing);
+    return result;
+  }
+}`;
+
+export const patternNotes = `// Pattern resolution
+// - send('service.method') -> Dapr service invoke: /invoke/service/method
+// - emit('topic') -> Dapr pub/sub publish to {pubsubName}/{topic}
+// Object patterns allowed: { app: 'billing', method: 'charge' } or { service, cmd/action }`;
+
+<article className="space-y-8">
+  <div className="space-y-3">
+    <Badge className="bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-50">Microservices</Badge>
+    <h1 className="text-4xl font-semibold tracking-tight">Microservices overview</h1>
+    <div className="text-lg text-muted-foreground max-w-3xl">
+      Nael ships a Dapr-backed microservices module with request/response and pub/sub semantics. Use decorators to
+      declare handlers, and inject the client to emit events or invoke other services.
+    </div>
+  </div>
+
+  <section className="space-y-4" id="install">
+    <h2 className="text-2xl font-semibold">Install</h2>
+    <CodeBlock code={installMicro} title="Install packages" />
+  </section>
+
+  <section className="space-y-4" id="handlers">
+    <h2 className="text-2xl font-semibold">Declare handlers</h2>
+    <div className="text-muted-foreground">
+      Use <code>@MessagePattern</code> for request/response handlers and <code>@EventPattern</code> for events. Handlers
+      are discovered via metadata.
+    </div>
+    <CodeBlock code={consumer} title="orders.consumer.ts" />
+  </section>
+
+  <section className="space-y-4" id="module">
+    <h2 className="text-2xl font-semibold">Wire the module</h2>
+    <div className="text-muted-foreground">
+      Create a <code>MicroservicesModule</code> with a transport (Dapr by default) and register controllers. The module
+      connects to the Dapr sidecar on init and tears down on destroy.
+    </div>
+    <CodeBlock code={moduleSetup} title="app.module.ts" />
+  </section>
+
+  <section className="space-y-4" id="publish">
+    <h2 className="text-2xl font-semibold">Publish and invoke</h2>
+    <div className="text-muted-foreground">
+      Inject <code>MicroserviceClient</code> to emit events (pub/sub) or send commands (service invocation).
+    </div>
+    <CodeBlock code={publisher} title="orders.service.ts" />
+    <CodeBlock code={patternNotes} title="Pattern resolution" />
+  </section>
+
+  <section className="space-y-4" id="next">
+    <h2 className="text-2xl font-semibold">Next steps</h2>
+    <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+      <li>Configure retries/headers in <code>DaprTransport</code> via a custom <code>invocationResolver</code>.</li>
+      <li>Add more consumers in <code>controllers</code>; handlers are auto-registered by <code>createMicroservicesModule</code>.</li>
+      <li>Secure downstream calls with BetterAuth by signing requests before <code>send()</code>.</li>
+      <li>Scale horizontally by pointing multiple instances at the same pub/sub and service names.</li>
+    </ul>
+  </section>
+</article>

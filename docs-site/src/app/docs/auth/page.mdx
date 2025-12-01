@@ -1,0 +1,145 @@
+---
+title: 'BetterAuth overview · Auth'
+description: 'Install BetterAuth for Nael, proxy hosted routes, and share session context across transports.'
+---
+
+import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+export const installBetterAuth = `bun add @nl-framework/auth better-auth @better-auth/bun`;
+
+<article className="space-y-8">
+  <div className="space-y-3">
+    <Badge className="bg-purple-100 text-purple-900 dark:bg-purple-900/30 dark:text-purple-50">Auth</Badge>
+    <h1 className="text-4xl font-semibold tracking-tight">BetterAuth in Nael</h1>
+    <div className="text-lg text-muted-foreground max-w-3xl">
+      Nael treats BetterAuth as a first-class identity provider. Proxy the hosted auth router, reuse the same session
+      cookies for REST and GraphQL, and hydrate tenant-specific secrets when you run multi-tenant deployments.
+    </div>
+  </div>
+
+  <section className="space-y-4" id="install">
+    <h2 className="text-2xl font-semibold">Install packages</h2>
+    <div className="text-muted-foreground">
+      Add the Nael auth module plus the BetterAuth SDK. Everything runs on Bun&apos;s native fetch implementation.
+    </div>
+    <CodeBlock code={installBetterAuth} title="Install" />
+  </section>
+
+  <section className="space-y-4" id="exports">
+    <h2 className="text-2xl font-semibold">Exports you get</h2>
+    <div className="text-muted-foreground">
+      The Nael auth package wraps BetterAuth and exposes a small set of building blocks for both HTTP and GraphQL.
+      Keep these symbols shared across transports to avoid duplicate lookups.
+    </div>
+    <div className="grid gap-4 md:grid-cols-2">
+      <Card className="border-border/70">
+        <CardHeader>
+          <CardTitle>Modules & routing</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm text-muted-foreground">
+          <ul className="list-disc space-y-2 pl-5">
+            <li><code>BetterAuthProxyModule.forRoot(options)</code> — proxy hosted BetterAuth into Bun HTTP. Options: <code>upstreamUrl</code> (required), <code>cookieDomain</code>, <code>pathPrefix?</code>.</li>
+            <li>Order: register proxy before custom routes so middleware runs correctly.</li>
+            <li>Supports middleware/filters on top of proxied routes if you need logging or extra headers.</li>
+          </ul>
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/70">
+        <CardHeader>
+          <CardTitle>Guards & session access</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm text-muted-foreground">
+          <ul className="list-disc space-y-2 pl-5">
+            <li><code>BetterAuthGuard</code> — protects HTTP handlers and GraphQL resolvers; reads BetterAuth cookies.</li>
+            <li><code>@CurrentSession()</code> — injects <code>BetterAuthSession</code> (or <code>null</code>).</li>
+            <li><code>BetterAuthSessionStore</code> — shared cache; call <code>app.get(BetterAuthSessionStore)</code> to reuse across transports.</li>
+            <li><code>BetterAuthSession</code> shape: <code>{`{ userId, tenantKey?, expiresAt, claims? }`}</code>. Extend per-request with your own profile (see REST/GraphQL pages).</li>
+          </ul>
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/70">
+        <CardHeader>
+          <CardTitle>Multi-tenant</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm text-muted-foreground">
+          <ul className="list-disc space-y-2 pl-5">
+            <li><code>BetterAuthMultiTenantFactory.register({`{ resolveTenant, secretsFor }`})</code> — host/path-based tenant resolution + per-tenant secrets/cookie names.</li>
+            <li>Call once at startup before bootstrapping HTTP/GraphQL so guards use the correct secrets.</li>
+            <li>Use unique cookie names (<code>__Secure-{'{tenantKey}'}</code>) to avoid collisions across domains.</li>
+          </ul>
+          <div className="text-xs">
+            Full guide: <Link className="text-primary underline" href="/docs/auth/multi-tenant">Multi-tenant auth</Link>.
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/70">
+        <CardHeader>
+          <CardTitle>Tenant metadata helpers</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm text-muted-foreground">
+          <ul className="list-disc space-y-2 pl-5">
+            <li>Access host/path info from the context passed to <code>resolveTenant</code>.</li>
+            <li>Store resolved tenant on the session (<code>tenantKey</code>) so REST/GraphQL can branch logic per tenant.</li>
+            <li>Expose a <code>/session</code> endpoint that returns <code>tenantKey</code> for SPA hydration.</li>
+          </ul>
+        </CardContent>
+      </Card>
+    </div>
+  </section>
+
+  <section className="space-y-4" id="routing">
+    <h2 className="text-2xl font-semibold">How routing works</h2>
+    <div className="text-muted-foreground">
+      BetterAuthProxyModule forwards hosted BetterAuth routes through your Bun HTTP server. That means the same cookies
+      apply to any controllers or GraphQL resolvers you protect with <code>BetterAuthGuard</code>. The proxy does not
+      change the hosted paths—check your BetterAuth project for the actual endpoints (e.g., <code>/auth/*</code>,
+      callbacks, session endpoints).
+    </div>
+    <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+      <li>Proxies all hosted BetterAuth routes to your Bun server.</li>
+      <li>Shares cookies/session store with GraphQL guard.</li>
+      <li>Lets you add middleware/filters on top of proxied routes if needed.</li>
+    </ul>
+  </section>
+
+  <section className="space-y-4" id="multi-tenant">
+    <h2 className="text-2xl font-semibold">Multi-tenant strategy</h2>
+    <div className="text-muted-foreground">
+      BetterAuthMultiTenantFactory lets you resolve a tenant per request (usually by host header) and load per-tenant
+      cookies + secrets. Both REST and GraphQL reuse the same resolver so sessions stay consistent.
+    </div>
+    <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+      <li>Implement <code>resolveTenant(ctx)</code> (host header or path prefix) and <code>secretsFor(tenant)</code>.</li>
+      <li>Set unique cookie names per tenant to avoid collisions across domains.</li>
+      <li>Memoize secrets and rotate them when revoking access for a tenant.</li>
+      <li>Wire the resolver before bootstrapping HTTP/GraphQL so guards pick up the right secrets.</li>
+    </ul>
+    <div className="text-sm text-muted-foreground">
+      Full walkthrough: <Link className="text-primary underline" href="/docs/auth/multi-tenant">Multi-tenant auth</Link>.
+    </div>
+  </section>
+
+  <section className="space-y-4" id="what-next">
+    <h2 className="text-2xl font-semibold">Where to go next</h2>
+    <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+      <li>
+        <Link className="text-primary underline" href="/docs/auth/rest">
+          REST / HTTP integration
+        </Link>{" "}
+        — proxy the hosted router, share session cookies, and wire multi-tenant secrets.
+      </li>
+      <li>
+        <Link className="text-primary underline" href="/docs/auth/graphql">
+          GraphQL integration
+        </Link>{" "}
+        — protect resolvers with <code>BetterAuthGuard</code> and inject <code>@CurrentSession()</code>.
+      </li>
+    </ul>
+  </section>
+</article>

@@ -1,0 +1,139 @@
+---
+title: 'Subscriptions · GraphQL'
+description: 'Enable GraphQL subscriptions in Nael with graphql-ws, typed events, and BetterAuth-aware contexts.'
+---
+
+import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const enableSubscriptions = `import { Module } from '@nl-framework/core';
+import { GraphQLModule } from '@nl-framework/graphql';
+import { BetterAuthProxyModule } from '@nl-framework/auth';
+
+@Module({
+  imports: [
+    BetterAuthProxyModule.forRoot({
+      upstreamUrl: 'https://auth.nael.dev',
+      cookieDomain: '.nael.dev',
+    }),
+    GraphQLModule.forRoot({
+      autoSchemaFile: 'schema.gql',
+      // Enable graphql-ws (recommended)
+      subscriptions: {
+        'graphql-ws': true,
+        path: '/graphql',
+      },
+      context: ({ req, res, connectionParams }) => ({
+        request: req,
+        response: res,
+        connectionParams,
+      }),
+      playground: true,
+    }),
+  ],
+})
+export class AppModule {}`;
+
+export const subscriptionResolver = `import { Resolver, Subscription, Mutation, Args } from '@nl-framework/graphql';
+import { PubSub } from 'graphql-subscriptions';
+import { randomUUID } from 'node:crypto';
+
+const pubsub = new PubSub();
+
+@Resolver(() => ChatMessage)
+export class ChatResolver {
+  @Subscription(() => ChatMessage, {
+    topics: 'messageAdded',
+  })
+  messageAdded(payload: ChatMessage) {
+    return payload;
+  }
+
+  @Mutation(() => Boolean)
+  async sendMessage(@Args('text') text: string) {
+    const message: ChatMessage = { id: randomUUID(), text, createdAt: new Date() };
+    await pubsub.publish('messageAdded', message);
+    return true;
+  }
+}`;
+
+export const messageType = `import { Field, ObjectType } from '@nl-framework/graphql';
+
+@ObjectType()
+export class ChatMessage {
+  @Field()
+  id!: string;
+
+  @Field()
+  text!: string;
+
+  @Field()
+  createdAt!: Date;
+}`;
+
+export const authContext = `// If you protect subscriptions with BetterAuthGuard:
+// - Ensure context includes cookies/headers (or connectionParams token)
+// - You can parse connectionParams.cookie to hydrate session for ws connections
+
+// GraphQLModule.forRoot({
+//   context: ({ req, res, connectionParams }) => ({
+//     request: req,
+//     response: res,
+//     connectionParams,
+//   }),
+// });
+`;
+
+<article className="space-y-8">
+  <div className="space-y-3">
+    <Badge className="bg-sky-100 text-sky-900 dark:bg-sky-900/30 dark:text-sky-50">GraphQL</Badge>
+    <h1 className="text-4xl font-semibold tracking-tight">Subscriptions</h1>
+    <div className="text-lg text-muted-foreground max-w-3xl">
+      Enable realtime GraphQL with <code>graphql-ws</code>, typed payloads, and Nael DI-backed services. Reuse BetterAuth
+      for guarded subscriptions by passing cookies/headers into the subscription context.
+    </div>
+  </div>
+
+  <section className="space-y-4" id="config">
+    <h2 className="text-2xl font-semibold">Enable subscriptions</h2>
+    <div className="text-muted-foreground">
+      Turn on <code>graphql-ws</code> in <code>GraphQLModule.forRoot</code> and pass <code>request/response/connectionParams</code>
+      into the context. Keep the same path as HTTP (<code>/graphql</code>) unless you need to split traffic.
+    </div>
+    <CodeBlock code={enableSubscriptions} title="app.module.ts" />
+  </section>
+
+  <section className="space-y-4" id="resolver">
+    <h2 className="text-2xl font-semibold">Create a subscription</h2>
+    <div className="text-muted-foreground">
+      Use <code>@Subscription()</code> with a topic string. Publish events from mutations or background workers using
+      <code>PubSub</code>. For production, back PubSub with Redis/Kafka/Dapr instead of in-memory.
+    </div>
+    <CodeBlock code={subscriptionResolver} title="chat.resolver.ts" />
+    <CodeBlock code={messageType} title="chat-message.model.ts" />
+  </section>
+
+  <section className="space-y-4" id="auth">
+    <h2 className="text-2xl font-semibold">Auth for subscriptions</h2>
+    <div className="text-muted-foreground">
+      <code>BetterAuthGuard</code> can protect subscriptions if the context carries session info. Pass cookies or a token
+      via <code>connectionParams</code> from the client (e.g., <code>{`connectionParams: { cookie: document.cookie }`}</code>),
+      then hydrate <code>request/response</code> or parse directly in a guard.
+    </div>
+    <CodeBlock code={authContext} title="Context for BetterAuth" />
+    <div className="text-sm text-muted-foreground">
+      Keep the session store shared (<code>BetterAuthSessionStore</code>) so REST/GraphQL reuse the same cache.
+    </div>
+  </section>
+
+  <section className="space-y-4" id="next">
+    <h2 className="text-2xl font-semibold">Next steps</h2>
+    <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+      <li>Back PubSub with Redis/Dapr for horizontal scaling.</li>
+      <li>Apply guards/interceptors to subscriptions for auth and logging.</li>
+      <li>Shape payloads with dedicated <code>@ObjectType()</code> classes.</li>
+      <li>Combine with <Link className="text-primary underline" href="/docs/auth/graphql">BetterAuth GraphQL</Link> for consistent session handling.</li>
+    </ul>
+  </section>
+</article>

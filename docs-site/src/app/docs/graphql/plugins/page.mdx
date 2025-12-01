@@ -1,0 +1,101 @@
+---
+title: 'Plugins · GraphQL'
+description: 'Use GraphQL plugins in Nael to extend execution—logging, tracing, validation, and custom responses.'
+---
+
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+import Link from 'next/link';
+
+export const pluginExample = `import { ApolloServerPlugin } from '@apollo/server';
+import { GraphQLRequestContext } from 'apollo-server-types';
+
+export const loggingPlugin: ApolloServerPlugin = {
+  async requestDidStart(ctx: GraphQLRequestContext) {
+    console.log('[GQL] start', ctx.request.operationName);
+    return {
+      async willSendResponse({ response }) {
+        console.log('[GQL] end', ctx.request.operationName, response.http?.status);
+      },
+    };
+  },
+};`;
+
+export const moduleConfig = `import { Module } from '@nl-framework/core';
+import { GraphQLModule } from '@nl-framework/graphql';
+import { loggingPlugin } from './logging.plugin';
+
+@Module({
+  imports: [
+    GraphQLModule.forRoot({
+      autoSchemaFile: 'schema.gql',
+      plugins: [loggingPlugin],
+    }),
+  ],
+})
+export class AppModule {}`;
+
+export const authPlugin = `import { ApolloServerPlugin } from '@apollo/server';
+import { BetterAuthSessionStore } from '@nl-framework/auth';
+
+export function betterAuthPlugin(store: BetterAuthSessionStore): ApolloServerPlugin {
+  return {
+    async requestDidStart() {
+      return {
+        async didResolveOperation(ctx) {
+          // You can inspect headers/cookies here via ctx.request.http?.headers
+          // and preload session if needed.
+        },
+      };
+    },
+  };
+}`;
+
+<article className="space-y-8">
+  <div className="space-y-3">
+    <Badge className="bg-sky-100 text-sky-900 dark:bg-sky-900/30 dark:text-sky-50">GraphQL</Badge>
+    <h1 className="text-4xl font-semibold tracking-tight">Plugins</h1>
+    <div className="text-lg text-muted-foreground max-w-3xl">
+      Attach Apollo-style plugins to your Nael GraphQL server for logging, tracing, auth preloading, or custom response
+      shaping.
+    </div>
+  </div>
+
+  <section className="space-y-4" id="define">
+    <h2 className="text-2xl font-semibold">Define a plugin</h2>
+    <div className="text-muted-foreground">
+      Implement the Apollo plugin hooks you need. Common hooks: <code>requestDidStart</code>, <code>didResolveOperation</code>,
+      <code>willSendResponse</code>.
+    </div>
+    <CodeBlock code={pluginExample} title="logging.plugin.ts" />
+  </section>
+
+  <section className="space-y-4" id="register">
+    <h2 className="text-2xl font-semibold">Register in GraphQLModule</h2>
+    <div className="text-muted-foreground">
+      Pass your plugins array to <code>GraphQLModule.forRoot</code>. Plugins run for every GraphQL request.
+    </div>
+    <CodeBlock code={moduleConfig} title="app.module.ts" />
+  </section>
+
+  <section className="space-y-4" id="auth">
+    <h2 className="text-2xl font-semibold">BetterAuth-aware plugins</h2>
+    <div className="text-muted-foreground">
+      Use plugins to preload sessions or trace auth flows. Inject <code>BetterAuthSessionStore</code> and inspect
+      headers/cookies in plugin hooks. Pair with <code>BetterAuthGuard</code> for resolver-level enforcement.
+    </div>
+    <CodeBlock code={authPlugin} title="better-auth.plugin.ts" />
+    <div className="text-sm text-muted-foreground">
+      See <Link className="text-primary underline" href="/docs/auth/graphql">BetterAuth GraphQL</Link> for guard usage.
+    </div>
+  </section>
+
+  <section className="space-y-4" id="next">
+    <h2 className="text-2xl font-semibold">Next steps</h2>
+    <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+      <li>Add tracing/metrics plugins to push data to your APM.</li>
+      <li>Implement response masking or error formatting in <code>willSendResponse</code>.</li>
+      <li>Combine with directives for per-field behaviors.</li>
+    </ul>
+  </section>
+</article>

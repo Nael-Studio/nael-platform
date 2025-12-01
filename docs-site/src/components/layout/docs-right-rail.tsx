@@ -23,7 +23,7 @@ const releases = [
 export function DocsRightRail() {
   return (
     <aside className="hidden xl:block">
-      <div className="sticky top-20 flex w-64 flex-col gap-4">
+      <div className="sticky top-20 flex w-full flex-col gap-4">
         <Card className="border-border/70 bg-card/80">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">

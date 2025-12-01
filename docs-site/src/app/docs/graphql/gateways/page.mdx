@@ -1,0 +1,83 @@
+---
+title: 'Gateways · GraphQL'
+description: 'Run an Apollo Federation gateway inside Nael using the built-in FederationGatewayApplication.'
+---
+
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+import Link from 'next/link';
+
+export const gatewayOptions = `import { NaelFactory } from '@nl-framework/platform';
+
+const app = await NaelFactory.create(AppModule, {
+  gateway: {
+    enabled: true,
+    path: '/graphql', // optional; defaults to /graphql
+    subgraphs: [
+      { name: 'accounts', url: 'http://localhost:3001/graphql' },
+      { name: 'profiles', url: 'http://localhost:3002/graphql' },
+    ],
+  },
+});
+
+// Start the gateway as a standalone server (default port 4020 if omitted)
+const { gateway } = await app.listen({
+  gateway: { port: 4000, path: '/graphql' },
+});
+
+console.log('Gateway running at', gateway?.url);`;
+
+export const integratedGateway = `// If you also start HTTP, Nael mounts the gateway handler into the HTTP server:
+const { http, gateway } = await app.listen({
+  http: 3000,
+  gateway: { path: '/federation', subgraphs: [...] },
+});
+// Requests to http://localhost:3000/federation will be served by the gateway.`;
+
+<article className="space-y-8">
+  <div className="space-y-3">
+    <Badge className="bg-sky-100 text-sky-900 dark:bg-sky-900/30 dark:text-sky-50">GraphQL</Badge>
+    <h1 className="text-4xl font-semibold tracking-tight">Gateways</h1>
+    <div className="text-lg text-muted-foreground max-w-3xl">
+      Nael ships a built-in Apollo Federation gateway. Pass subgraph URLs to <code>NaelFactory</code>, and it boots an
+      <code>ApolloGateway</code>-backed server (standalone or mounted in your HTTP server).
+    </div>
+  </div>
+
+  <section className="space-y-4" id="requirements">
+    <h2 className="text-2xl font-semibold">Requirements</h2>
+    <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+      <li>Each Nael service must enable <code>federation: true</code> in <code>GraphQLModule</code>.</li>
+      <li>Entities need <code>@key</code> + <code>@ResolveReference</code> implemented (see <Link className="text-primary underline" href="/docs/graphql/federation">Federation</Link>).</li>
+      <li>Subgraphs must expose their SDL (default when federation is on); the gateway uses <code>IntrospectAndCompose</code>.</li>
+    </ul>
+  </section>
+
+  <section className="space-y-4" id="configure">
+    <h2 className="text-2xl font-semibold">Configure the gateway</h2>
+    <div className="text-muted-foreground">
+      Provide subgraph definitions and optional host/port/path. If you also run HTTP, you can mount the gateway handler
+      inside the same server.
+    </div>
+    <CodeBlock code={gatewayOptions} title="Gateway bootstrap (standalone)" />
+    <CodeBlock code={integratedGateway} title="Mount gateway within HTTP" />
+  </section>
+
+  <section className="space-y-4" id="auth">
+    <h2 className="text-2xl font-semibold">Auth considerations</h2>
+    <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+      <li>Subgraphs: use <Link className="text-primary underline" href="/docs/auth/graphql">BetterAuthGuard</Link> to secure resolvers.</li>
+      <li>Gateway: forward cookies/headers to subgraphs; avoid duplicating auth in the gateway layer.</li>
+      <li>Persisted queries: align hashing/whitelists across subgraphs if you enable them.</li>
+    </ul>
+  </section>
+
+  <section className="space-y-4" id="next">
+    <h2 className="text-2xl font-semibold">Next steps</h2>
+    <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+      <li>Use <code>gateway.listen(&#123; subgraphs: [...] &#125;)</code> with different ports per env.</li>
+      <li>Set up health checks for subgraphs so the gateway can fail fast.</li>
+      <li>Automate subgraph lists via config/registry and reloading on deploys.</li>
+    </ul>
+  </section>
+</article>

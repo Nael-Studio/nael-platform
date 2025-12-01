@@ -1,0 +1,85 @@
+---
+title: 'Enums · GraphQL'
+description: 'Define and use enums in Nael GraphQL for constrained values across queries and mutations.'
+---
+
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const enumDef = `import { Field, ObjectType, registerEnumType, Resolver, Query } from '@nl-framework/graphql';
+
+export enum Status {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  PENDING = 'PENDING',
+}
+
+registerEnumType(Status, {
+  name: 'Status',
+  description: 'User/account status',
+});
+
+@ObjectType()
+export class Account {
+  @Field()
+  id!: string;
+
+  @Field(() => Status)
+  status!: Status;
+}
+
+@Resolver(() => Account)
+export class AccountResolver {
+  @Query(() => Account)
+  account() {
+    return { id: 'acct-1', status: Status.ACTIVE };
+  }
+}`;
+
+export const enumArgs = `import { Resolver, Mutation, Args } from '@nl-framework/graphql';
+import { Status } from './account.enum';
+
+@Resolver()
+export class AccountMutations {
+  @Mutation(() => Boolean)
+  updateStatus(@Args('id') id: string, @Args('status', () => Status) status: Status) {
+    // persist
+    return true;
+  }
+}`;
+
+<article className="space-y-8">
+  <div className="space-y-3">
+    <Badge className="bg-sky-100 text-sky-900 dark:bg-sky-900/30 dark:text-sky-50">GraphQL</Badge>
+    <h1 className="text-4xl font-semibold tracking-tight">Enums</h1>
+    <div className="text-lg text-muted-foreground max-w-3xl">
+      Use enums to constrain values in your schema. Register TypeScript enums with <code>registerEnumType</code> and
+      reference them in object types and args.
+    </div>
+  </div>
+
+  <section className="space-y-4" id="define">
+    <h2 className="text-2xl font-semibold">Define and register</h2>
+    <div className="text-muted-foreground">
+      Create a TypeScript enum and register it so it appears in the schema. Use the enum in fields to restrict values.
+    </div>
+    <CodeBlock code={enumDef} title="account.enum.ts" />
+  </section>
+
+  <section className="space-y-4" id="args">
+    <h2 className="text-2xl font-semibold">Use enums in mutations</h2>
+    <div className="text-muted-foreground">
+      Reference the enum in arguments so clients can pass only the allowed values.
+    </div>
+    <CodeBlock code={enumArgs} title="account.mutations.ts" />
+  </section>
+
+  <section className="space-y-4" id="tips">
+    <h2 className="text-2xl font-semibold">Tips</h2>
+    <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+      <li>Prefer string enums for stability across clients.</li>
+      <li>Document enum values; use descriptions in <code>registerEnumType</code>.</li>
+      <li>Reuse the same enum across REST/GraphQL to avoid drift.</li>
+    </ul>
+  </section>
+</article>
