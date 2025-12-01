@@ -1,3 +1,5 @@
+import type { Scope } from '../scope';
+
 export type ClassType<T = any> = new (...args: any[]) => T;
 
 /**
@@ -18,6 +20,7 @@ export type Token<T = any> = string | symbol | ClassType<T> | ForwardRef<T>;
 export interface ClassProvider<T = any> {
   provide: Token<T>;
   useClass: ClassType<T>;
+  scope?: Scope;
 }
 
 export interface ValueProvider<T = any> {
@@ -29,6 +32,7 @@ export interface FactoryProvider<T = any> {
   provide: Token<T>;
   useFactory: (...args: any[]) => T | Promise<T>;
   inject?: Token[];
+  scope?: Scope;
 }
 
 export type Provider<T = any> = ClassType<T> | ClassProvider<T> | ValueProvider<T> | FactoryProvider<T>;

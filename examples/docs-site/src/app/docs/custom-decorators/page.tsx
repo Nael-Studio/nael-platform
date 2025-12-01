@@ -1,0 +1,151 @@
+import type { Metadata } from "next";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { CodeBlock } from "@/components/shared/simple-code-block";
+
+const metadataDecoratorSnippet = `import { SetMetadata } from '@nl-framework/core';
+import { Controller, Get, UseGuards } from '@nl-framework/http';
+
+export const Roles = (...roles: string[]) => SetMetadata('roles', roles);
+
+@Controller('/admin')
+@Roles('admin')
+export class AdminController {
+  @Get()
+  @Roles('moderator')
+  dashboard() {
+    return { ok: true };
+  }
+}`;
+
+const metadataGuardSnippet = `import 'reflect-metadata';
+import { CanActivate } from '@nl-framework/core';
+import { HttpExecutionContext } from '@nl-framework/http';
+
+export class RolesGuard implements CanActivate {
+  canActivate(context: HttpExecutionContext) {
+    const handler = context.getHandler();
+    const controller = context.getClass();
+    const handlerRoles = Reflect.getMetadata('roles', handler) ?? [];
+    const controllerRoles = Reflect.getMetadata('roles', controller) ?? [];
+
+    if (!handlerRoles.length && !controllerRoles.length) {
+      return true;
+    }
+
+    const request = context.getRequest();
+    const currentRole = request.headers.get('x-role');
+    const allowed = [...controllerRoles, ...handlerRoles];
+    return currentRole ? allowed.includes(currentRole) : false;
+  }
+}`;
+
+const httpParamSnippet = `import { Controller, Get, createHttpParamDecorator } from '@nl-framework/http';
+
+export const CurrentUser = createHttpParamDecorator((property, ctx) => {
+  const user = {
+    id: ctx.headers.get('x-user-id'),
+    role: ctx.headers.get('x-user-role'),
+  };
+  if (!property) {
+    return user;
+  }
+  return user[property];
+});
+
+@Controller('/profile')
+export class ProfileController {
+  @Get()
+  me(@CurrentUser('id') id: string, @CurrentUser() user: Record<string, unknown>) {
+    return { id, user };
+  }
+}`;
+
+const graphqlParamSnippet = `import { ObjectType, Field } from '@nl-framework/graphql';
+import { Resolver, Query, createGraphqlParamDecorator } from '@nl-framework/graphql';
+
+export const CurrentTenant = createGraphqlParamDecorator((property, ctx) => {
+  const tenant = (ctx.context?.tenant ?? {}) as Record<string, unknown>;
+  if (!property) {
+    return tenant;
+  }
+  return tenant[property];
+});
+
+@ObjectType()
+class TenantInfo {
+  @Field()
+  id!: string;
+
+  @Field()
+  plan!: string;
+}
+
+@Resolver(() => TenantInfo)
+export class TenantResolver {
+  @Query(() => TenantInfo)
+  info(@CurrentTenant('plan') plan: string, @CurrentTenant('id') id: string) {
+    return { id, plan };
+  }
+}`;
+
+export const metadata: Metadata = {
+  title: "Custom decorators · Nael Platform",
+  description:
+    "Implement metadata and parameter decorators using SetMetadata, createHttpParamDecorator, and createGraphqlParamDecorator.",
+};
+
+export default function CustomDecoratorsPage() {
+  return (
+    <article className="space-y-8">
+      <div className="space-y-3">
+        <Badge className="bg-blue-100 text-blue-900 dark:bg-blue-900/30 dark:text-blue-50">Decorators</Badge>
+        <h1 className="text-4xl font-semibold tracking-tight">Custom decorators</h1>
+        <p className="text-lg text-muted-foreground">
+          Extend the framework with the same primitives NestJS documents—metadata decorators via <code>SetMetadata</code> and
+          transport-aware parameter decorators with <code>createHttpParamDecorator</code> and <code>createGraphqlParamDecorator</code>.
+          These helpers integrate with the router and schema builder so your decorators behave like first-party ones.
+        </p>
+      </div>
+
+      <section className="space-y-4" id="metadata">
+        <h2 className="text-2xl font-semibold">Metadata decorators</h2>
+        <p className="text-muted-foreground">
+          Wrap class and handler definitions with domain-specific metadata. Under the hood <code>SetMetadata</code> stores values
+          using <code>reflect-metadata</code>, allowing guards, interceptors, or any runtime component to look them up.
+        </p>
+        <CodeBlock code={metadataDecoratorSnippet} title="Define a @Roles decorator" />
+        <CodeBlock code={metadataGuardSnippet} title="Consume metadata inside a guard" />
+      </section>
+
+      <section className="space-y-4" id="http">
+        <h2 className="text-2xl font-semibold">HTTP parameter decorators</h2>
+        <p className="text-muted-foreground">
+          Use <code>createHttpParamDecorator()</code> to capture values from <code>RequestContext</code>. Decorators participate in the
+          same metadata pipeline as <code>@Param()</code> or <code>@Body()</code>, so pipes and validation keep working.
+        </p>
+        <CodeBlock code={httpParamSnippet} title="@CurrentUser for REST" />
+      </section>
+
+      <section className="space-y-4" id="graphql">
+        <h2 className="text-2xl font-semibold">GraphQL parameter decorators</h2>
+        <p className="text-muted-foreground">
+          GraphQL resolvers can define decorators with <code>createGraphqlParamDecorator()</code>. The factory receives the parent value,
+          sanitized args, the shared context object, and <code>GraphQLResolveInfo</code>, mirroring NestJS&apos;s <code>ExecutionContext</code>.
+        </p>
+        <CodeBlock code={graphqlParamSnippet} title="@CurrentTenant inside resolvers" />
+      </section>
+
+      <Card className="border-border/70">
+        <CardContent className="space-y-2 pt-6 text-sm text-muted-foreground">
+          <p><strong>Tips</strong></p>
+          <ul className="list-disc space-y-1 pl-5">
+            <li>Metadata decorators work for both legacy and stage-3 decorators—the framework adds initializers automatically.</li>
+            <li>Custom parameter decorators can still leverage pipes; any data you pass into the decorator is forwarded to pipe metadata.</li>
+            <li>GraphQL factories run after arguments are transformed, so you never have to manually validate DTOs.</li>
+          </ul>
+        </CardContent>
+      </Card>
+    </article>
+  );
+}

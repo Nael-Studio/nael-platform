@@ -1,8 +1,13 @@
 import { Inject, Injectable } from '@nl-framework/core';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
 import { betterAuth, type BetterAuthOptions, type BetterAuthPlugin } from 'better-auth';
-import type { Adapter, AdapterFactory } from 'better-auth/adapters';
-import type { BetterAuthInstance, BetterAuthSessionPayload } from './types';
+import type {
+  BetterAuthInstance,
+  BetterAuthSessionInput,
+  BetterAuthSessionPayload,
+  BetterAuthAdapter,
+  BetterAuthAdapterFactory,
+} from './types';
 import type { BetterAuthSessionOptions } from './service';
 import type {
   BetterAuthMultiTenantCacheOptions,
@@ -109,7 +114,7 @@ export class BetterAuthMultiTenantService {
     const config = {
       ...normalized.betterAuth,
     } as BetterAuthOptions & {
-      adapter?: Adapter | AdapterFactory;
+      adapter?: BetterAuthAdapter | BetterAuthAdapterFactory;
       database?: BetterAuthOptions['database'];
       plugins?: BetterAuthPlugin[];
     };
@@ -128,7 +133,7 @@ export class BetterAuthMultiTenantService {
 
     config.plugins = plugins;
 
-    const instance = betterAuth(config);
+    const instance = betterAuth(config) as unknown as BetterAuthInstance;
 
     if (normalized.autoRunMigrations) {
       await this.runMigrations(instance, tenantKey);
@@ -166,12 +171,12 @@ export class BetterAuthMultiTenantService {
     const instance = await this.getInstance({ ...context, headers });
     const query = options.disableCookieCache || options.disableRefresh
       ? {
-          disableCookieCache: options.disableCookieCache,
-          disableRefresh: options.disableRefresh,
-        }
+        disableCookieCache: options.disableCookieCache,
+        disableRefresh: options.disableRefresh,
+      }
       : undefined;
 
-    const args = { headers } as Parameters<BetterAuthInstance['api']['getSession']>[0] & { query?: typeof query };
+    const args = { headers } as BetterAuthSessionInput;
     if (query) {
       args.query = query;
     }
@@ -220,7 +225,11 @@ export class BetterAuthMultiTenantService {
 
     const excess = this.registry.size - this.cache.maxEntries;
     for (let i = 0; i < excess; i += 1) {
-      this.registry.delete(sorted[i][0]);
+      const entry = sorted[i];
+      if (!entry) {
+        break;
+      }
+      this.registry.delete(entry[0]);
     }
   }
 

@@ -1,0 +1,122 @@
+import { Metadata } from "next";
+import { CodeBlock } from "@/components/shared/simple-code-block";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+const installBetterAuth = `bun add @nl-framework/auth better-auth @better-auth/bun`;
+const httpProxy = `import { BetterAuthProxyModule } from "@nl-framework/auth";
+
+@Module({
+  imports: [BetterAuthProxyModule.forRoot({
+    upstreamUrl: "https://auth.nael.dev",
+    cookieDomain: ".nael.dev",
+  })],
+})
+export class HttpModule {}`;
+const graphqlGuard = `@Resolver(() => Profile)
+export class ProfileResolver {
+  constructor(private readonly service: ProfileService) {}
+
+  @UseGuards(BetterAuthGuard)
+  @Query(() => Profile)
+  me(@CurrentSession() session: BetterAuthSession) {
+    return this.service.resolveProfile(session.userId);
+  }
+}`;
+const multiTenantBootstrap = `BetterAuthMultiTenantFactory.register({
+  async resolveTenant(ctx) {
+    return tenants.find((tenant) => tenant.domain === ctx.req.host)
+  },
+  async secretsFor(tenant) {
+    return {
+      cookieName: \`__Secure-\${tenant.key}\`,
+      secret: tenant.secret,
+    }
+  },
+});`;
+
+export const metadata: Metadata = {
+  title: "Better Auth · Techniques",
+  description: "Best practices for wiring Better Auth across HTTP, GraphQL, and multi-tenant services.",
+};
+
+export default function BetterAuthTechniquePage() {
+  return (
+    <div className="space-y-10">
+      <div className="space-y-3">
+        <p className="text-sm uppercase tracking-wide text-muted-foreground">Techniques</p>
+        <h1 className="text-4xl font-semibold">Better Auth</h1>
+        <p className="max-w-2xl text-muted-foreground">
+          Better Auth is treated as a first-class citizen: proxy the hosted routes, share session middleware across
+          transports, and hydrate tenant-specific secrets on the fly. This guide distills how the examples wire
+          everything together.
+        </p>
+      </div>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Install + configure</h2>
+        <p className="text-muted-foreground">
+          Start with the auth package plus the upstream Better Auth SDKs. Every provider is tree-shakeable and
+          compatible with Bun&apos;s native fetch implementation.
+        </p>
+        <CodeBlock code={installBetterAuth} title="Install packages" />
+      </section>
+
+      <section className="space-y-6">
+        <Card className="border-border/70">
+          <CardHeader>
+            <CardTitle>HTTP proxy</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Reuse the hosted Better Auth router by proxying it through the Bun server. Attach the module to the
+              same Nest-like DI container so guards share context.
+            </p>
+            <CodeBlock code={httpProxy} title="BetterAuthProxyModule" />
+          </CardContent>
+        </Card>
+        <Card className="border-border/70">
+          <CardHeader>
+            <CardTitle>GraphQL guard</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Wrap resolvers with <code>BetterAuthGuard</code> and inject the session using <code>@CurrentSession()</code>. The guard
+              reads the same cookies set by the proxy module.
+            </p>
+            <CodeBlock code={graphqlGuard} title="Protect a resolver" />
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Multi-tenant secrets</h2>
+        <p className="text-muted-foreground">
+          The <code>auth-multi-tenant-*</code> examples register a resolver that inspects the incoming host header, resolves a
+          tenant, and loads individual Better Auth cookies + secrets. Each tenant can map to its own project inside
+          the Better Auth dashboard.
+        </p>
+        <CodeBlock code={multiTenantBootstrap} title="Tenant-aware bootstrap" />
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Session propagation tips</h2>
+        <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
+          <li>Proxy Better Auth before registering custom routes to avoid middleware ordering bugs.</li>
+          <li>Share the <code>BetterAuthSessionStore</code> across HTTP + GraphQL to prevent duplicate lookups.</li>
+          <li>In multi-tenant mode, persist tenant metadata in <code>ConfigService</code> and memoize secrets.</li>
+          <li>Expose a <code>GET /session</code> helper for SPA hydration so clients know when to refresh.</li>
+        </ul>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Debugging checklist</h2>
+        <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
+          <li>Use <code>nl doctor --checks auth</code> to confirm secrets and callback URLs are sane.</li>
+          <li>Set <code>BETTER_AUTH_DEBUG=true</code> locally to log upstream proxy responses.</li>
+          <li>Ensure cookies share the <code>Secure</code> attribute in prod and <code>SameSite=Lax</code> in dev.</li>
+          <li>Verify the GraphQL context inherits <code>request</code> + <code>response</code> objects (see <code>examples/basic-graphql</code>).</li>
+        </ul>
+      </section>
+    </div>
+  );
+}

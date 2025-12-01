@@ -1,7 +1,7 @@
-import type { AdapterFactory } from 'better-auth/adapters';
 import { mongodbAdapter, type MongoDBAdapterConfig } from 'better-auth/adapters/mongodb';
 import type { Db } from 'mongodb';
 import type { OrmConnection } from '@nl-framework/orm';
+import type { BetterAuthAdapterFactory } from '../types';
 
 const isMongoDatabase = (value: unknown): value is Db =>
   Boolean(value && typeof (value as Db).collection === 'function');
@@ -9,7 +9,7 @@ const isMongoDatabase = (value: unknown): value is Db =>
 export const createMongoAdapterFromDb = (
   db: Db,
   config?: MongoDBAdapterConfig,
-): AdapterFactory => mongodbAdapter(db, config);
+): BetterAuthAdapterFactory => mongodbAdapter(db, config);
 
 export const resolveMongoDatabase = async (connection: OrmConnection): Promise<Db> => {
   await connection.ensureConnection();
@@ -25,4 +25,5 @@ export const resolveMongoDatabase = async (connection: OrmConnection): Promise<D
 export const createMongoAdapterFromOrm = async (
   connection: OrmConnection,
   config?: MongoDBAdapterConfig,
-): Promise<AdapterFactory> => mongodbAdapter(await resolveMongoDatabase(connection), config);
+): Promise<BetterAuthAdapterFactory> =>
+  mongodbAdapter(await resolveMongoDatabase(connection), config);

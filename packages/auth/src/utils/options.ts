@@ -1,15 +1,15 @@
-import type { Adapter, BetterAuthOptions, BetterAuthPlugin } from 'better-auth';
-import type { AdapterFactory } from 'better-auth/adapters';
+import type { BetterAuthOptions, BetterAuthPlugin } from 'better-auth';
 import { normalizeConnectionName } from '@nl-framework/orm';
 import { mergePluginCollections } from './plugins';
 import type { BetterAuthModuleOptions } from '../interfaces/module-options';
+import type { BetterAuthAdapter, BetterAuthAdapterFactory } from '../types';
 
 export interface NormalizedBetterAuthModuleOptions {
   betterAuth: BetterAuthOptions;
   basePlugins: BetterAuthPlugin[];
   extendPlugins: BetterAuthPlugin[];
   connectionName: string;
-  adapter?: Adapter | AdapterFactory;
+  adapter?: BetterAuthAdapter | BetterAuthAdapterFactory;
   database?: BetterAuthOptions['database'];
   autoRunMigrations: boolean;
 }
@@ -49,8 +49,8 @@ export const normalizeModuleOptions = (
   const providedDatabase = options.database ??
     (legacyAdapter
       ? (typeof legacyAdapter === 'function'
-          ? (legacyAdapter as AdapterFactory)
-          : ((() => legacyAdapter) as AdapterFactory))
+        ? (legacyAdapter as BetterAuthAdapterFactory)
+        : ((() => legacyAdapter) as BetterAuthAdapterFactory))
       : undefined);
 
   if (!providedDatabase) {

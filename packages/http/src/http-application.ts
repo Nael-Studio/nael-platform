@@ -4,6 +4,7 @@ import { Application, getControllerPrefix } from '@nl-framework/core';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
 import { Router } from './router/router';
 import type { MiddlewareHandler, HttpMethod, RequestContext } from './interfaces/http';
+import type { HttpVersioningOptions } from './versioning/options';
 import { getRouteDefinitions } from './decorators/routes';
 import { listHttpRouteRegistrars } from './registry';
 import { PUBLIC_ROUTE_METADATA_KEY } from './constants';
@@ -12,9 +13,10 @@ export interface HttpServerOptions {
   host?: string;
   port?: number;
   middleware?: MiddlewareHandler[];
+  versioning?: HttpVersioningOptions;
 }
 
-export interface HttpApplicationOptions extends ApplicationOptions, HttpServerOptions {}
+export interface HttpApplicationOptions extends ApplicationOptions, HttpServerOptions { }
 
 const createDynamicRouteController = (
   className: string,
@@ -33,17 +35,19 @@ const createDynamicRouteController = (
 };
 
 export class HttpApplication {
-  private readonly router = new Router();
+  private readonly router: Router;
   private server?: ReturnType<typeof Bun.serve>;
   private logger: Logger;
   private customRouteCounter = 0;
   private readonly routeRegistrarPromise: Promise<void>;
+  private readonly unsubscribeModuleListener: () => void;
 
   constructor(
     private readonly context: ApplicationContext,
     private readonly options: HttpServerOptions,
     private readonly ownsContext: boolean,
   ) {
+    this.router = new Router({ versioning: options.versioning });
     const baseLogger = this.context.getLogger().child('HttpApplication');
     this.logger = baseLogger;
     void this.context
@@ -55,6 +59,9 @@ export class HttpApplication {
         this.logger = baseLogger;
       });
     this.registerControllers();
+    this.unsubscribeModuleListener = this.context.addModuleLoadListener(async ({ controllers }) => {
+      this.registerControllerInstances(controllers);
+    });
     this.routeRegistrarPromise = this.initializeRouteRegistrars();
     for (const middleware of options.middleware ?? []) {
       this.router.use(middleware);
@@ -68,31 +75,42 @@ export class HttpApplication {
   }
 
   private registerControllers(): void {
-    const controllers = this.context.getControllers<object>();
-    for (const controller of controllers) {
-      const controllerClass = controller.constructor as ClassType;
-      const routes = getRouteDefinitions(controllerClass);
-      if (!routes.length) {
-        this.logger.warn('Controller has no routable handlers', {
-          controller: controllerClass.name,
-        });
-        continue;
-      }
+    this.registerControllerInstances(this.context.getControllers<object>());
+  }
 
-      this.logger.info('Registering HTTP routes', {
-        controller: controllerClass.name,
-        routes: routes.map((route) => ({ method: route.method, path: route.path })),
-      });
-
-      this.router.registerController(
-        {
-          prefix: getControllerPrefix(controllerClass),
-          controller: controllerClass,
-          routes,
-        },
-        controller,
-      );
+  private registerControllerInstances(instances: unknown[]): void {
+    for (const controller of instances) {
+      this.registerControllerInstance(controller);
     }
+  }
+
+  private registerControllerInstance(controller: unknown): void {
+    if (!controller || typeof controller !== 'object') {
+      return;
+    }
+
+    const controllerClass = controller.constructor as ClassType;
+    const routes = getRouteDefinitions(controllerClass);
+    if (!routes.length) {
+      this.logger.warn('Controller has no routable handlers', {
+        controller: controllerClass.name,
+      });
+      return;
+    }
+
+    this.logger.info('Registering HTTP routes', {
+      controller: controllerClass.name,
+      routes: routes.map((route) => ({ method: route.method, path: route.path })),
+    });
+
+    this.router.registerController(
+      {
+        prefix: getControllerPrefix(controllerClass),
+        controller: controllerClass,
+        routes,
+      },
+      controller,
+    );
   }
 
   use(middleware: MiddlewareHandler): void {
@@ -142,10 +160,16 @@ export class HttpApplication {
     this.server = Bun.serve({
       port: listenPort,
       hostname,
-      fetch: (request) =>
-        this.router.handle(request, {
-          resolve: <T>(token: Token<T>) => this.context.get(token),
-        }),
+      fetch: async (request) => {
+        const contextId = this.context.createContextId('http');
+        try {
+          return await this.router.handle(request, {
+            resolve: <T>(token: Token<T>) => this.context.get(token, { contextId }),
+          });
+        } finally {
+          this.context.releaseContext(contextId);
+        }
+      },
     });
 
     const actualHost = this.server.hostname ?? hostname;
@@ -169,6 +193,7 @@ export class HttpApplication {
   async close(): Promise<void> {
     this.server?.stop();
     this.logger.info('HTTP server stopped');
+    this.unsubscribeModuleListener?.();
     if (this.ownsContext) {
       await this.context.close();
     }

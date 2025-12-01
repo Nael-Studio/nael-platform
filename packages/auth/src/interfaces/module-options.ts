@@ -1,11 +1,11 @@
-import type { BetterAuthOptions, Adapter, BetterAuthPlugin } from 'better-auth';
-import type { AdapterFactory } from 'better-auth/adapters';
+import type { BetterAuthOptions, BetterAuthPlugin } from 'better-auth';
 import type { ClassType, Token } from '@nl-framework/core';
+import type { BetterAuthAdapter, BetterAuthAdapterFactory } from '../types';
 
 export interface BetterAuthModuleOptions {
   betterAuth: BetterAuthOptions;
   connectionName?: string;
-  adapter?: Adapter | AdapterFactory;
+  adapter?: BetterAuthAdapter | BetterAuthAdapterFactory;
   database?: BetterAuthOptions['database'];
   extendPlugins?: BetterAuthPlugin[];
   autoRunMigrations?: boolean;

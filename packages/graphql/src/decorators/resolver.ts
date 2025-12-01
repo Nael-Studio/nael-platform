@@ -6,6 +6,7 @@ import {
   type ResolverParamOptions,
   type ResolverParamKind,
   type TypeThunk,
+  type GraphqlParamFactory,
 } from '../internal/metadata';
 
 const storage = GraphqlMetadataStorage.get();
@@ -24,18 +25,18 @@ const createMethodDecorator = (
   kind: 'query' | 'mutation' | 'field',
 ) =>
   (typeThunk?: TypeThunk, options: ResolverMethodOptions = {}): MethodDecorator =>
-  (target, propertyKey) => {
-    const designReturnType = Reflect.getMetadata('design:returntype', target, propertyKey);
-    storage.addResolverMethod({
-      kind,
-      target: (target as any).constructor as ClassType,
-      methodName: String(propertyKey),
-      schemaName: options.name ?? String(propertyKey),
-      typeThunk,
-      designReturnType,
-      options,
-    });
-  };
+    (target, propertyKey) => {
+      const designReturnType = Reflect.getMetadata('design:returntype', target, propertyKey);
+      storage.addResolverMethod({
+        kind,
+        target: (target as any).constructor as ClassType,
+        methodName: String(propertyKey),
+        schemaName: options.name ?? String(propertyKey),
+        typeThunk,
+        designReturnType,
+        options,
+      });
+    };
 
 /**
  * Declares a GraphQL query resolver method.
@@ -86,47 +87,47 @@ const createParamDecorator = (kind: ResolverParamKind) =>
     maybeTypeOrOptions?: TypeThunk | ResolverParamOptions,
     maybeOptions?: ResolverParamOptions,
   ): ParameterDecorator =>
-  (target, propertyKey, parameterIndex) => {
-    if (propertyKey === undefined) {
-      throw new Error('GraphQL parameter decorators can only be used on methods.');
-    }
+    (target, propertyKey, parameterIndex) => {
+      if (propertyKey === undefined) {
+        throw new Error('GraphQL parameter decorators can only be used on methods.');
+      }
 
-    let name: string | undefined;
-    let typeThunk: TypeThunk | undefined;
-    let options: ResolverParamOptions | undefined;
+      let name: string | undefined;
+      let typeThunk: TypeThunk | undefined;
+      let options: ResolverParamOptions | undefined;
 
-    if (typeof nameOrType === 'string') {
-      name = nameOrType;
-      if (typeof maybeTypeOrOptions === 'function') {
-        typeThunk = maybeTypeOrOptions as TypeThunk;
-        options = maybeOptions;
+      if (typeof nameOrType === 'string') {
+        name = nameOrType;
+        if (typeof maybeTypeOrOptions === 'function') {
+          typeThunk = maybeTypeOrOptions as TypeThunk;
+          options = maybeOptions;
+        } else {
+          options = maybeTypeOrOptions as ResolverParamOptions | undefined;
+        }
+      } else if (typeof nameOrType === 'function') {
+        typeThunk = nameOrType as TypeThunk;
+        options = maybeTypeOrOptions as ResolverParamOptions | undefined;
       } else {
         options = maybeTypeOrOptions as ResolverParamOptions | undefined;
       }
-    } else if (typeof nameOrType === 'function') {
-      typeThunk = nameOrType as TypeThunk;
-      options = maybeTypeOrOptions as ResolverParamOptions | undefined;
-    } else {
-      options = maybeTypeOrOptions as ResolverParamOptions | undefined;
-    }
 
-    const resolverKey = propertyKey as string | symbol;
-    const paramTypes = Reflect.getMetadata('design:paramtypes', target, resolverKey) as
-      | unknown[]
-      | undefined;
-    const designType = paramTypes?.[parameterIndex];
+      const resolverKey = propertyKey as string | symbol;
+      const paramTypes = Reflect.getMetadata('design:paramtypes', target, resolverKey) as
+        | unknown[]
+        | undefined;
+      const designType = paramTypes?.[parameterIndex];
 
-    storage.addResolverParam({
-      target: (target as any).constructor as ClassType,
-      methodName: String(resolverKey),
-      index: parameterIndex,
-      kind,
-      name,
-      typeThunk,
-      designType,
-      options: options ?? {},
-    });
-  };
+      storage.addResolverParam({
+        target: (target as any).constructor as ClassType,
+        methodName: String(resolverKey),
+        index: parameterIndex,
+        kind,
+        name,
+        typeThunk,
+        designType,
+        options: options ?? {},
+      });
+    };
 
 /**
  * Injects a single named GraphQL argument into a resolver parameter.
@@ -170,3 +171,30 @@ export const Parent = createParamDecorator('parent');
  * Provides the low-level `GraphQLResolveInfo` descriptor, including field selection and schema details.
  */
 export const Info = createParamDecorator('info');
+
+export const createGraphqlParamDecorator = <Data = unknown, Result = unknown>(
+  factory: GraphqlParamFactory<Data, Result>,
+): ((data?: Data) => ParameterDecorator) =>
+  (data?: Data) =>
+    (target, propertyKey, parameterIndex) => {
+      if (propertyKey === undefined) {
+        throw new Error('GraphQL parameter decorators can only be used on methods.');
+      }
+
+      const resolverKey = propertyKey as string | symbol;
+      const paramTypes = Reflect.getMetadata('design:paramtypes', target, resolverKey) as
+        | unknown[]
+        | undefined;
+      const designType = paramTypes?.[parameterIndex];
+
+      storage.addResolverParam({
+        target: (target as any).constructor as ClassType,
+        methodName: String(resolverKey),
+        index: parameterIndex,
+        kind: 'custom',
+        designType,
+        options: {},
+        data,
+        factory: factory as GraphqlParamFactory,
+      });
+    };

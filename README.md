@@ -26,6 +26,7 @@ Nael Platform is a [NestJS](https://nestjs.com/)-inspired application framework 
 - Modular core built around dependency injection and application contexts
 - HTTP module with decorator-driven routing and middleware support
 - GraphQL module with schema-first resolvers and federation-ready tooling
+- GraphQL resolver interceptors that reuse `@UseInterceptors()` and support global registration
 - Federation gateway wrapper that embeds Apollo Gateway into the shared server
 - Structured logging with pluggable transports (console out-of-the-box)
 - Driver-based ORM module with TypeORM-style registration, MongoDB support, timestamps, and seeding hooks
@@ -65,6 +66,7 @@ The roadmap tracks both the pieces that already landed and the ones we still pla
 - [x] **Microservices module with NestJS-inspired message patterns (@MessagePattern, @EventPattern), Dapr transport integration, and MicroserviceClient for pub/sub messaging**
 - [x] **Scheduler module delivering Bun Worker-backed `@Cron`, `@Interval`, and `@Timeout` decorators with run-time registry APIs**
 - [x] Bun-native CLI for bootstrapping new services (`nl new <project-name>`), feature modules (`nl g module <module-name>`), controllers (`nl g controller <controller-name> --module <module-name>`), services (`nl g service <service-name> --module <module-name>`), resolvers (`nl g resolver <resolver-name> --module <module-name>`), models (`nl g model <model-name> --module <module-name>`), and shared libraries (`nl g lib <lib-name>`) with ready-to-run Nael scaffolding
+- [x] Nest-style interceptor pipeline with `@UseInterceptors()`, global `registerHttpInterceptor()`, and request/response wrapping
 
 ### Planned
 
@@ -78,7 +80,7 @@ The roadmap tracks both the pieces that already landed and the ones we still pla
 - [ ] Additional database connectors and ODM abstractions beyond MongoDB
 - [ ] Test harness utilities mirroring NestJS testing module APIs
 - [ ] Comprehensive documentation site
-- [ ] Unified exception-handling primitives (HTTP/GraphQL filters, logging integration, Nest-style interceptors)
+- [ ] Unified exception-handling primitives (HTTP/GraphQL filters, logging integration)
 
 ---
 
@@ -91,6 +93,7 @@ Nael Platform is built around a modular architecture where each package provides
 The foundation of the framework, providing dependency injection, module system, and application bootstrapping.
 
 **Key Features:**
+
 - **Dependency Injection**: Constructor-based injection with token resolution
 - **Module System**: `@Module()` decorator for organizing providers, controllers, and imports
 - **Decorators**: `@Injectable()`, `@Controller()` for marking classes
@@ -119,6 +122,7 @@ const context = await app.bootstrap(AppModule);
 ```
 
 **Advanced Features:**
+
 - Factory providers with `useFactory` and async initialization
 - Value providers with `useValue` for constants
 - Class providers with `useClass` for substitution
@@ -132,9 +136,12 @@ const context = await app.bootstrap(AppModule);
 REST API development with decorator-based routing, middleware support, and guard-based authorization.
 
 **Key Features:**
+
 - **Route Decorators**: `@Get()`, `@Post()`, `@Put()`, `@Delete()`, `@Patch()`
 - **Parameter Decorators**: `@Body()`, `@Query()`, `@Param()`, `@Headers()`, `@Req()`, `@Res()`
 - **Guards**: Route protection with `@UseGuards()` for authentication/authorization
+- **Interceptors**: Cross-cutting concerns via `@UseInterceptors()` and global `registerHttpInterceptor()` hooks
+- **Custom Decorators**: `SetMetadata` plus `createHttpParamDecorator()` let you build `@Roles()` or `@CurrentUser()`-style helpers without reimplementing the router
 - **Middleware**: Request/response pipeline customization
 - **Bun Native**: Uses Bun's native HTTP server for maximum performance
 
@@ -178,6 +185,7 @@ export class AppModule {}
 ```
 
 **Route Patterns:**
+
 - Path parameters: `/users/:id`
 - Query strings: Automatic parsing via `@Query()`
 - Request body: JSON parsing via `@Body()`
@@ -190,11 +198,14 @@ export class AppModule {}
 Schema-first GraphQL development with resolver discovery, Apollo Server integration, and federation support.
 
 **Key Features:**
+
 - **Schema-First**: Load `.graphql` files and map to resolvers
 - **Resolver Discovery**: Automatic registration via `@Resolver()` decorator
 - **Apollo Server**: Built on Apollo Server for GraphQL spec compliance
 - **Federation Ready**: First-class support for Apollo Federation subgraphs
 - **Guard Integration**: Reuse HTTP guards in GraphQL resolvers
+- **Interceptor Pipeline**: Wrap resolver execution with `@UseInterceptors()` and global `registerGraphqlInterceptor()` calls
+- **Custom Decorators**: Build resolver helpers with `createGraphqlParamDecorator()` to project context or parent data into arguments
 - **Context Sharing**: Access request context, user info, and DI container
 
 **Example:**
@@ -262,6 +273,7 @@ export class SubgraphModule {}
 Unified factory for running HTTP and GraphQL servers together on a single port, with built-in Apollo Federation gateway support.
 
 **Key Features:**
+
 - **NaelFactory**: Single entry point for creating integrated applications
 - **Shared Context**: HTTP and GraphQL share the same DI container
 - **Federation Gateway**: Built-in Apollo Gateway for subgraph aggregation
@@ -274,10 +286,7 @@ Unified factory for running HTTP and GraphQL servers together on a single port, 
 import { NaelFactory } from '@nl-framework/platform';
 
 @Module({
-  imports: [
-    HttpModule.forRoot(),
-    GraphqlModule.forRoot({ schemaPath: './schema.graphql' }),
-  ],
+  imports: [HttpModule.forRoot(), GraphqlModule.forRoot({ schemaPath: './schema.graphql' })],
   controllers: [UsersController],
   resolvers: [UsersResolver],
 })
@@ -317,6 +326,7 @@ await gatewayApp.start({ port: 4000 });
 Environment-aware configuration loading with YAML support, async factories, and feature-scoped injection.
 
 **Key Features:**
+
 - **File Loading**: YAML, JSON, and environment variable support
 - **Layered Configuration**: Merge base + environment-specific configs
 - **Type-Safe**: Generic-typed `ConfigService<T>` for autocomplete
@@ -386,6 +396,7 @@ export class DatabaseService {
 Structured logging with context tracking, multiple transports, and child logger support.
 
 **Key Features:**
+
 - **Structured Logging**: JSON-formatted logs with metadata
 - **Context Tracking**: Module/service-level context in every log
 - **Child Loggers**: Inherit context and create scoped loggers
@@ -407,7 +418,7 @@ export class UserService {
 
   async createUser(data: any) {
     this.logger.info('Creating user', { email: data.email });
-    
+
     try {
       // ... create user
       this.logger.info('User created successfully', { userId: '123' });
@@ -438,6 +449,7 @@ const context = await app.bootstrap(AppModule, {
 MongoDB integration with repository pattern, TypeORM-style registration, and built-in timestamp/soft-delete support.
 
 **Key Features:**
+
 - **Repository Pattern**: Type-safe CRUD operations
 - **Entity Decorators**: `@Entity()`, `@Field()` for schema definition
 - **Automatic Timestamps**: `createdAt`, `updatedAt` tracking
@@ -532,6 +544,7 @@ export class UserSeeder {
 Better Auth integration with session management, guards, and unified authentication across HTTP and GraphQL.
 
 **Key Features:**
+
 - **Better Auth Integration**: Full wrapper around Better Auth library
 - **Session Management**: Cookie-based sessions with secure defaults
 - **HTTP Guards**: `@Public()` decorator and automatic route protection
@@ -595,7 +608,9 @@ import { BetterAuthGraphqlModule } from '@nl-framework/auth';
 
 @Module({
   imports: [
-    BetterAuthModule.forRoot({ /* config */ }),
+    BetterAuthModule.forRoot({
+      /* config */
+    }),
     BetterAuthGraphqlModule.forRoot(),
   ],
 })
@@ -673,6 +688,7 @@ registerBetterAuthMultiTenantHttpRoutes(authService, httpOptions, {
 Background job scheduling with Bun Worker-powered timers, inspired by NestJS Schedule but tuned for Nael's DI container and ESM-first runtime.
 
 **Key Features:**
+
 - **Decorator API**: `@Cron()`, `@Interval()`, and `@Timeout()` method decorators with optional names, `runOnInit`, and `maxRuns` controls
 - **Worker-backed timers**: Jobs run inside a dedicated Bun Worker for accurate timing without blocking the main event loop
 - **Imperative API**: `SchedulerService` exposes `scheduleCron`, `scheduleInterval`, `scheduleTimeout`, and `cancel` for dynamic job management
@@ -844,17 +860,17 @@ See [`examples/microservices/README.md`](./examples/microservices/README.md) for
 
 Quick reference for all framework packages:
 
-| Package | Description | Key Features |
-|---------|-------------|--------------|
-| `@nl-framework/core` | DI container and module system | Dependency injection, lifecycle hooks, application context |
-| `@nl-framework/http` | REST API framework | Decorator routing, guards, middleware, Bun-native server |
-| `@nl-framework/graphql` | GraphQL server | Schema-first, Apollo Server, federation, resolver discovery |
-| `@nl-framework/platform` | Unified application factory | Combined HTTP+GraphQL, gateway support, shared context |
-| `@nl-framework/config` | Configuration management | YAML/JSON loading, environment merging, async factories |
-| `@nl-framework/logger` | Structured logging | Context tracking, child loggers, multiple transports |
-| `@nl-framework/orm` | MongoDB ORM | Repository pattern, timestamps, soft deletes, seeding |
-| `@nl-framework/auth` | Authentication | Better Auth integration, session management, OAuth |
-| `@nl-framework/microservices` | Event-driven messaging | Message patterns, Dapr transport, pub/sub support |
+| Package                       | Description                    | Key Features                                                |
+| ----------------------------- | ------------------------------ | ----------------------------------------------------------- |
+| `@nl-framework/core`          | DI container and module system | Dependency injection, lifecycle hooks, application context  |
+| `@nl-framework/http`          | REST API framework             | Decorator routing, guards, middleware, Bun-native server    |
+| `@nl-framework/graphql`       | GraphQL server                 | Schema-first, Apollo Server, federation, resolver discovery |
+| `@nl-framework/platform`      | Unified application factory    | Combined HTTP+GraphQL, gateway support, shared context      |
+| `@nl-framework/config`        | Configuration management       | YAML/JSON loading, environment merging, async factories     |
+| `@nl-framework/logger`        | Structured logging             | Context tracking, child loggers, multiple transports        |
+| `@nl-framework/orm`           | MongoDB ORM                    | Repository pattern, timestamps, soft deletes, seeding       |
+| `@nl-framework/auth`          | Authentication                 | Better Auth integration, session management, OAuth          |
+| `@nl-framework/microservices` | Event-driven messaging         | Message patterns, Dapr transport, pub/sub support           |
 
 ## Architecture Principles
 
@@ -899,12 +915,12 @@ When the tag lands:
 3. Commit the changes so the new versions are on the branch you want to release.
 4. Create and push the tag:
 
-  ```bash
-  git tag 0.2.0
-  git push origin 0.2.0
-  ```
+```bash
+git tag 0.2.0
+git push origin 0.2.0
+```
 
-  The tag value must match the `MAJOR.MINOR.PATCH` format; the workflow will fail fast if it does not.
+The tag value must match the `MAJOR.MINOR.PATCH` format; the workflow will fail fast if it does not.
 
 ### Required Secrets
 

@@ -2,22 +2,29 @@ import { describe, expect, it, beforeEach, afterEach } from 'bun:test';
 import { Controller, Injectable, Module } from '@nl-framework/core';
 import {
   clearHttpGuards,
+  clearHttpInterceptors,
   clearHttpRouteRegistrars,
   createHttpApplication,
   Get,
   Post,
   registerHttpGuard,
+  registerHttpInterceptor,
   registerHttpRouteRegistrar,
   UseGuards,
+  UseInterceptors,
   Body,
   Param,
   Query,
   Headers,
   Req,
   Context,
+  createHttpParamDecorator,
   type CanActivate,
   type GuardFunction,
   type HttpExecutionContext,
+  type CallHandler,
+  type HttpInterceptor,
+  type InterceptorFunction,
   type MiddlewareHandler,
 } from '../src/index';
 import { IsInt, IsOptional, IsString, Min } from 'class-validator';
@@ -42,7 +49,7 @@ type GuardedRequestContext = RequestContext & { guardMessage?: string };
 
 @Injectable()
 class PersonalizedGuard implements CanActivate {
-  constructor(private readonly service: MessageService) {}
+  constructor(private readonly service: MessageService) { }
 
   canActivate(context: HttpExecutionContext): boolean {
     const request = context.getRequest();
@@ -60,9 +67,20 @@ const allowGuard: GuardFunction = () => true;
 const handlerResponseGuard: GuardFunction = async () =>
   new Response('handler-blocked', { status: 418 });
 
+const CurrentUser = createHttpParamDecorator<string | undefined>((property, ctx) => {
+  const user = {
+    id: ctx.headers.get('x-user-id'),
+    role: ctx.headers.get('x-user-role'),
+  } as const;
+  if (!property) {
+    return user;
+  }
+  return user[property as keyof typeof user];
+});
+
 @Controller('/greetings')
 class GreetingController {
-  constructor(private readonly service: MessageService) {}
+  constructor(private readonly service: MessageService) { }
 
   @Get('/:name')
   respond(ctx: RequestContext) {
@@ -75,7 +93,7 @@ class GreetingController {
   providers: [MessageService],
   controllers: [GreetingController],
 })
-class GreetingModule {}
+class GreetingModule { }
 
 @UseGuards(HeaderGuard)
 @Controller('/protected')
@@ -111,7 +129,7 @@ class PersonalizedController {
   providers: [MessageService, HeaderGuard, PersonalizedGuard],
   controllers: [ProtectedController, PersonalizedController],
 })
-class GuardedModule {}
+class GuardedModule { }
 
 class CreatePayloadDto {
   @IsString()
@@ -165,12 +183,72 @@ class PayloadController {
   exposeContext(@Context() ctx: RequestContext) {
     return { path: ctx.route.definition.path };
   }
+
+  @Get('/custom')
+  readCustom(@CurrentUser('role') role: string | null, @CurrentUser() user: { id: string | null; role: string | null }) {
+    return { role, user };
+  }
 }
 
 @Module({
   controllers: [PayloadController],
 })
-class PayloadModule {}
+class PayloadModule { }
+
+const interceptorOrder: string[] = [];
+let cachedHandlerInvocations = 0;
+
+@Injectable()
+class EnvelopeInterceptor implements HttpInterceptor {
+  async intercept(_: HttpExecutionContext, next: CallHandler) {
+    interceptorOrder.push('controller-before');
+    const result = await next.handle();
+    if (result instanceof Response) {
+      interceptorOrder.push('controller-after');
+      return result;
+    }
+    interceptorOrder.push('controller-after');
+    return { data: result };
+  }
+}
+
+const cacheInterceptor: InterceptorFunction = async () => new Response('cached-response');
+
+const methodTraceInterceptor: InterceptorFunction = async (_context, next) => {
+  interceptorOrder.push('method-before');
+  const result = await next.handle();
+  interceptorOrder.push('method-after');
+  return result;
+};
+
+@UseInterceptors(EnvelopeInterceptor)
+@Controller('/interceptors')
+class InterceptorController {
+  @Get()
+  read() {
+    return { status: 'ok' } as const;
+  }
+
+  @UseInterceptors(cacheInterceptor)
+  @Get('/cached')
+  cached() {
+    cachedHandlerInvocations += 1;
+    return { status: 'unreachable' } as const;
+  }
+
+  @UseInterceptors(methodTraceInterceptor)
+  @Get('/trace')
+  trace() {
+    interceptorOrder.push('handler');
+    return { status: 'trace' } as const;
+  }
+}
+
+@Module({
+  providers: [EnvelopeInterceptor],
+  controllers: [InterceptorController],
+})
+class InterceptorModule { }
 
 describe('HTTP Application', () => {
   let appUnderTest: Awaited<ReturnType<typeof createHttpApplication>>;
@@ -178,6 +256,9 @@ describe('HTTP Application', () => {
   beforeEach(() => {
     clearHttpRouteRegistrars();
     clearHttpGuards();
+    clearHttpInterceptors();
+    interceptorOrder.length = 0;
+    cachedHandlerInvocations = 0;
   });
 
   afterEach(async () => {
@@ -187,6 +268,7 @@ describe('HTTP Application', () => {
       appUnderTest = undefined as any;
     }
     clearHttpGuards();
+    clearHttpInterceptors();
   });
 
   it('handles requests through registered controllers', async () => {
@@ -359,6 +441,18 @@ describe('HTTP Application', () => {
     expect(contextExposure.status).toBe(200);
     expect(await contextExposure.json()).toEqual({ path: '/context' });
 
+    const customDecorator = await fetch(`http://127.0.0.1:${server.port}/payloads/custom`, {
+      headers: {
+        'x-user-id': '42',
+        'x-user-role': 'admin',
+      },
+    });
+    expect(customDecorator.status).toBe(200);
+    expect(await customDecorator.json()).toEqual({
+      role: 'admin',
+      user: { id: '42', role: 'admin' },
+    });
+
     const created = await fetch(`http://127.0.0.1:${server.port}/payloads/validated`, {
       method: 'POST',
       headers: {
@@ -383,5 +477,47 @@ describe('HTTP Application', () => {
         expect.objectContaining({ property: 'message' }),
       ]),
     });
+  });
+
+  it('applies controller and handler interceptors', async () => {
+    appUnderTest = await createHttpApplication(InterceptorModule, { port: 0 });
+    const server = await appUnderTest.listen();
+
+    const wrapped = await fetch(`http://127.0.0.1:${server.port}/interceptors`);
+    expect(wrapped.status).toBe(200);
+    expect(await wrapped.json()).toEqual({ data: { status: 'ok' } });
+
+    const cached = await fetch(`http://127.0.0.1:${server.port}/interceptors/cached`);
+    expect(cached.status).toBe(200);
+    expect(await cached.text()).toBe('cached-response');
+    expect(cachedHandlerInvocations).toBe(0);
+  });
+
+  it('runs global interceptors before controller and method interceptors', async () => {
+    const tracingGlobalInterceptor: InterceptorFunction = async (_context, next) => {
+      interceptorOrder.push('global-before');
+      const result = await next.handle();
+      interceptorOrder.push('global-after');
+      return result;
+    };
+
+    registerHttpInterceptor(tracingGlobalInterceptor);
+
+    appUnderTest = await createHttpApplication(InterceptorModule, { port: 0 });
+    const server = await appUnderTest.listen();
+
+    const traced = await fetch(`http://127.0.0.1:${server.port}/interceptors/trace`);
+    expect(traced.status).toBe(200);
+    expect(await traced.json()).toEqual({ data: { status: 'trace' } });
+
+    expect(interceptorOrder).toEqual([
+      'global-before',
+      'controller-before',
+      'method-before',
+      'handler',
+      'method-after',
+      'controller-after',
+      'global-after',
+    ]);
   });
 });

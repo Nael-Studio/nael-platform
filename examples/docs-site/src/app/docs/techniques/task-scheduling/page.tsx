@@ -1,0 +1,152 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
+import { CodeBlock } from "@/components/shared/simple-code-block";
+
+const install = `bun add @nl-framework/scheduler @nl-framework/logger`;
+
+const schedulerModule = `import { Module, Injectable, OnModuleInit } from '@nl-framework/core';
+import { Logger } from '@nl-framework/logger';
+import { Cron, Interval, Timeout, SchedulerModule, SchedulerService } from '@nl-framework/scheduler';
+
+@Injectable()
+export class ReportsScheduler implements OnModuleInit {
+  constructor(
+    private readonly scheduler: SchedulerService,
+    private readonly logger: Logger,
+  ) {}
+
+  // Runs every minute, immediately after registration
+  @Cron('0 * * * * *', { name: 'reports.generate', runOnInit: true })
+  async generateReport() {
+    this.logger.info('Generating scheduled report');
+  }
+
+  // Fixed interval with max runs
+  @Interval(15_000, { name: 'reports.cleanup', maxRuns: 10 })
+  async cleanup() {
+    this.logger.info('Cleaning up temporary report files');
+  }
+
+  // One-off timeout
+  @Timeout(5_000, { name: 'reports.seed' })
+  async seed() {
+    this.logger.info('Seeding initial reports');
+  }
+
+  async onModuleInit() {
+    await this.scheduler.registerDecoratedTarget(this);
+  }
+}
+
+@Module({
+  imports: [SchedulerModule],
+  providers: [ReportsScheduler],
+})
+export class ReportsModule {}`;
+
+const dynamicTasks = `import { Injectable } from '@nl-framework/core';
+import { SchedulerService } from '@nl-framework/scheduler';
+import { Logger } from '@nl-framework/logger';
+
+@Injectable()
+export class AdHocTasksService {
+  constructor(
+    private readonly scheduler: SchedulerService,
+    private readonly logger: Logger,
+  ) {}
+
+  async startPulse() {
+    const handle = await this.scheduler.scheduleInterval(
+      'diagnostics.pulse',
+      async () => this.logger.debug('Pulse tick'),
+      { interval: 5_000, runOnInit: true },
+    );
+    return handle;
+  }
+
+  async stop(name: string) {
+    await this.scheduler.cancel(name);
+  }
+}`;
+
+const configSnippet = `# config/scheduler.yaml (optional)
+scheduler:
+  timezone: UTC          # apply when building cron expressions manually
+  logging: true          # use logger transport
+  runOnInit: false       # default for decorators if you wish to override per env
+`;
+
+export const metadata: Metadata = {
+  title: "Task scheduling · Techniques",
+  description: "Run cron, interval, and timeout jobs in Bun workers with decorator-driven registration.",
+};
+
+export default function TaskSchedulingTechniquesPage() {
+  return (
+    <article className="space-y-8">
+      <div className="space-y-3">
+        <Badge className="bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-50">
+          Techniques
+        </Badge>
+        <h1 className="text-4xl font-semibold tracking-tight">Task scheduling</h1>
+        <p className="text-lg text-muted-foreground">
+          Offload cron-like and interval work to a dedicated Bun worker. Use decorators for static jobs, the scheduler
+          service for dynamic tasks, and keep your main event loop responsive.
+        </p>
+      </div>
+
+      <section className="space-y-4" id="install">
+        <h2 className="text-2xl font-semibold">Install & wire up</h2>
+        <p className="text-muted-foreground">
+          Add the scheduler package and logger (for structured job output). Import <code>SchedulerModule</code> in the
+          module that hosts your jobs.
+        </p>
+        <CodeBlock code={install} title="Install scheduler" />
+      </section>
+
+      <section className="space-y-4" id="decorators">
+        <h2 className="text-2xl font-semibold">Declare cron, interval, timeout jobs</h2>
+        <p className="text-muted-foreground">
+          Decorate methods with <code>@Cron</code>, <code>@Interval</code>, or <code>@Timeout</code>. Call{" "}
+          <code>registerDecoratedTarget</code> in <code>onModuleInit</code> so jobs are registered when the module
+          boots. Jobs execute inside a worker for accurate timers.
+        </p>
+        <CodeBlock code={schedulerModule} title="reports.module.ts" />
+      </section>
+
+      <section className="space-y-4" id="dynamic">
+        <h2 className="text-2xl font-semibold">Register tasks dynamically</h2>
+        <p className="text-muted-foreground">
+          Use <code>SchedulerService</code> directly for feature-flagged or user-driven schedules. Every registration
+          returns a handle that can be cancelled later.
+        </p>
+        <CodeBlock code={dynamicTasks} title="ad-hoc-tasks.service.ts" />
+      </section>
+
+      <section className="space-y-4" id="config">
+        <h2 className="text-2xl font-semibold">Configuration hints</h2>
+        <p className="text-muted-foreground">
+          The scheduler itself is configuration-light; you can still centralize flags (like default{" "}
+          <code>runOnInit</code> or timezones) in your config module and inject values into your schedulers or factories.
+        </p>
+        <CodeBlock code={configSnippet} title="config/scheduler.yaml" />
+      </section>
+
+      <section className="space-y-3" id="tips">
+        <h2 className="text-2xl font-semibold">Best practices</h2>
+        <ul className="list-disc space-y-2 pl-6 text-muted-foreground">
+          <li>Give every job a stable <code>name</code> (decorators set one by default) so you can cancel or inspect it.</li>
+          <li>Use <code>maxRuns</code> for cleanup tasks that should self-expire; pair with logging for observability.</li>
+          <li>Keep handlers idempotent and defensive—failed jobs should log and retry safely.</li>
+          <li>Consider separate scheduler modules per bounded context to keep dependencies light.</li>
+          <li>Test cron expressions in isolation; set <code>runOnInit</code> in dev to catch drift early.</li>
+        </ul>
+        <p className="text-sm text-muted-foreground">
+          Explore the runnable example at <code>examples/scheduler</code> or the API docs in{" "}
+          <Link className="text-primary underline" href="/docs/cli">CLI</Link> generated references.
+        </p>
+      </section>
+    </article>
+  );
+}

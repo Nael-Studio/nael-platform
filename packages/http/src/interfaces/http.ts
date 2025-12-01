@@ -1,4 +1,4 @@
-import type { ClassType } from '@nl-framework/core';
+import type { ClassType, Token } from '@nl-framework/core';
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'OPTIONS' | 'HEAD';
 
@@ -6,6 +6,7 @@ export interface RouteDefinition {
   method: HttpMethod;
   path: string;
   handlerName: string;
+  versions?: string[];
 }
 
 export interface ControllerDefinition {
@@ -31,8 +32,9 @@ export interface RequestContext {
   query: URLSearchParams;
   headers: Headers;
   body: unknown;
+  version?: string;
   route: ResolvedRouteInfo;
   container: {
-    resolve<T>(token: ClassType<T> | symbol | string): Promise<T>;
+    resolve<T>(token: Token<T>): Promise<T>;
   };
 }

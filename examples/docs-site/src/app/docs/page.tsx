@@ -1,0 +1,239 @@
+import Link from "next/link";
+import type { Metadata } from "next";
+import { ArrowRight, Sparkles } from "lucide-react";
+import { CodeBlock } from "@/components/shared/simple-code-block";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ExamplesShowcase } from "@/components/sections/examples-showcase";
+
+const cliInstall = `bun install --global @nl-framework/cli
+nl new platform-demo
+cd platform-demo
+bun run dev`;
+
+const repoInstall = `git clone https://github.com/Nael-Studio/nael-platform.git
+cd nael-platform
+bun install
+bun run build`;
+
+const gitHistory = `git clone https://github.com/Nael-Studio/nael-platform.git --depth=1 --single-branch
+cd nael-platform
+bun run --cwd examples/basic-http start`;
+
+const betterAuthSnippet = `import { BetterAuthModule } from '@nl-framework/auth';
+
+@Module({
+  imports: [
+    BetterAuthModule.register({
+      baseUrl: env.BETTER_AUTH_URL,
+      multiTenant: true,
+    }),
+  ],
+})
+export class AuthModule {}`;
+
+const graphqlSnippet = `GraphqlModule.forRoot({
+  schemaPath: './src/schema.graphql',
+  federation: true,
+  playground: true,
+});`;
+
+const microservicesSnippet = `createMicroservicesModule({
+  controllers: [BillingController],
+  dapr: {
+    pubsubName: 'redis-pubsub',
+  },
+});`;
+
+export const metadata: Metadata = {
+  title: "Overview · Nael Platform",
+  description:
+    "Learn about Nael Platform philosophy, installation options, Better Auth integration, GraphQL, and microservices support.",
+};
+
+export default function OverviewPage() {
+  return (
+    <article className="space-y-16">
+      <section className="space-y-4" id="introduction">
+        <Badge className="bg-primary/10 text-primary">Bun-native · Multi-tenant · OSS</Badge>
+        <div className="space-y-3">
+          <p className="text-sm uppercase tracking-wide text-muted-foreground">Introduction</p>
+          <h1 className="text-4xl font-semibold tracking-tight">Nael Platform Overview</h1>
+          <p className="text-lg text-muted-foreground">
+            A NestJS-inspired framework that runs entirely on Bun. Combine Better Auth, Apollo Federation, Dapr microservices,
+            and schedulers without juggling multiple ecosystems. This page mirrors nestjs.com depth so you can ship
+            production-ready services quickly.
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card className="border-border/70">
+            <CardHeader>
+              <CardTitle>What you get</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              Decorator-driven modules, Bun-native HTTP and GraphQL servers, shared DI contexts, and full Better Auth integration
+              (single-tenant and multi-tenant) with zero CommonJS shims.
+            </CardContent>
+          </Card>
+          <Card className="border-border/70">
+            <CardHeader>
+              <CardTitle>Release cadence</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              Weekly alpha releases keep the framework aligned with Bun updates and Better Auth changes. Subscribe to the changelog
+              in the right rail or star the repo to follow along.
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      <section className="space-y-4" id="philosophy">
+        <div className="flex items-center gap-2 text-sm uppercase tracking-wide text-muted-foreground">
+          <Sparkles className="h-4 w-4" /> Philosophy
+        </div>
+        <Card className="border-border/70">
+          <CardContent className="space-y-3 py-6 text-muted-foreground">
+            <p>
+              Inspired by NestJS but optimized for Bun, Nael keeps the &ldquo;lego-brick&rdquo; approach to modules while shedding layered build steps.
+              Everything is native ESM, meaning faster cold starts, effortless workers, and aligned tooling.
+            </p>
+            <ul className="list-disc space-y-2 pl-5">
+              <li>Decorators + DI you already know from NestJS.</li>
+              <li>Unified HTTP, GraphQL, federation gateway, and microservices factories via <code>NaelFactory</code>.</li>
+              <li>Better Auth-first mindset: guards, middleware, tenant-aware resolvers, and HTTP proxies included.</li>
+              <li>CLI automation with <code>nl new</code> and <code>nl g *</code> commands.</li>
+            </ul>
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="space-y-8" id="installation">
+        <div className="space-y-2">
+          <p className="text-sm uppercase tracking-wide text-muted-foreground">Installation</p>
+          <h2 className="text-3xl font-semibold">Start from the CLI or clone the repo</h2>
+          <p className="text-muted-foreground">
+            Choose the workflow that matches your team. The CLI scaffolds clean services, while the monorepo unlocks every example and package.
+          </p>
+        </div>
+        <div className="space-y-6">
+          <div className="space-y-4">
+            <h3 className="text-xl font-semibold">CLI workflow</h3>
+            <CodeBlock code={cliInstall} title="Create a service" />
+            <p className="text-sm text-muted-foreground">
+              Generates HTTP + GraphQL boilerplate, registers Better Auth, and wires config/logging. Run <code>nl g module billing</code> or
+              <code>nl g resolver user</code> as you grow the surface area.
+            </p>
+          </div>
+          <div className="space-y-4">
+            <h3 className="text-xl font-semibold">Monorepo workflow</h3>
+            <CodeBlock code={repoInstall} title="Clone the repository" />
+            <p className="text-sm text-muted-foreground">
+              Ideal for contributing or exploring every package. Each example has its own <code>start</code> script and shares dependencies via Bun workspaces.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-6" id="alternatives">
+        <div className="space-y-2">
+          <p className="text-sm uppercase tracking-wide text-muted-foreground">Alternatives</p>
+          <h2 className="text-3xl font-semibold">Prefer to skip commit history?</h2>
+        </div>
+        <CodeBlock code={gitHistory} title="Shallow clone and explore" />
+        <p className="text-sm text-muted-foreground">
+          Great for CI examples or one-off demos. Run <code>dapr init</code> and start the microservices example without keeping git history around.
+        </p>
+      </section>
+
+      <section className="space-y-6" id="better-auth">
+        <div className="space-y-2">
+          <p className="text-sm uppercase tracking-wide text-muted-foreground">Techniques</p>
+          <h2 className="text-3xl font-semibold">Better Auth everywhere</h2>
+        </div>
+        <p className="text-muted-foreground">
+          Shared guards, middleware, and HTTP proxies mean REST + GraphQL stay in sync. Enable tenant-aware sessions with a single config block.
+        </p>
+        <CodeBlock code={betterAuthSnippet} title="Register BetterAuthModule" />
+        <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
+          <li>Expose the Better Auth HTTP router via <code>BetterAuthProxyModule</code> for SPA compatibility.</li>
+          <li>Use <code>BetterAuthMultiTenantGuard</code> to hydrate the active tenant.</li>
+          <li>Reuse guards inside GraphQL resolvers with <code>@UseGuards()</code>.</li>
+        </ul>
+      </section>
+
+      <section className="space-y-6" id="graphql">
+        <h2 className="text-3xl font-semibold">GraphQL & Federation</h2>
+        <p className="text-muted-foreground">
+          Schema-first development with Apollo Server under the hood. Run a gateway and subgraphs from the same NaelFactory instance or deploy them independently.
+        </p>
+        <CodeBlock code={graphqlSnippet} title="GraphqlModule setup" />
+        <p className="text-sm text-muted-foreground">
+          Each resolver module can opt-in to federation without toggling feature flags. Subgraphs share the logging + config stack automatically.
+        </p>
+        <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
+          <li>Decorators such as <code>@UseInterceptors()</code> now wrap GraphQL resolvers, allowing shared caching/logging envelopes across transports.</li>
+          <li>Register global resolver middleware with <code>registerGraphqlInterceptor()</code> to apply observability or auth layers everywhere.</li>
+        </ul>
+      </section>
+
+      <section className="space-y-6" id="microservices">
+        <h2 className="text-3xl font-semibold">Microservices & schedulers</h2>
+        <p className="text-muted-foreground">
+          Dapr pub/sub transports, Bun Worker schedulers, and message pattern decorators mirror the NestJS API you already know.
+        </p>
+        <CodeBlock code={microservicesSnippet} title="createMicroservicesModule" />
+        <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
+          <li>Decorators: <code>@MessagePattern</code>, <code>@EventPattern</code>, <code>@Cron</code>, <code>@Interval</code>, <code>@Timeout</code>.</li>
+          <li>CLI command <code>nl g worker invoices</code> scaffolds workers tied to the scheduler module.</li>
+          <li>Examples cover Redis pub/sub, Dapr sidecars, and Kubernetes deployment manifests.</li>
+        </ul>
+      </section>
+
+      <section className="space-y-6" id="examples">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm uppercase tracking-wide text-muted-foreground">Examples</p>
+            <h2 className="text-3xl font-semibold">Hands-on references</h2>
+          </div>
+          <Button asChild>
+            <Link href="https://github.com/Nael-Studio/nael-platform/tree/main/examples" rel="noreferrer" target="_blank">
+              Browse repo
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+        <ExamplesShowcase />
+      </section>
+
+      <section className="space-y-4" id="support">
+        <p className="text-sm uppercase tracking-wide text-muted-foreground">Support</p>
+        <h2 className="text-3xl font-semibold">Support us</h2>
+        <p className="text-muted-foreground">
+          Nael is MIT + Apache 2.0 and depends on sponsors. If the framework powers your platform, consider funding maintenance and roadmap items.
+        </p>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card className="border-border/70">
+            <CardHeader>
+              <CardTitle>Principal sponsors</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              Trilon, Mach10, and the Nael Studio collective keep CI running and ensure Better Auth parity. Your company can join them.
+            </CardContent>
+          </Card>
+          <Card className="border-border/70">
+            <CardHeader>
+              <CardTitle>Partners</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm text-muted-foreground">
+              <p>We highlight ecosystem partners building on Nael (hosting, observability, dashboards).</p>
+              <Link className="text-primary" href="https://github.com/sponsors/Nael-Studio" rel="noreferrer" target="_blank">
+                Become a sponsor
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+    </article>
+  );
+}
