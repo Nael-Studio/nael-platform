@@ -15,11 +15,11 @@ export const Roles = (...roles: string[]) => SetMetadata('roles', roles);
 @Controller('/admin')
 @Roles('admin')
 export class AdminController {
-@Get()
-@Roles('moderator')
-dashboard() {
-return { ok: true };
-}
+  @Get()
+  @Roles('moderator')
+  dashboard() {
+    return { ok: true };
+  }
 }`;
 
 export const metadataGuardSnippet = `import 'reflect-metadata';
@@ -41,8 +41,7 @@ export class RolesGuard implements CanActivate {
     const currentRole = request.headers.get('x-role');
     const allowed = [...controllerRoles, ...handlerRoles];
     return currentRole ? allowed.includes(currentRole) : false;
-
-}
+  }
 }`;
 
 export const httpParamSnippet = `import { Controller, Get, createHttpParamDecorator } from '@nl-framework/http';
@@ -60,10 +59,10 @@ export const CurrentUser = createHttpParamDecorator((property, ctx) => {
 
 @Controller('/profile')
 export class ProfileController {
-@Get()
-me(@CurrentUser('id') id: string, @CurrentUser() user: Record<string, unknown>) {
-return { id, user };
-}
+  @Get()
+  me(@CurrentUser('id') id: string, @CurrentUser() user: Record<string, unknown>) {
+    return { id, user };
+  }
 }`;
 
 export const graphqlParamSnippet = `import { ObjectType, Field } from '@nl-framework/graphql';
@@ -79,19 +78,19 @@ export const CurrentTenant = createGraphqlParamDecorator((property, ctx) => {
 
 @ObjectType()
 class TenantInfo {
-@Field()
-id!: string;
+  @Field()
+  id!: string;
 
-@Field()
-plan!: string;
+  @Field()
+  plan!: string;
 }
 
 @Resolver(() => TenantInfo)
 export class TenantResolver {
-@Query(() => TenantInfo)
-info(@CurrentTenant('plan') plan: string, @CurrentTenant('id') id: string) {
-return { id, plan };
-}
+  @Query(() => TenantInfo)
+  info(@CurrentTenant('plan') plan: string, @CurrentTenant('id') id: string) {
+    return { id, plan };
+  }
 }`;
 
 <article className="space-y-8">
@@ -135,7 +134,7 @@ return { id, plan };
 
       <Card className="border-border/70">
         <CardContent className="space-y-2 pt-6 text-sm text-muted-foreground">
-          <p><strong>Tips</strong></div>
+          <div><strong>Tips</strong></div>
           <ul className="list-disc space-y-1 pl-5">
             <li>Metadata decorators work for both legacy and stage-3 decorators—the framework adds initializers automatically.</li>
             <li>Custom parameter decorators can still leverage pipes; any data you pass into the decorator is forwarded to pipe metadata.</li>

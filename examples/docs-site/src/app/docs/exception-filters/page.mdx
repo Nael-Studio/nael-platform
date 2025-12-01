@@ -38,8 +38,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
         headers: { 'Content-Type': 'application/json' },
       }
     );
-
-}
+  }
 }`;
 
 export const registerFilter = `import { registerExceptionFilters } from '@nl-framework/http';
@@ -52,23 +51,22 @@ import { Controller, Get, Post, Body, Param } from '@nl-framework/http';
 
 @Controller('/posts')
 export class PostsController {
-@Get('/:id')
-async findOne(@Param('id') id: string) {
-const post = await this.findPostById(id);
+  @Get('/:id')
+  async findOne(@Param('id') id: string) {
+    const post = await this.findPostById(id);
 
     if (!post) {
       throw HttpException.notFound(\`Post with ID \${id} not found\`);
     }
 
     return post;
+  }
 
-}
-
-@Post('/')
-async create(@Body() data: CreatePostDto) {
-if (!data.title || data.title.length < 3) {
-throw HttpException.badRequest('Title must be at least 3 characters');
-}
+  @Post('/')
+  async create(@Body() data: CreatePostDto) {
+    if (!data.title || data.title.length < 3) {
+      throw HttpException.badRequest('Title must be at least 3 characters');
+    }
 
     const existingPost = await this.findByTitle(data.title);
     if (existingPost) {
@@ -76,8 +74,7 @@ throw HttpException.badRequest('Title must be at least 3 characters');
     }
 
     return await this.createPost(data);
-
-}
+  }
 }`;
 
 export const staticMethods = `import { HttpException } from '@nl-framework/http';
@@ -134,8 +131,7 @@ export class ValidationExceptionFilter implements ExceptionFilter {
 
     // Let other filters handle this
     throw exception;
-
-}
+  }
 }`;
 
 export const problemJsonFilter = `import { ExceptionFilter, HttpException } from '@nl-framework/http';
@@ -174,22 +170,21 @@ export class ProblemJsonFilter implements ExceptionFilter {
         headers: { 'Content-Type': 'application/problem+json' },
       }
     );
+  }
 
-}
-
-private getStatusText(status: number): string {
-const statusTexts: Record<number, string> = {
-400: 'Bad Request',
-401: 'Unauthorized',
-403: 'Forbidden',
-404: 'Not Found',
-409: 'Conflict',
-422: 'Unprocessable Entity',
-500: 'Internal Server Error',
-503: 'Service Unavailable',
-};
-return statusTexts[status] || 'Error';
-}
+  private getStatusText(status: number): string {
+    const statusTexts: Record<number, string> = {
+      400: 'Bad Request',
+      401: 'Unauthorized',
+      403: 'Forbidden',
+      404: 'Not Found',
+      409: 'Conflict',
+      422: 'Unprocessable Entity',
+      500: 'Internal Server Error',
+      503: 'Service Unavailable',
+    };
+    return statusTexts[status] || 'Error';
+  }
 }`;
 
 export const loggingFilter = `import { ExceptionFilter, HttpException } from '@nl-framework/http';
@@ -199,13 +194,13 @@ import type { RequestContext } from '@nl-framework/http';
 export class LoggingExceptionFilter implements ExceptionFilter {
   private readonly logger: Logger;
 
-constructor(loggerFactory: LoggerFactory) {
-this.logger = loggerFactory.create({ context: 'ExceptionFilter' });
-}
+  constructor(loggerFactory: LoggerFactory) {
+    this.logger = loggerFactory.create({ context: 'ExceptionFilter' });
+  }
 
-async catch(exception: Error, context: RequestContext): Promise<Response> {
-const url = new URL(context.request.url);
-const status = exception instanceof HttpException ? exception.status : 500;
+  async catch(exception: Error, context: RequestContext): Promise<Response> {
+    const url = new URL(context.request.url);
+    const status = exception instanceof HttpException ? exception.status : 500;
 
     this.logger.error('Request exception', exception, {
       method: context.request.method,
@@ -236,8 +231,7 @@ const status = exception instanceof HttpException ? exception.status : 500;
         headers: { 'Content-Type': 'application/json' },
       }
     );
-
-}
+  }
 }`;
 
 export const multipleFilters = `import { registerExceptionFilters } from '@nl-framework/http';
@@ -245,20 +239,20 @@ import { NaelFactory } from '@nl-framework/platform';
 import { LoggerFactory } from '@nl-framework/logger';
 
 const bootstrap = async () => {
-const app = await NaelFactory.create(AppModule);
-const loggerFactory = await app.get(LoggerFactory);
+  const app = await NaelFactory.create(AppModule);
+  const loggerFactory = await app.get(LoggerFactory);
 
-// Register filters in order
-// First filter catches ValidationException
-// Second filter catches HttpException
-// Third filter catches everything else and logs
-registerExceptionFilters(
-new ValidationExceptionFilter(),
-new HttpExceptionFilter(),
-new LoggingExceptionFilter(loggerFactory),
-);
+  // Register filters in order
+  // First filter catches ValidationException
+  // Second filter catches HttpException
+  // Third filter catches everything else and logs
+  registerExceptionFilters(
+    new ValidationExceptionFilter(),
+    new HttpExceptionFilter(),
+    new LoggingExceptionFilter(loggerFactory),
+  );
 
-await app.listen({ http: 3000 });
+  await app.listen({ http: 3000 });
 };
 
 bootstrap().catch(console.error);`;
@@ -297,8 +291,7 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
 
     // Let other filters handle this
     throw exception;
-
-}
+  }
 }`;
 
 export const catchAllFilter = `import { ExceptionFilter } from '@nl-framework/http';
@@ -323,8 +316,7 @@ export class CatchAllFilter implements ExceptionFilter {
         headers: { 'Content-Type': 'application/json' },
       }
     );
-
-}
+  }
 }`;
 
 <div className="space-y-10">

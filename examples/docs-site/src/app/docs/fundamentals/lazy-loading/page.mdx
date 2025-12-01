@@ -9,32 +9,32 @@ import { CodeBlock } from '@/components/shared/simple-code-block';
 export const lazyLoaderSnippet = `import { LazyModuleLoader } from '@nl-framework/core';
 import { createHttpApplication } from '@nl-framework/http';
 
-const http = await createHttpApplication(AppModule, { port: 0 });
-const loader = await http.get(LazyModuleLoader);
+    const http = await createHttpApplication(AppModule, { port: 0 });
+    const loader = await http.get(LazyModuleLoader);
 
-await loader.load(async () => (await import('./reports/reports.module')).ReportsModule);
+    await loader.load(async () => (await import('./reports/reports.module')).ReportsModule);
 `;
 
 export const listenerSnippet = `import { Application } from '@nl-framework/core';
 
-const app = new Application();
-const context = await app.bootstrap(AppModule);
+    const app = new Application();
+    const context = await app.bootstrap(AppModule);
 
-const unsubscribe = context.addModuleLoadListener(({ module, controllers }) => {
+    const unsubscribe = context.addModuleLoadListener(({ module, controllers }) => {
 console.log('Loaded module:', module.name, 'controllers:', controllers.length);
-});
+  });
 
-await context.loadModule(ReportsModule);
+    await context.loadModule(ReportsModule);
 unsubscribe();
 `;
 
 export const onDemandResolverSnippet = `import { LazyModuleLoader } from '@nl-framework/core';
 import { GraphqlApplication } from '@nl-framework/graphql';
 
-const graphql = await createGraphqlApplication(AppModule);
-const loader = await graphql.get(LazyModuleLoader);
+    const graphql = await createGraphqlApplication(AppModule);
+    const loader = await graphql.get(LazyModuleLoader);
 
-await loader.load(() => import('./billing/billing.module'));
+    await loader.load(() => import('./billing/billing.module'));
 // Next request sees the rebuilt schema automatically.
 `;
 

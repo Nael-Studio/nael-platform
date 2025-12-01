@@ -6,7 +6,7 @@ import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { ThemeSwitcher } from "@/components/kibo-ui/theme-switcher";
 import { Button } from "@/components/ui/button";
-import { SearchBox } from "@/components/search/search-box";
+import { CommandSearch } from "@/components/search/command-search";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -35,7 +35,7 @@ export function SiteHeader() {
             Nael Platform Docs
           </Link>
           <div className="hidden w-80 md:block">
-            <SearchBox />
+            <CommandSearch />
           </div>
           <nav className="hidden items-center gap-4 text-sm font-medium md:flex">
             {navItems.map((item) => (
@@ -54,7 +54,7 @@ export function SiteHeader() {
         </div>
         <div className="flex items-center gap-2">
           <div className="block w-48 md:hidden">
-            <SearchBox />
+            <CommandSearch />
           </div>
           {/* #sym:kibo-ui Theme Switcher for global appearance */}
           {mounted && (

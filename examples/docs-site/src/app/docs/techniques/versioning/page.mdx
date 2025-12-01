@@ -21,13 +21,13 @@ http:
 export const bootstrap = `import { createHttpApplication } from '@nl-framework/http';
 
 await createHttpApplication(AppModule, {
-port: 3000,
-versioning: {
-enabled: true,
-strategies: ['uri', 'header'],
-defaultVersion: '1',
-responseHeader: 'api-version',
-},
+  port: 3000,
+  versioning: {
+    enabled: true,
+    strategies: ['uri', 'header'],
+    defaultVersion: '1',
+    responseHeader: 'api-version',
+  },
 }).then((app) => app.listen());`;
 
 export const controllerExample = `import { Controller, Get, Version } from '@nl-framework/http';
@@ -35,22 +35,22 @@ export const controllerExample = `import { Controller, Get, Version } from '@nl-
 @Controller('/users')
 @Version('1') // default for the controller
 export class UsersController {
-@Get('/')
-listV1() {
-return [{ id: 1, email: 'ada@example.com' }];
-}
+  @Get('/')
+  listV1() {
+    return [{ id: 1, email: 'ada@example.com' }];
+  }
 
-@Get('/')
-@Version('2')
-listV2() {
-return [{ id: 1, email: 'ada@example.com', active: true }];
-}
+  @Get('/')
+  @Version('2')
+  listV2() {
+    return [{ id: 1, email: 'ada@example.com', active: true }];
+  }
 
-@Get('/:id')
-@Version(['1', '2'])
-detail() {
-return { id: 1, email: 'ada@example.com' };
-}
+  @Get('/:id')
+  @Version(['1', '2'])
+  detail() {
+    return { id: 1, email: 'ada@example.com' };
+  }
 }`;
 
 export const calling = `# URI strategy (/v1 prefix)

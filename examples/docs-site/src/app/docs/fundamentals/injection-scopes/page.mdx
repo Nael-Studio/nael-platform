@@ -10,11 +10,11 @@ export const defaultScopeSnippet = `import { Injectable } from '@nl-framework/co
 
 @Injectable()
 export class FeatureFlagService {
-private cache = new Map<string, boolean>();
+  private cache = new Map<string, boolean>();
 
-isEnabled(flag: string) {
-return this.cache.get(flag) ?? false;
-}
+  isEnabled(flag: string) {
+    return this.cache.get(flag) ?? false;
+  }
 }`;
 
 export const requestScopeSnippet = `import { Injectable, Scope } from '@nl-framework/core';
@@ -22,11 +22,11 @@ import { RequestContext } from '@nl-framework/http';
 
 @Injectable({ scope: Scope.REQUEST })
 export class RequestLogger {
-constructor(private readonly ctx: RequestContext) {}
+  constructor(private readonly ctx: RequestContext) {}
 
-log(message: string) {
-console.log('[' + this.ctx.request.url + ']', message);
-}
+  log(message: string) {
+    console.log('[' + this.ctx.request.url + ']', message);
+  }
 }`;
 
 export const transientScopeSnippet = `import { Injectable, Scope, Inject } from '@nl-framework/core';
@@ -34,16 +34,16 @@ import { randomUUID } from 'node:crypto';
 
 @Injectable({ scope: Scope.TRANSIENT })
 export class JobIdFactory {
-readonly id = randomUUID();
+  readonly id = randomUUID();
 }
 
 @Injectable()
 export class JobsService {
-constructor(@Inject(JobIdFactory) private readonly jobIdFactory: JobIdFactory) {}
+  constructor(@Inject(JobIdFactory) private readonly jobIdFactory: JobIdFactory) {}
 
-run() {
-return this.jobIdFactory.id;
-}
+  run() {
+    return this.jobIdFactory.id;
+  }
 }`;
 
 export const customContextSnippet = `import { Injectable, Scope } from '@nl-framework/core';
@@ -51,15 +51,15 @@ import { GraphqlExecutionContext } from '@nl-framework/graphql';
 
 @Injectable({ scope: Scope.REQUEST })
 export class TenantContext {
-private tenantId?: string;
+  private tenantId?: string;
 
-setFromExecution(ctx: GraphqlExecutionContext) {
-this.tenantId = ctx.getContext().tenantId;
-}
+  setFromExecution(ctx: GraphqlExecutionContext) {
+    this.tenantId = ctx.getContext().tenantId;
+  }
 
-getId() {
-return this.tenantId;
-}
+  getId() {
+    return this.tenantId;
+  }
 }`;
 
 export const manualContextSnippet = `const app = await createHttpApplication(AppModule);
@@ -67,11 +67,11 @@ const appContext = app.getApplicationContext();
 const contextId = appContext.createContextId('job-42');
 
 try {
-const tenant = await appContext.get(TenantContext, { contextId });
-tenant.setFromExecution(jobContext);
-await jobRunner.execute(tenant);
+  const tenant = await appContext.get(TenantContext, { contextId });
+  tenant.setFromExecution(jobContext);
+  await jobRunner.execute(tenant);
 } finally {
-appContext.releaseContext(contextId);
+  appContext.releaseContext(contextId);
 }`;
 
 <article className="space-y-8">

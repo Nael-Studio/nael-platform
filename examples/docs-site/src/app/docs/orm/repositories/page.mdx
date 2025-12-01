@@ -196,14 +196,15 @@ return this.users.deleteHard({ id: { $in: ids } });
 }`;
 
 export const operationsSnippet = `async function archiveUser(users: OrmRepository<User>, id: string) {
-  const document = await users.findById(id);
+    const document = await users.findById(id);
   if (!document) {
     throw new Error('User not found');
   }
 
-await users.softDelete({ id });
+    await users.softDelete({ id });
 
-return users.find(
+    return users.find(
+
 { plan: document.plan },
 { projection: { email: 1 }, withDeleted: true },
 );

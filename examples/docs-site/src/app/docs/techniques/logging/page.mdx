@@ -11,8 +11,8 @@ export const configureLogger = `import { NaelFactory } from '@nl-framework/platf
 import { Logger } from '@nl-framework/logger';
 
 const appLogger = new Logger({
-context: 'orders-api',
-level: (process.env.LOG_LEVEL as any) ?? 'INFO',
+  context: 'orders-api',
+  level: (process.env.LOG_LEVEL as any) ?? 'INFO',
 });
 
 const app = await NaelFactory.create(AppModule, { logger: appLogger });
@@ -24,26 +24,26 @@ import { LoggerFactory } from '@nl-framework/logger';
 export const createRequestLogger = async (loggerFactory: LoggerFactory): Promise<MiddlewareHandler> => {
   const logger = loggerFactory.create({ context: 'HttpRequest' });
 
-return async (ctx, next) => {
-const start = Date.now();
-try {
-const res = await next();
-logger.info('Handled request', {
-method: ctx.request.method,
-path: new URL(ctx.request.url).pathname,
-status: res.status,
-elapsedMs: Date.now() - start,
-});
-return res;
-} catch (error) {
-logger.error('Request failed', error instanceof Error ? error : undefined, {
-method: ctx.request.method,
-path: new URL(ctx.request.url).pathname,
-elapsedMs: Date.now() - start,
-});
-throw error;
-}
-};
+  return async (ctx, next) => {
+    const start = Date.now();
+    try {
+      const res = await next();
+      logger.info('Handled request', {
+        method: ctx.request.method,
+        path: new URL(ctx.request.url).pathname,
+        status: res.status,
+        elapsedMs: Date.now() - start,
+      });
+      return res;
+    } catch (error) {
+      logger.error('Request failed', error instanceof Error ? error : undefined, {
+        method: ctx.request.method,
+        path: new URL(ctx.request.url).pathname,
+        elapsedMs: Date.now() - start,
+      });
+      throw error;
+    }
+  };
 };`;
 
 export const childLoggers = `import { Injectable } from '@nl-framework/core';
@@ -51,28 +51,28 @@ import { LoggerFactory } from '@nl-framework/logger';
 
 @Injectable()
 export class BillingService {
-private readonly logger = this.loggerFactory.create({ context: 'Billing' });
+  private readonly logger = this.loggerFactory.create({ context: 'Billing' });
 
-constructor(private readonly loggerFactory: LoggerFactory) {}
+  constructor(private readonly loggerFactory: LoggerFactory) {}
 
-async charge(customerId: string, amount: number) {
-const op = this.logger.child('Charge', { level: 'INFO' });
-op.info('Initiating charge', { customerId, amount });
-// ...
-op.info('Charge complete', { customerId, amount });
-}
+  async charge(customerId: string, amount: number) {
+    const op = this.logger.child('Charge', { level: 'INFO' });
+    op.info('Initiating charge', { customerId, amount });
+    // ...
+    op.info('Charge complete', { customerId, amount });
+  }
 }`;
 
 export const customTransport = `import { Logger, type LogMessage, type LoggerTransport } from '@nl-framework/logger';
 
 class HttpTransport implements LoggerTransport {
-async log(entry: LogMessage) {
-await fetch('https://logs.example.com/ingest', {
-method: 'POST',
-headers: { 'content-type': 'application/json' },
-body: JSON.stringify(entry),
-});
-}
+  async log(entry: LogMessage) {
+    await fetch('https://logs.example.com/ingest', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(entry),
+    });
+  }
 }
 
 const logger = new Logger({ transports: [new HttpTransport()], context: 'jobs' });
@@ -82,24 +82,24 @@ export const elasticApm = `import apm from 'elastic-apm-node';
 import { Logger, type LogMessage, type LoggerTransport } from '@nl-framework/logger';
 
 apm.start({
-serviceName: 'orders-api',
-serverUrl: process.env.ELASTIC_APM_SERVER_URL,
-secretToken: process.env.ELASTIC_APM_SECRET_TOKEN,
-environment: process.env.NODE_ENV ?? 'development',
+  serviceName: 'orders-api',
+  serverUrl: process.env.ELASTIC_APM_SERVER_URL,
+  secretToken: process.env.ELASTIC_APM_SECRET_TOKEN,
+  environment: process.env.NODE_ENV ?? 'development',
 });
 
 class ElasticApmTransport implements LoggerTransport {
-log(entry: LogMessage) {
-// Avoid blocking; Elastic APM agent batches internally
-const span = apm.currentSpan || apm.startSpan(entry.context ?? 'log');
-if (span) {
-span.addLabels({
-level: entry.level.toLowerCase(),
-message: entry.message,
-...(entry.meta ?? {}),
-});
-span.end();
-}
+  log(entry: LogMessage) {
+    // Avoid blocking; Elastic APM agent batches internally
+    const span = apm.currentSpan || apm.startSpan(entry.context ?? 'log');
+    if (span) {
+      span.addLabels({
+        level: entry.level.toLowerCase(),
+        message: entry.message,
+        ...(entry.meta ?? {}),
+      });
+      span.end();
+    }
 
     if (entry.error instanceof Error) {
       apm.captureError(entry.error, {
@@ -111,12 +111,12 @@ span.end();
       });
     }
 
-}
+  }
 }
 
 const logger = new Logger({
-context: 'orders-api',
-transports: [new ElasticApmTransport()],
+  context: 'orders-api',
+  transports: [new ElasticApmTransport()],
 });
 
 logger.info('Booting service');`;

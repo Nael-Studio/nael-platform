@@ -36,16 +36,16 @@ export const useGuardsMethod = `import { Controller, Get, UseGuards } from '@nl-
 
 @Controller('/api/users')
 export class UserController {
-@Get('/')
-@UseGuards(AuthGuard)
-async getUsers() {
-return { users: [] };
-}
+  @Get('/')
+  @UseGuards(AuthGuard)
+  async getUsers() {
+    return { users: [] };
+  }
 
-@Get('/public')
-async getPublicData() {
-return { data: 'public' };
-}
+  @Get('/public')
+  async getPublicData() {
+    return { data: 'public' };
+  }
 }`;
 
 export const controllerLevelGuard = `@Controller('/api/admin')
@@ -65,34 +65,34 @@ export class AdminController {
 export const functionalGuards = `import { GuardFunction } from '@nl-framework/http';
 
 const isAuthenticated: GuardFunction = async (context) => {
-const request = context.getRequest();
-return !!request.headers.authorization;
+  const request = context.getRequest();
+  return !!request.headers.authorization;
 };
 
 function hasRole(role: string): GuardFunction {
-return async (context) => {
-const request = context.getRequest();
-return request.user?.role === role;
-};
+  return async (context) => {
+    const request = context.getRequest();
+    return request.user?.role === role;
+  };
 }
 
 @Controller('/api/admin')
 export class AdminController {
-@Get('/dashboard')
-@UseGuards(isAuthenticated, hasRole('admin'))
-async getDashboard() {
-return { dashboard: {} };
-}
+  @Get('/dashboard')
+  @UseGuards(isAuthenticated, hasRole('admin'))
+  async getDashboard() {
+    return { dashboard: {} };
+  }
 }`;
 
 export const globalGuards = `import { createHttpApp, registerHttpGuard } from '@nl-framework/http';
 
 async function bootstrap() {
-const app = await createHttpApp({ port: 3000 });
+  const app = await createHttpApp({ port: 3000 });
 
-registerHttpGuard(AuthGuard);
+  registerHttpGuard(AuthGuard);
 
-await app.start();
+  await app.start();
 }`;
 
 export const rbacPattern = `import { SetMetadata } from '@nl-framework/core';
@@ -101,25 +101,24 @@ export const Roles = (...roles: string[]) => SetMetadata('roles', roles);
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-async canActivate(context: HttpGuardExecutionContext): Promise<boolean> {
-const requiredRoles = context.getRoute().metadata?.roles as string[];
+  async canActivate(context: HttpGuardExecutionContext): Promise<boolean> {
+    const requiredRoles = context.getRoute().metadata?.roles as string[];
 
     if (!requiredRoles) return true;
 
     const user = context.getRequest().user;
     return requiredRoles.some(role => user.roles?.includes(role));
-
-}
+  }
 }
 
 @Controller('/api/admin')
 @UseGuards(AuthGuard, RolesGuard)
 export class AdminController {
-@Get('/users')
-@Roles('admin', 'superadmin')
-async getUsers() {
-return { users: [] };
-}
+  @Get('/users')
+  @Roles('admin', 'superadmin')
+  async getUsers() {
+    return { users: [] };
+  }
 }`;
 
 <article className="space-y-8">

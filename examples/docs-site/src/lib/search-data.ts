@@ -4,6 +4,7 @@ export type SearchDoc = {
   href: string;
   section: string;
   headings?: string[];
+  content?: string;
 };
 
 export const searchDocs: SearchDoc[] = [];

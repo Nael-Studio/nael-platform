@@ -7,6 +7,7 @@ type SearchDoc = {
   href: string;
   section: string;
   headings?: string[];
+  content?: string;
 };
 
 const DOCS_ROOT = path.join(process.cwd(), "src", "app", "docs");
@@ -56,6 +57,69 @@ const extractParagraph = (content: string) => {
   return "";
 };
 
+const extractContent = (content: string) => {
+  // Extract text content from MDX, removing code blocks, imports, exports, JSX tags
+  const lines = content.split("\n");
+  const textLines: string[] = [];
+  let inCodeBlock = false;
+  let inFrontMatter = false;
+  let inExportConst = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    // Skip front matter
+    if (trimmed === "---") {
+      inFrontMatter = !inFrontMatter;
+      continue;
+    }
+    if (inFrontMatter) continue;
+
+    // Skip code blocks
+    if (trimmed.startsWith("```")) {
+      inCodeBlock = !inCodeBlock;
+      continue;
+    }
+    if (inCodeBlock) continue;
+
+    // Skip export const blocks (code examples stored as variables)
+    if (trimmed.startsWith("export const")) {
+      inExportConst = true;
+      continue;
+    }
+    if (inExportConst) {
+      // End of export const when we hit a line that starts with export, import, or <article
+      if (trimmed.startsWith("export ") || trimmed.startsWith("import ") || trimmed.startsWith("<article") || trimmed.startsWith("<")) {
+        inExportConst = false;
+      } else {
+        continue;
+      }
+    }
+
+    // Skip imports/exports
+    if (trimmed.startsWith("import") || trimmed.startsWith("export")) continue;
+
+    // Skip empty lines
+    if (!trimmed) continue;
+
+    // Clean and add text content
+    const cleaned = trimmed
+      .replace(/<[^>]+>/g, " ") // Remove JSX tags
+      .replace(/\{[^}]+\}/g, " ") // Remove JSX expressions
+      .replace(/`([^`]+)`/g, "$1") // Remove backticks but keep content
+      .replace(/[#*_]/g, "") // Remove markdown formatting
+      .replace(/\s+/g, " ") // Normalize whitespace
+      .trim();
+
+    if (cleaned) {
+      textLines.push(cleaned);
+    }
+  }
+
+  return textLines.join(" ").slice(0, 1500); // Limit to 1500 chars for search
+};
+
 async function walk(dir: string, acc: string[] = []): Promise<string[]> {
   const entries = await fs.readdir(dir, { withFileTypes: true });
   for (const entry of entries) {
@@ -82,6 +146,7 @@ async function build() {
     const title = meta.title || headings[0] || path.basename(path.dirname(file));
     const sectionParts = href.split("/").filter(Boolean);
     const section = sectionParts.length > 1 ? sectionParts[1] ?? "Docs" : "Docs";
+    const pageContent = extractContent(content);
 
     docs.push({
       title,
@@ -89,6 +154,7 @@ async function build() {
       href,
       section,
       headings,
+      content: pageContent,
     });
   }
 

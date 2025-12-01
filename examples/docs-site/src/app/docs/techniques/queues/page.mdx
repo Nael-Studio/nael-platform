@@ -27,22 +27,22 @@ import { MicroservicesModule, EventPattern, createMicroservicesModule } from '@n
 
 @Injectable()
 export class OrdersConsumer {
-constructor(private readonly logger: Logger) {}
+  constructor(private readonly logger: Logger) {}
 
-@EventPattern('orders.created')
-async handleCreated(payload: { id: string; total: number }) {
-this.logger.info('Processing order', payload);
-}
+  @EventPattern('orders.created')
+  async handleCreated(payload: { id: string; total: number }) {
+    this.logger.info('Processing order', payload);
+  }
 }
 
 @Module({
-imports: [
-createMicroservicesModule({
-// Defaults: daprHost=localhost, daprHttpPort=3500, pubsubName=redis-pubsub
-controllers: [OrdersConsumer],
-}),
-],
-providers: [OrdersConsumer],
+  imports: [
+    createMicroservicesModule({
+      // Defaults: daprHost=localhost, daprHttpPort=3500, pubsubName=redis-pubsub
+      controllers: [OrdersConsumer],
+    }),
+  ],
+  providers: [OrdersConsumer],
 })
 export class OrdersModule {}`;
 
@@ -51,17 +51,17 @@ import { MicroserviceClient } from '@nl-framework/microservices';
 
 @Injectable()
 export class OrdersService {
-constructor(private readonly client: MicroserviceClient) {}
+  constructor(private readonly client: MicroserviceClient) {}
 
-async publishOrder(order: { id: string; total: number }) {
-await this.client.emit('orders.created', order); // fire-and-forget to Dapr pubsub
-}
+  async publishOrder(order: { id: string; total: number }) {
+    await this.client.emit('orders.created', order); // fire-and-forget to Dapr pubsub
+  }
 
-async getInvoice(id: string) {
-// Request/response via Dapr service invocation
-// Pattern format: "app:method" or { app, method }
-return this.client.send<{ invoiceUrl: string }>('billing:get-invoice', { orderId: id });
-}
+  async getInvoice(id: string) {
+    // Request/response via Dapr service invocation
+    // Pattern format: "app:method" or { app, method }
+    return this.client.send<{ invoiceUrl: string }>('billing:get-invoice', { orderId: id });
+  }
 }`;
 
 export const runDapr = `# terminal 1: start Dapr sidecar with pubsub component mounted

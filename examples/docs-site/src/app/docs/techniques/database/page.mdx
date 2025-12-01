@@ -14,21 +14,21 @@ import { createPool } from 'mysql2/promise';
 export const MYSQL_POOL = Symbol('mysql:pool');
 
 @Module({
-imports: [ConfigModule.forRoot()],
-providers: [
-{
-provide: MYSQL_POOL,
-useFactory: async (config: ConfigService) => {
-const credentials = config.get('database.mysql');
-return createPool({
-uri: credentials.url,
-connectionLimit: credentials.pool ?? 5,
-});
-},
-inject: [ConfigService],
-},
-],
-exports: [MYSQL_POOL],
+  imports: [ConfigModule.forRoot()],
+  providers: [
+    {
+      provide: MYSQL_POOL,
+      useFactory: async (config: ConfigService) => {
+        const credentials = config.get('database.mysql');
+        return createPool({
+          uri: credentials.url,
+          connectionLimit: credentials.pool ?? 5,
+        });
+      },
+      inject: [ConfigService],
+    },
+  ],
+  exports: [MYSQL_POOL],
 })
 export class DatabaseModule {};`;
 
@@ -36,34 +36,34 @@ export const repositorySnippet = `import { Inject, Injectable, Scope } from '@nl
 
 @Injectable({ scope: Scope.REQUEST })
 export class UsersRepository {
-constructor(@Inject(MYSQL_POOL) private readonly pool: Pool) {}
+  constructor(@Inject(MYSQL_POOL) private readonly pool: Pool) {}
 
-async findById(id: string) {
-const [rows] = await this.pool.query('SELECT \* FROM users WHERE id = ?', [id]);
-return rows[0] ?? null;
-}
+  async findById(id: string) {
+    const [rows] = await this.pool.query('SELECT \* FROM users WHERE id = ?', [id]);
+    return rows[0] ?? null;
+  }
 }`;
 
 export const transactionsSnippet = `import { Inject, Injectable } from '@nl-framework/core';
 
 @Injectable()
 export class PaymentsService {
-constructor(@Inject(MYSQL_POOL) private readonly pool: Pool) {}
+  constructor(@Inject(MYSQL_POOL) private readonly pool: Pool) {}
 
-async transfer(amount: number, from: string, to: string) {
-const connection = await this.pool.getConnection();
-try {
-await connection.beginTransaction();
-await connection.query('UPDATE accounts SET balance = balance - ? WHERE id = ?', [amount, from]);
-await connection.query('UPDATE accounts SET balance = balance + ? WHERE id = ?', [amount, to]);
-await connection.commit();
-} catch (error) {
-await connection.rollback();
-throw error;
-} finally {
-connection.release();
-}
-}
+  async transfer(amount: number, from: string, to: string) {
+    const connection = await this.pool.getConnection();
+    try {
+      await connection.beginTransaction();
+      await connection.query('UPDATE accounts SET balance = balance - ? WHERE id = ?', [amount, from]);
+      await connection.query('UPDATE accounts SET balance = balance + ? WHERE id = ?', [amount, to]);
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
 }`;
 
 <article className="space-y-8">
@@ -109,7 +109,7 @@ connection.release();
           Nael ships an opinionated ORM with schema migrations, repositories, and multi-tenant helpers. This page covers low-level integration using raw
           drivers. For advanced scenarios—entity mapping, hooks, tenancy—head over to the dedicated guide.
         </div>
-        <p>
+        <div>
           <Link className="text-primary underline" href="/docs/orm/overview">
             Explore the ORM docs →
           </Link>

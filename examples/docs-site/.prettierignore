@@ -1,0 +1,11 @@
+# Ignore documentation MDX files to preserve code block indentation
+src/app/docs/**/*.mdx
+
+# Keep other ignores
+node_modules
+.next
+dist
+build
+coverage
+*.min.js
+public/search-index.json

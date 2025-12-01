@@ -11,40 +11,40 @@ export const readCookies = `import { Controller, Get, Req } from '@nl-framework/
 
 @Controller('/profile')
 export class ProfileController {
-@Get('/')
-me(@Req() req: Request) {
-const cookieHeader = req.headers.get('cookie') ?? '';
-const cookies = Object.fromEntries(
-cookieHeader
-.split(';')
-.map((pair) => pair.trim())
-.filter(Boolean)
-.map((pair) => pair.split('=').map(decodeURIComponent) as [string, string]),
-);
+  @Get('/')
+  me(@Req() req: Request) {
+    const cookieHeader = req.headers.get('cookie') ?? '';
+    const cookies = Object.fromEntries(
+      cookieHeader
+        .split(';')
+        .map((pair) => pair.trim())
+        .filter(Boolean)
+        .map((pair) => pair.split('=').map(decodeURIComponent) as [string, string]),
+    );
 
     return { userId: cookies['session_id'] ?? null };
 
-}
+  }
 }`;
 
 export const setCookie = `import { Controller, Post } from '@nl-framework/http';
 
 @Controller('/auth')
 export class AuthController {
-@Post('/login')
-async login(): Promise<Response> {
-const body = JSON.stringify({ ok: true });
-return new Response(body, {
-status: 200,
-headers: {
-'content-type': 'application/json',
-// Secure, HttpOnly, SameSite for safety
-'set-cookie': [
-\`session_id=\${encodeURIComponent('abc123')}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=86400\`,
-],
-},
-});
-}
+  @Post('/login')
+  async login(): Promise<Response> {
+    const body = JSON.stringify({ ok: true });
+    return new Response(body, {
+      status: 200,
+      headers: {
+        'content-type': 'application/json',
+        // Secure, HttpOnly, SameSite for safety
+        'set-cookie': [
+          \`session_id=\${encodeURIComponent('abc123')}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=86400\`,
+        ],
+      },
+    });
+  }
 }`;
 
 export const clearCookie = `// Overwrite with expired cookie

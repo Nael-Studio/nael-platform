@@ -10,11 +10,11 @@ import { Badge } from '@/components/ui/badge';
 export const basicUsage = `import { ApplicationException } from '@nl-framework/graphql';
 import { Resolver, Query, Mutation, Arg } from '@nl-framework/graphql';
 
-@Resolver()
-export class UserResolver {
-@Query(() => User)
-async getUser(@Arg('id') id: string): Promise<User> {
-const user = await this.userRepository.findById(id);
+  @Resolver()
+  export class UserResolver {
+  @Query(() => User)
+  async getUser(@Arg('id') id: string): Promise<User> {
+    const user = await this.userRepository.findById(id);
 
     if (!user) {
       throw ApplicationException.notFound('User not found');
@@ -22,11 +22,11 @@ const user = await this.userRepository.findById(id);
 
     return user;
 
-}
+  }
 
-@Mutation(() => User)
-async createUser(@Arg('input') input: CreateUserInput): Promise<User> {
-const existing = await this.userRepository.findByEmail(input.email);
+  @Mutation(() => User)
+  async createUser(@Arg('input') input: CreateUserInput): Promise<User> {
+    const existing = await this.userRepository.findByEmail(input.email);
 
     if (existing) {
       throw ApplicationException.conflict(
@@ -37,14 +37,14 @@ const existing = await this.userRepository.findByEmail(input.email);
 
     return this.userRepository.create(input);
 
-}
+  }
 }`;
 
 export const customFilter = `import { GraphQLExceptionFilter } from '@nl-framework/graphql';
 import { GraphQLError } from 'graphql';
 import { ApplicationException } from '@nl-framework/core';
 
-export class CustomGraphQLExceptionFilter implements GraphQLExceptionFilter {
+  export class CustomGraphQLExceptionFilter implements GraphQLExceptionFilter {
   async catch(exception: Error): Promise<GraphQLError | null> {
     if (exception instanceof ApplicationException) {
       return new GraphQLError(exception.message, {
@@ -66,14 +66,14 @@ export const registerFilter = `import {
   registerGraphQLExceptionFilter 
 } from '@nl-framework/graphql';
 
-async function bootstrap() {
-const app = await createGraphqlApplication({
+  async function bootstrap() {
+    const app = await createGraphqlApplication({
 modules: [AppModule],
-});
+  });
 
 registerGraphQLExceptionFilter(new CustomGraphQLExceptionFilter());
 
-await app.start();
+    await app.start();
 }`;
 
 export const errorResponse = `{
@@ -92,7 +92,7 @@ export const errorResponse = `{
 }`;
 
 export const authError = `@Resolver()
-export class PostResolver {
+  export class PostResolver {
   @Query(() => [Post])
   async myPosts(@Context('user') user: User): Promise<Post[]> {
     if (!user) {
@@ -104,7 +104,7 @@ export class PostResolver {
 }`;
 
 export const validationError = `@Resolver()
-export class PostResolver {
+  export class PostResolver {
   @Mutation(() => Post)
   async createPost(@Arg('input') input: CreatePostInput): Promise<Post> {
     if (input.title.length < 3) {
@@ -262,11 +262,11 @@ export const advancedFilter = `export class DetailedGraphQLExceptionFilter imple
         <h2 className="text-2xl font-semibold">Best Practices</h2>
         <Card className="border-border/70">
           <CardContent className="space-y-2 pt-6 text-sm text-muted-foreground">
-            <p><strong>Use ApplicationException:</strong> Always use <code>ApplicationException</code> for consistent error handling across HTTP and GraphQL.</div>
-            <p><strong>Include Details:</strong> Add relevant details to help clients understand and handle errors appropriately.</div>
-            <p><strong>Don't Expose Sensitive Information:</strong> Never include passwords, tokens, or sensitive data in error messages.</div>
-            <p><strong>Use Appropriate Error Codes:</strong> Choose the right error code to help clients handle errors programmatically.</div>
-            <p><strong>Filter Errors in Production:</strong> Use exception filters to hide internal error details in production.</div>
+            <div><strong>Use ApplicationException:</strong> Always use <code>ApplicationException</code> for consistent error handling across HTTP and GraphQL.</div>
+            <div><strong>Include Details:</strong> Add relevant details to help clients understand and handle errors appropriately.</div>
+            <div><strong>Don't Expose Sensitive Information:</strong> Never include passwords, tokens, or sensitive data in error messages.</div>
+            <div><strong>Use Appropriate Error Codes:</strong> Choose the right error code to help clients handle errors programmatically.</div>
+            <div><strong>Filter Errors in Production:</strong> Use exception filters to hide internal error details in production.</div>
           </CardContent>
         </Card>
       </section>

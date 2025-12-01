@@ -11,12 +11,12 @@ import { ModuleRef } from '@nl-framework/core';
 
 @Injectable()
 export class ReportsService {
-constructor(private readonly moduleRef: ModuleRef) {}
+  constructor(private readonly moduleRef: ModuleRef) {}
 
-async sendWeeklyReport() {
-const email = await this.moduleRef.resolve(EmailService);
-await email.send('ops@example.com', 'Weekly status', '...');
-}
+  async sendWeeklyReport() {
+    const email = await this.moduleRef.resolve(EmailService);
+    await email.send('ops@example.com', 'Weekly status', '...');
+  }
 }`;
 
 export const strictResolution = `const cache = await this.moduleRef.resolve(CacheService, {

@@ -22,10 +22,10 @@ export const subgraphResolver = `@Resolver(() => Fleet)
 export class FleetResolver {
   constructor(private readonly service: FleetService) {}
 
-@ResolveReference()
-resolveReference(ref: FleetReference) {
-return this.service.lookup(ref.id)
-}
+  @ResolveReference()
+  resolveReference(ref: FleetReference) {
+    return this.service.lookup(ref.id)
+  }
 }`;
 
 export const graphqlServer = `const app = await NaelFactory.create(GraphQLModule.forRoot({

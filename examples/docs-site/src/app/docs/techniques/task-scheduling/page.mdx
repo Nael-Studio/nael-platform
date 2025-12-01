@@ -15,37 +15,37 @@ import { Cron, Interval, Timeout, SchedulerModule, SchedulerService } from '@nl-
 
 @Injectable()
 export class ReportsScheduler implements OnModuleInit {
-constructor(
-private readonly scheduler: SchedulerService,
-private readonly logger: Logger,
-) {}
+  constructor(
+    private readonly scheduler: SchedulerService,
+    private readonly logger: Logger,
+  ) {}
 
-// Runs every minute, immediately after registration
-@Cron('0 \* \* \* \* \*', { name: 'reports.generate', runOnInit: true })
-async generateReport() {
-this.logger.info('Generating scheduled report');
-}
+  // Runs every minute, immediately after registration
+  @Cron('0 \* \* \* \* \*', { name: 'reports.generate', runOnInit: true })
+  async generateReport() {
+    this.logger.info('Generating scheduled report');
+  }
 
-// Fixed interval with max runs
-@Interval(15_000, { name: 'reports.cleanup', maxRuns: 10 })
-async cleanup() {
-this.logger.info('Cleaning up temporary report files');
-}
+  // Fixed interval with max runs
+  @Interval(15_000, { name: 'reports.cleanup', maxRuns: 10 })
+  async cleanup() {
+    this.logger.info('Cleaning up temporary report files');
+  }
 
-// One-off timeout
-@Timeout(5_000, { name: 'reports.seed' })
-async seed() {
-this.logger.info('Seeding initial reports');
-}
+  // One-off timeout
+  @Timeout(5_000, { name: 'reports.seed' })
+  async seed() {
+    this.logger.info('Seeding initial reports');
+  }
 
-async onModuleInit() {
-await this.scheduler.registerDecoratedTarget(this);
-}
+  async onModuleInit() {
+    await this.scheduler.registerDecoratedTarget(this);
+  }
 }
 
 @Module({
-imports: [SchedulerModule],
-providers: [ReportsScheduler],
+  imports: [SchedulerModule],
+  providers: [ReportsScheduler],
 })
 export class ReportsModule {}`;
 
@@ -55,23 +55,23 @@ import { Logger } from '@nl-framework/logger';
 
 @Injectable()
 export class AdHocTasksService {
-constructor(
-private readonly scheduler: SchedulerService,
-private readonly logger: Logger,
-) {}
+  constructor(
+    private readonly scheduler: SchedulerService,
+    private readonly logger: Logger,
+  ) {}
 
-async startPulse() {
-const handle = await this.scheduler.scheduleInterval(
-'diagnostics.pulse',
-async () => this.logger.debug('Pulse tick'),
-{ interval: 5_000, runOnInit: true },
-);
-return handle;
-}
+  async startPulse() {
+    const handle = await this.scheduler.scheduleInterval(
+      'diagnostics.pulse',
+      async () => this.logger.debug('Pulse tick'),
+      { interval: 5_000, runOnInit: true },
+    );
+    return handle;
+  }
 
-async stop(name: string) {
-await this.scheduler.cancel(name);
-}
+  async stop(name: string) {
+    await this.scheduler.cancel(name);
+  }
 }`;
 
 export const configSnippet = `# config/scheduler.yaml (optional)

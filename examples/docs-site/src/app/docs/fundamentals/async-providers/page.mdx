@@ -11,17 +11,17 @@ import { ConfigModule, ConfigService } from '@nl-framework/config';
 import { DatabaseModule } from '@acme/database'; // imagine a feature module that exposes forRootAsync
 
 @Module({
-imports: [
-ConfigModule.forRoot({ isGlobal: true }),
-DatabaseModule.forRootAsync({
-inject: [ConfigService],
-useFactory: async (config: ConfigService) => ({
-url: config.get('database.url'),
-ssl: config.get('database.sslEnabled'),
-maxConnections: 10,
-}),
-}),
-],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    DatabaseModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: async (config: ConfigService) => ({
+        url: config.get('database.url'),
+        ssl: config.get('database.sslEnabled'),
+        maxConnections: 10,
+      }),
+    }),
+  ],
 })
 export class AppModule {}`;
 
@@ -32,23 +32,23 @@ import { ConfigService } from '@nl-framework/config';
 
 @Injectable()
 class AuthEnvService implements BetterAuthOptionsFactory {
-constructor(private readonly config: ConfigService) {}
+  constructor(private readonly config: ConfigService) {}
 
-async createBetterAuthOptions(): Promise<BetterAuthModuleOptions> {
-return {
-projectId: this.config.get('auth.projectId'),
-secret: await this.config.getSecret('auth.secret'),
-};
-}
+  async createBetterAuthOptions(): Promise<BetterAuthModuleOptions> {
+    return {
+      projectId: this.config.get('auth.projectId'),
+      secret: await this.config.getSecret('auth.secret'),
+    };
+  }
 }
 
 @Module({
-imports: [
-BetterAuthModule.registerAsync({
-useClass: AuthEnvService,
-imports: [ConfigModule],
-}),
-],
+  imports: [
+    BetterAuthModule.registerAsync({
+      useClass: AuthEnvService,
+      imports: [ConfigModule],
+    }),
+  ],
 })
 export class AuthModule {}`;
 
@@ -59,12 +59,12 @@ export const useExistingSnippet = `@Module({
 export class SharedConfigModule {}
 
 @Module({
-imports: [
-SharedConfigModule,
-BetterAuthModule.registerAsync({
-useExisting: AuthEnvService,
-}),
-],
+  imports: [
+    SharedConfigModule,
+    BetterAuthModule.registerAsync({
+      useExisting: AuthEnvService,
+    }),
+  ],
 })
 export class AuthModule {}`;
 
@@ -74,9 +74,9 @@ export const lifecycleSnippet = `@Module({
 export class AppModule implements OnModuleInit {
   constructor(private readonly cache: CacheService) {}
 
-async onModuleInit() {
-await this.cache.ping();
-}
+  async onModuleInit() {
+    await this.cache.ping();
+  }
 }`;
 
 <article className="space-y-8">

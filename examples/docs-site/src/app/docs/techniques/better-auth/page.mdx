@@ -11,10 +11,10 @@ export const installBetterAuth = `bun add @nl-framework/auth better-auth @better
 export const httpProxy = `import { BetterAuthProxyModule } from "@nl-framework/auth";
 
 @Module({
-imports: [BetterAuthProxyModule.forRoot({
-upstreamUrl: "https://auth.nael.dev",
-cookieDomain: ".nael.dev",
-})],
+  imports: [BetterAuthProxyModule.forRoot({
+    upstreamUrl: "https://auth.nael.dev",
+    cookieDomain: ".nael.dev",
+  })],
 })
 export class HttpModule {}`;
 
@@ -22,11 +22,11 @@ export const graphqlGuard = `@Resolver(() => Profile)
 export class ProfileResolver {
   constructor(private readonly service: ProfileService) {}
 
-@UseGuards(BetterAuthGuard)
-@Query(() => Profile)
-me(@CurrentSession() session: BetterAuthSession) {
-return this.service.resolveProfile(session.userId);
-}
+  @UseGuards(BetterAuthGuard)
+  @Query(() => Profile)
+  me(@CurrentSession() session: BetterAuthSession) {
+    return this.service.resolveProfile(session.userId);
+  }
 }`;
 
 export const multiTenantBootstrap = `BetterAuthMultiTenantFactory.register({

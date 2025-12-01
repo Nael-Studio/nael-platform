@@ -15,9 +15,9 @@ export const daprConsumer = `@Subscriber({
 export class VehicleAssignedConsumer {
   constructor(private readonly logger: LoggerService) {}
 
-async handle(data: VehicleAssignedPayload) {
-this.logger.log("vehicle.assigned", data)
-}
+  async handle(data: VehicleAssignedPayload) {
+    this.logger.log("vehicle.assigned", data)
+  }
 }`;
 
 export const schedulerExample = `@Cron("0 */5 * * * *", { name: "warm-cache" })
@@ -27,7 +27,7 @@ handleCacheWarmup() {
 
 @Interval(60_000)
 handleMetricsPush() {
-return this.metrics.flush()
+  return this.metrics.flush()
 }`;
 
 export const sidecar = `dapr run \

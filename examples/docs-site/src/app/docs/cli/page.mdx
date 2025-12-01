@@ -1,11 +1,11 @@
 ---
-title: 'CLI Reference · Nael Platform'
-description: 'Full reference for the nl CLI including generators, diagnostics, and workspace scripts.'
+title: "CLI Reference · Nael Platform"
+description: "Full reference for the nl CLI including generators, diagnostics, and workspace scripts."
 ---
 
-import Link from 'next/link';
-import { CodeBlock } from '@/components/shared/simple-code-block';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import Link from "next/link";
+import { CodeBlock } from "@/components/shared/simple-code-block";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const installCli = `bun install --global @nl-framework/cli`;
 
@@ -19,24 +19,24 @@ export const runScripts = `nl dev          # starts Bun dev server\nnl start    
 
 export const commandMatrix = [
   {
-    name: 'nl new',
-    description: 'Scaffold a new service with HTTP, GraphQL, Better Auth, or worker templates.',
-    flags: '--template --features --package-manager --install',
+    name: "nl new",
+    description: "Scaffold a new service with HTTP, GraphQL, Better Auth, or worker templates.",
+    flags: "--template --features --package-manager --install",
   },
   {
-    name: 'nl generate',
-    description: 'Add modules, controllers, resolvers, providers, schedulers, or Dapr subscribers.',
-    flags: 'module|controller|resolver|provider|subscriber|cron',
+    name: "nl generate",
+    description: "Add modules, controllers, resolvers, providers, schedulers, or Dapr subscribers.",
+    flags: "module|controller|resolver|provider|subscriber|cron",
   },
   {
-    name: 'nl sync',
-    description: 'Sync versions across packages, apply lint rules, and re-run project references.',
-    flags: '--workspace --dry-run',
+    name: "nl sync",
+    description: "Sync versions across packages, apply lint rules, and re-run project references.",
+    flags: "--workspace --dry-run",
   },
   {
-    name: 'nl doctor',
-    description: 'Run environment diagnostics (Bun version, Dapr, BetterAuth secrets, Docker).',
-    flags: '--checks --fix',
+    name: "nl doctor",
+    description: "Run environment diagnostics (Bun version, Dapr, BetterAuth secrets, Docker).",
+    flags: "--checks --fix",
   },
 ];
 

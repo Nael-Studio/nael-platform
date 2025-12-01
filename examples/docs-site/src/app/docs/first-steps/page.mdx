@@ -13,9 +13,9 @@ export const createProject = `nl new my-app`;
 export const mainFile = `import { NaelFactory } from '@nl-framework/core';
 
 async function bootstrap() {
-const app = await NaelFactory.create(AppModule);
-await app.listen(3000);
-console.log(\`Application is running on: http://localhost:3000\`);
+  const app = await NaelFactory.create(AppModule);
+  await app.listen(3000);
+  console.log(\`Application is running on: http://localhost:3000\`);
 }
 
 bootstrap();`;
@@ -23,9 +23,9 @@ bootstrap();`;
 export const appModule = `import { Module } from '@nl-framework/core';
 
 @Module({
-imports: [],
-controllers: [AppController],
-providers: [AppService],
+  imports: [],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}`;
 
@@ -33,21 +33,21 @@ export const appController = `import { Controller, Get } from '@nl-framework/htt
 
 @Controller()
 export class AppController {
-constructor(private readonly appService: AppService) {}
+  constructor(private readonly appService: AppService) {}
 
-@Get()
-getHello(): string {
-return this.appService.getHello();
-}
+  @Get()
+  getHello(): string {
+    return this.appService.getHello();
+  }
 }`;
 
 export const appService = `import { Injectable } from '@nl-framework/core';
 
 @Injectable()
 export class AppService {
-getHello(): string {
-return 'Hello Nael Platform!';
-}
+  getHello(): string {
+    return 'Hello Nael Platform!';
+  }
 }`;
 
 export const runDev = `bun run dev`;

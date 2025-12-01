@@ -10,64 +10,64 @@ export const featureModule = `// users/users.module.ts
 import { Module } from '@nl-framework/core';
 
 @Module({
-controllers: [UsersController],
-providers: [UsersService],
+  controllers: [UsersController],
+  providers: [UsersService],
 })
 export class UsersModule {}`;
 
 export const sharedModule = `import { Module } from '@nl-framework/core';
 
 @Module({
-providers: [ConfigService],
-exports: [ConfigService],
+  providers: [ConfigService],
+  exports: [ConfigService],
 })
 export class SharedModule {}`;
 
 export const reExportModule = `import { Module } from '@nl-framework/core';
 
 @Module({
-imports: [ConfigModule, DatabaseModule],
-exports: [ConfigModule, DatabaseModule],
+  imports: [ConfigModule, DatabaseModule],
+  exports: [ConfigModule, DatabaseModule],
 })
 export class CoreModule {}`;
 
 export const dependencyInjection = `import { Module } from '@nl-framework/core';
 
 @Module({
-controllers: [UsersController],
-providers: [UsersService],
+  controllers: [UsersController],
+  providers: [UsersService],
 })
 export class UsersModule {
-constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) {}
 }`;
 
 export const dynamicModule = `import { Module, DynamicModule } from '@nl-framework/core';
 
 @Module({})
 export class ConfigModule {
-static forRoot(options: ConfigOptions): DynamicModule {
-return {
-module: ConfigModule,
-providers: [
-{
-provide: 'CONFIG_OPTIONS',
-useValue: options,
-},
-ConfigService,
-],
-exports: [ConfigService],
-};
-}
+  static forRoot(options: ConfigOptions): DynamicModule {
+    return {
+      module: ConfigModule,
+      providers: [
+        {
+          provide: 'CONFIG_OPTIONS',
+          useValue: options,
+        },
+        ConfigService,
+      ],
+      exports: [ConfigService],
+    };
+  }
 }`;
 
 export const useDynamicModule = `import { Module } from '@nl-framework/core';
 
 @Module({
-imports: [
-ConfigModule.forRoot({
-folder: './config',
-}),
-],
+  imports: [
+    ConfigModule.forRoot({
+      folder: './config',
+    }),
+  ],
 })
 export class AppModule {}`;
 
@@ -75,45 +75,45 @@ export const asyncDynamicModule = `import { Module, DynamicModule } from '@nl-fr
 
 @Module({})
 export class DatabaseModule {
-static forRootAsync(options: {
-useFactory: (...args: any[]) => Promise<DatabaseOptions>;
-inject?: any[];
-}): DynamicModule {
-return {
-module: DatabaseModule,
-providers: [
-{
-provide: 'DATABASE_OPTIONS',
-useFactory: options.useFactory,
-inject: options.inject || [],
-},
-{
-provide: DatabaseConnection,
-useFactory: async (dbOptions) => {
-const connection = await createConnection(dbOptions);
-return connection;
-},
-inject: ['DATABASE_OPTIONS'],
-},
-DatabaseService,
-],
-exports: [DatabaseService],
-};
-}
+  static forRootAsync(options: {
+    useFactory: (...args: any[]) => Promise<DatabaseOptions>;
+    inject?: any[];
+  }): DynamicModule {
+    return {
+      module: DatabaseModule,
+      providers: [
+        {
+          provide: 'DATABASE_OPTIONS',
+          useFactory: options.useFactory,
+          inject: options.inject || [],
+        },
+        {
+          provide: DatabaseConnection,
+          useFactory: async (dbOptions) => {
+            const connection = await createConnection(dbOptions);
+            return connection;
+          },
+          inject: ['DATABASE_OPTIONS'],
+        },
+        DatabaseService,
+      ],
+      exports: [DatabaseService],
+    };
+  }
 }`;
 
 export const useAsyncModule = `import { Module } from '@nl-framework/core';
 
 @Module({
-imports: [
-DatabaseModule.forRootAsync({
-useFactory: (config: ConfigService) => ({
-host: config.get('DB_HOST'),
-port: config.get('DB_PORT'),
-}),
-inject: [ConfigService],
-}),
-],
+  imports: [
+    DatabaseModule.forRootAsync({
+      useFactory: (config: ConfigService) => ({
+        host: config.get('DB_HOST'),
+        port: config.get('DB_PORT'),
+      }),
+      inject: [ConfigService],
+    }),
+  ],
 })
 export class AppModule {}`;
 

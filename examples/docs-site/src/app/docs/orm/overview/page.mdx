@@ -11,17 +11,17 @@ export const rootSnippet = `import { Module } from '@nl-framework/core';
 import { OrmModule, createMongoDriver } from '@nl-framework/orm';
 
 @Module({
-imports: [
-OrmModule.forRoot({
-driver: createMongoDriver({
-uri: process.env.MONGO_URI!,
-dbName: 'app-db',
-}),
-connectionName: 'primary',
-autoRunSeeds: true,
-seedEnvironment: process.env.APP_ENV ?? process.env.NODE_ENV ?? 'default',
-}),
-],
+  imports: [
+    OrmModule.forRoot({
+      driver: createMongoDriver({
+        uri: process.env.MONGO_URI!,
+        dbName: 'app-db',
+      }),
+      connectionName: 'primary',
+      autoRunSeeds: true,
+      seedEnvironment: process.env.APP_ENV ?? process.env.NODE_ENV ?? 'default',
+    }),
+  ],
 })
 export class AppModule {}`;
 
@@ -30,22 +30,22 @@ import { ConfigModule, ConfigService } from '@nl-framework/config';
 import { OrmModule, createMongoDriver } from '@nl-framework/orm';
 
 @Module({
-imports: [
-ConfigModule,
-OrmModule.forRootAsync({
-imports: [ConfigModule],
-inject: [ConfigService],
-useFactory: (config: ConfigService) => ({
-connectionName: config.get('database.connectionName', 'default'),
-driver: createMongoDriver({
-uri: config.get('database.mongo.uri'),
-dbName: config.get('database.mongo.dbName'),
-}),
-autoRunSeeds: config.get('database.seeds.autoRun', false),
-seeds: [InitialUsersSeed],
-}),
-}),
-],
+  imports: [
+    ConfigModule,
+    OrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        connectionName: config.get('database.connectionName', 'default'),
+        driver: createMongoDriver({
+          uri: config.get('database.mongo.uri'),
+          dbName: config.get('database.mongo.dbName'),
+        }),
+        autoRunSeeds: config.get('database.seeds.autoRun', false),
+        seeds: [InitialUsersSeed],
+      }),
+    }),
+  ],
 })
 export class AppModule {}`;
 
@@ -55,15 +55,15 @@ import type { Db } from 'mongodb';
 
 @Injectable()
 export class HealthService {
-constructor(
-@Inject(getConnectionToken()) private readonly connection: OrmConnection,
-@Inject(getDatabaseToken()) private readonly db: Db,
-) {}
+  constructor(
+    @Inject(getConnectionToken()) private readonly connection: OrmConnection,
+    @Inject(getDatabaseToken()) private readonly db: Db,
+  ) {}
 
-async ping() {
-await this.connection.ensureConnection();
-return this.db.command({ ping: 1 });
-}
+  async ping() {
+    await this.connection.ensureConnection();
+    return this.db.command({ ping: 1 });
+  }
 }`;
 
 <article className="space-y-8">

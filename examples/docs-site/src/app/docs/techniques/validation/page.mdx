@@ -14,28 +14,28 @@ export class CreateUserDto {
   @IsEmail()
   email!: string;
 
-@IsString()
-@MinLength(2)
-name!: string;
+  @IsString()
+  @MinLength(2)
+  name!: string;
 
-@IsOptional()
-@IsInt()
-@Min(13)
-@Type(() => Number)
-age?: number;
+  @IsOptional()
+  @IsInt()
+  @Min(13)
+  @Type(() => Number)
+  age?: number;
 }`;
 
 export const httpBodyValidation = `import { Body, Controller, Post } from '@nl-framework/http';
 
 @Controller('/users')
 export class UsersController {
-@Post('/')
-create(@Body() payload: CreateUserDto) {
-// Payload is already a CreateUserDto instance; unknown keys are stripped
-return this.service.register(payload);
-}
+  @Post('/')
+  create(@Body() payload: CreateUserDto) {
+    // Payload is already a CreateUserDto instance; unknown keys are stripped
+    return this.service.register(payload);
+  }
 
-constructor(private readonly service: UsersService) {}
+  constructor(private readonly service: UsersService) {}
 }`;
 
 export const validationPipeUsage = `import { Body, Controller, Put, UsePipes, ValidationPipe } from '@nl-framework/http';
@@ -43,20 +43,20 @@ import { ApplicationException } from '@nl-framework/core';
 
 @Controller('/users')
 @UsePipes(new ValidationPipe({
-transform: true,
-whitelist: true,
-skipMissingProperties: true, // friendly for PATCH-style updates
-groups: ['update'],
-exceptionFactory: (issues) => ApplicationException.validationError(
-'User payload invalid',
-{ issues },
-),
+  transform: true,
+  whitelist: true,
+  skipMissingProperties: true, // friendly for PATCH-style updates
+  groups: ['update'],
+  exceptionFactory: (issues) => ApplicationException.validationError(
+    'User payload invalid',
+    { issues },
+  ),
 }))
 export class UsersController {
-@Put('/:id')
-update(@Body() payload: UpdateUserDto) {
-return this.service.update(payload);
-}
+  @Put('/:id')
+  update(@Body() payload: UpdateUserDto) {
+    return this.service.update(payload);
+  }
 }`;
 
 export const graphqlValidation = `import { Resolver, Mutation, Arg, InputType, Field, Int } from '@nl-framework/graphql';
@@ -65,29 +65,29 @@ import { Type } from 'class-transformer';
 
 @InputType()
 class UpdateProfileInput {
-@Field()
-@IsString()
-id!: string;
+  @Field()
+  @IsString()
+  id!: string;
 
-@Field({ nullable: true })
-@IsOptional()
-@IsEmail()
-email?: string;
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsEmail()
+  email?: string;
 
-@Field(() => Int, { nullable: true })
-@IsOptional()
-@Min(1)
-@Type(() => Number)
-visits?: number;
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @Min(1)
+  @Type(() => Number)
+  visits?: number;
 }
 
 @Resolver()
 export class ProfileResolver {
-@Mutation(() => Boolean)
-updateProfile(@Arg('input', () => UpdateProfileInput) input: UpdateProfileInput) {
-// input arrives as a sanitized UpdateProfileInput instance
-return true;
-}
+  @Mutation(() => Boolean)
+  updateProfile(@Arg('input', () => UpdateProfileInput) input: UpdateProfileInput) {
+    // input arrives as a sanitized UpdateProfileInput instance
+    return true;
+  }
 }`;
 
 export const manualValidation = `import { transformAndValidate } from '@nl-framework/core';

@@ -10,36 +10,36 @@ export const forwardRefProviders = `import { Inject, Injectable, forwardRef } fr
 
 @Injectable()
 export class UsersService {
-constructor(
-@Inject(forwardRef(() => PaymentsService))
-private readonly payments: PaymentsService,
-) {}
+  constructor(
+    @Inject(forwardRef(() => PaymentsService))
+    private readonly payments: PaymentsService,
+  ) {}
 
-async createUser() {
-await this.payments.provisionWallet();
-}
+  async createUser() {
+    await this.payments.provisionWallet();
+  }
 }
 
 @Injectable()
 export class PaymentsService {
-constructor(private readonly users: UsersService) {}
+  constructor(private readonly users: UsersService) {}
 
-async provisionWallet() {/* ... */}
+  async provisionWallet() {/* ... */}
 }`;
 
 export const moduleForwardRef = `import { Module, forwardRef } from '@nl-framework/core';
 
 @Module({
-providers: [UsersService],
-exports: [UsersService],
-imports: [forwardRef(() => PaymentsModule)],
+  providers: [UsersService],
+  exports: [UsersService],
+  imports: [forwardRef(() => PaymentsModule)],
 })
 export class UsersModule {}
 
 @Module({
-providers: [PaymentsService],
-exports: [PaymentsService],
-imports: [forwardRef(() => UsersModule)],
+  providers: [PaymentsService],
+  exports: [PaymentsService],
+  imports: [forwardRef(() => UsersModule)],
 })
 export class PaymentsModule {}`;
 
@@ -48,30 +48,30 @@ import { ModuleRef } from '@nl-framework/core';
 
 @Injectable()
 export class ReportsService {
-constructor(private readonly moduleRef: ModuleRef) {}
+  constructor(private readonly moduleRef: ModuleRef) {}
 
-async run() {
-const exporter = await this.moduleRef.resolve(ExporterService, { strict: false });
-return exporter.export();
-}
+  async run() {
+    const exporter = await this.moduleRef.resolve(ExporterService, { strict: false });
+    return exporter.export();
+  }
 }`;
 
 export const setterInjection = `import { Injectable, Inject, forwardRef, OnModuleInit } from '@nl-framework/core';
 
 @Injectable()
 export class NotificationsService implements OnModuleInit {
-private emailService!: EmailService;
+  private emailService!: EmailService;
 
-constructor(@Inject(forwardRef(() => EmailService)) private readonly email: EmailService) {}
+  constructor(@Inject(forwardRef(() => EmailService)) private readonly email: EmailService) {}
 
-onModuleInit() {
-this.emailService = this.email;
-}
+  onModuleInit() {
+    this.emailService = this.email;
+  }
 }
 
 @Injectable()
 export class EmailService {
-constructor(private readonly notifications: NotificationsService) {}
+  constructor(private readonly notifications: NotificationsService) {}
 }`;
 
 <article className="space-y-8">

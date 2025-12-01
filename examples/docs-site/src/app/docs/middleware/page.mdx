@@ -9,20 +9,20 @@ import { CodeBlock } from '@/components/shared/simple-code-block';
 export const basicMiddleware = `import { MiddlewareHandler } from '@nl-framework/http';
 
 const loggingMiddleware: MiddlewareHandler = async (ctx, next) => {
-console.log(\`[\${ctx.request.method}] \${new URL(ctx.request.url).pathname}\`);
-const response = await next();
-console.log(\`Response status: \${response.status}\`);
-return response;
+  console.log(\`[\${ctx.request.method}] \${new URL(ctx.request.url).pathname}\`);
+  const response = await next();
+  console.log(\`Response status: \${response.status}\`);
+  return response;
 };`;
 
 export const timingMiddleware = `import { MiddlewareHandler } from '@nl-framework/http';
 
 const requestTimingMiddleware: MiddlewareHandler = async (ctx, next) => {
-const started = Date.now();
+  const started = Date.now();
 
-try {
-const response = await next();
-const elapsed = Date.now() - started;
+  try {
+    const response = await next();
+    const elapsed = Date.now() - started;
 
     console.log('Request completed', {
       method: ctx.request.method,
@@ -32,17 +32,16 @@ const elapsed = Date.now() - started;
     });
 
     return response;
-
-} catch (error) {
-const elapsed = Date.now() - started;
-console.error('Request failed', {
-method: ctx.request.method,
-path: new URL(ctx.request.url).pathname,
-elapsedMs: elapsed,
-error,
-});
-throw error;
-}
+  } catch (error) {
+    const elapsed = Date.now() - started;
+    console.error('Request failed', {
+      method: ctx.request.method,
+      path: new URL(ctx.request.url).pathname,
+      elapsedMs: elapsed,
+      error,
+    });
+    throw error;
+  }
 };`;
 
 export const applyMiddleware = `import { NaelFactory } from '@nl-framework/platform';
@@ -51,8 +50,8 @@ const app = await NaelFactory.create(AppModule);
 const httpApp = app.getHttpApplication();
 
 if (httpApp) {
-httpApp.use(loggingMiddleware);
-httpApp.use(requestTimingMiddleware);
+  httpApp.use(loggingMiddleware);
+  httpApp.use(requestTimingMiddleware);
 }
 
 await app.listen({ http: 3000 });`;
@@ -60,11 +59,11 @@ await app.listen({ http: 3000 });`;
 export const createMiddleware = `import { createHttpApplication } from '@nl-framework/http';
 
 const app = await createHttpApplication(AppModule, {
-port: 3000,
-middleware: [
-loggingMiddleware,
-requestTimingMiddleware,
-],
+  port: 3000,
+  middleware: [
+    loggingMiddleware,
+    requestTimingMiddleware,
+  ],
 });
 
 await app.listen();`;
@@ -72,125 +71,124 @@ await app.listen();`;
 export const corsMiddleware = `import { MiddlewareHandler } from '@nl-framework/http';
 
 const corsMiddleware: MiddlewareHandler = async (ctx, next) => {
-// Handle preflight requests
-if (ctx.request.method === 'OPTIONS') {
-return new Response(null, {
-status: 204,
-headers: {
-'Access-Control-Allow-Origin': '\*',
-'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-'Access-Control-Max-Age': '86400',
-},
-});
-}
+  // Handle preflight requests
+  if (ctx.request.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': '\*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Max-Age': '86400',
+      },
+    });
+  }
 
-const response = await next();
+  const response = await next();
 
-// Add CORS headers to the response
-const headers = new Headers(response.headers);
-headers.set('Access-Control-Allow-Origin', '\*');
-headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  // Add CORS headers to the response
+  const headers = new Headers(response.headers);
+  headers.set('Access-Control-Allow-Origin', '\*');
+  headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-return new Response(response.body, {
-status: response.status,
-statusText: response.statusText,
-headers,
-});
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
 };`;
 
 export const authMiddleware = `import { MiddlewareHandler } from '@nl-framework/http';
 
 const authMiddleware: MiddlewareHandler = async (ctx, next) => {
-const authHeader = ctx.request.headers.get('Authorization');
+  const authHeader = ctx.request.headers.get('Authorization');
 
-if (!authHeader || !authHeader.startsWith('Bearer ')) {
-return new Response(
-JSON.stringify({ error: 'Unauthorized' }),
-{
-status: 401,
-headers: { 'Content-Type': 'application/json' },
-}
-);
-}
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized' }),
+      {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  }
 
-const token = authHeader.substring(7);
+  const token = authHeader.substring(7);
 
-try {
-// Validate token here
-const user = await validateToken(token);
+  try {
+    // Validate token here
+    const user = await validateToken(token);
 
     // Attach user to context (would need custom context extension)
     // For now, continue to next middleware
     return await next();
-
-} catch (error) {
-return new Response(
-JSON.stringify({ error: 'Invalid token' }),
-{
-status: 401,
-headers: { 'Content-Type': 'application/json' },
-}
-);
-}
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ error: 'Invalid token' }),
+      {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  }
 };`;
 
 export const requestIdMiddleware = `import { MiddlewareHandler } from '@nl-framework/http';
 
 const requestIdMiddleware: MiddlewareHandler = async (ctx, next) => {
-const requestId = crypto.randomUUID();
+  const requestId = crypto.randomUUID();
 
-const response = await next();
+  const response = await next();
 
-const headers = new Headers(response.headers);
-headers.set('X-Request-ID', requestId);
+  const headers = new Headers(response.headers);
+  headers.set('X-Request-ID', requestId);
 
-return new Response(response.body, {
-status: response.status,
-statusText: response.statusText,
-headers,
-});
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
 };`;
 
 export const compressionMiddleware = `import { MiddlewareHandler } from '@nl-framework/http';
 
 const compressionMiddleware: MiddlewareHandler = async (ctx, next) => {
-const response = await next();
+  const response = await next();
 
-const acceptEncoding = ctx.request.headers.get('Accept-Encoding') || '';
+  const acceptEncoding = ctx.request.headers.get('Accept-Encoding') || '';
 
-if (!acceptEncoding.includes('gzip')) {
-return response;
-}
+  if (!acceptEncoding.includes('gzip')) {
+    return response;
+  }
 
-// Only compress JSON responses
-const contentType = response.headers.get('Content-Type') || '';
-if (!contentType.includes('application/json')) {
-return response;
-}
+  // Only compress JSON responses
+  const contentType = response.headers.get('Content-Type') || '';
+  if (!contentType.includes('application/json')) {
+    return response;
+  }
 
-const body = await response.text();
-const compressed = await Bun.gzipSync(Buffer.from(body));
+  const body = await response.text();
+  const compressed = await Bun.gzipSync(Buffer.from(body));
 
-const headers = new Headers(response.headers);
-headers.set('Content-Encoding', 'gzip');
-headers.set('Content-Length', compressed.length.toString());
+  const headers = new Headers(response.headers);
+  headers.set('Content-Encoding', 'gzip');
+  headers.set('Content-Length', compressed.length.toString());
 
-return new Response(compressed, {
-status: response.status,
-statusText: response.statusText,
-headers,
-});
+  return new Response(compressed, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
 };`;
 
 export const errorHandlingMiddleware = `import { MiddlewareHandler } from '@nl-framework/http';
 
 const errorHandlingMiddleware: MiddlewareHandler = async (ctx, next) => {
-try {
-return await next();
-} catch (error) {
-console.error('Unhandled error:', error);
+  try {
+    return await next();
+  } catch (error) {
+    console.error('Unhandled error:', error);
 
     if (error instanceof ValidationError) {
       return new Response(
@@ -222,30 +220,29 @@ console.error('Unhandled error:', error);
         headers: { 'Content-Type': 'application/json' },
       }
     );
-
-}
+  }
 };`;
 
 export const conditionalMiddleware = `import { MiddlewareHandler } from '@nl-framework/http';
 
 const apiOnlyMiddleware: MiddlewareHandler = async (ctx, next) => {
-const url = new URL(ctx.request.url);
+  const url = new URL(ctx.request.url);
 
-// Only apply this middleware to /api routes
-if (!url.pathname.startsWith('/api')) {
-return await next();
-}
+  // Only apply this middleware to /api routes
+  if (!url.pathname.startsWith('/api')) {
+    return await next();
+  }
 
-// Add API-specific headers
-const response = await next();
-const headers = new Headers(response.headers);
-headers.set('X-API-Version', '1.0');
+  // Add API-specific headers
+  const response = await next();
+  const headers = new Headers(response.headers);
+  headers.set('X-API-Version', '1.0');
 
-return new Response(response.body, {
-status: response.status,
-statusText: response.statusText,
-headers,
-});
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
 };`;
 
 export const multipleMiddleware = `import { NaelFactory } from '@nl-framework/platform';
@@ -253,44 +250,44 @@ import { Logger, LoggerFactory } from '@nl-framework/logger';
 import type { MiddlewareHandler } from '@nl-framework/http';
 
 const bootstrap = async () => {
-const app = await NaelFactory.create(AppModule);
-const loggerFactory = await app.get<LoggerFactory>(LoggerFactory);
-const requestLogger = loggerFactory.create({ context: 'Request' });
+  const app = await NaelFactory.create(AppModule);
+  const loggerFactory = await app.get<LoggerFactory>(LoggerFactory);
+  const requestLogger = loggerFactory.create({ context: 'Request' });
 
-const httpApp = app.getHttpApplication();
-if (!httpApp) {
-throw new Error('HTTP application not available');
-}
+  const httpApp = app.getHttpApplication();
+  if (!httpApp) {
+    throw new Error('HTTP application not available');
+  }
 
-// Error handling (first)
-httpApp.use(errorHandlingMiddleware);
+  // Error handling (first)
+  httpApp.use(errorHandlingMiddleware);
 
-// Request logging
-const loggingMiddleware: MiddlewareHandler = async (ctx, next) => {
-const started = Date.now();
-try {
-const response = await next();
-requestLogger.debug('Request completed', {
-method: ctx.request.method,
-path: new URL(ctx.request.url).pathname,
-status: response.status,
-elapsedMs: Date.now() - started,
-});
-return response;
-} catch (error) {
-requestLogger.error('Request failed', error);
-throw error;
-}
-};
-httpApp.use(loggingMiddleware);
+  // Request logging
+  const loggingMiddleware: MiddlewareHandler = async (ctx, next) => {
+    const started = Date.now();
+    try {
+      const response = await next();
+      requestLogger.debug('Request completed', {
+        method: ctx.request.method,
+        path: new URL(ctx.request.url).pathname,
+        status: response.status,
+        elapsedMs: Date.now() - started,
+      });
+      return response;
+    } catch (error) {
+      requestLogger.error('Request failed', error);
+      throw error;
+    }
+  };
+  httpApp.use(loggingMiddleware);
 
-// CORS
-httpApp.use(corsMiddleware);
+  // CORS
+  httpApp.use(corsMiddleware);
 
-// Request ID
-httpApp.use(requestIdMiddleware);
+  // Request ID
+  httpApp.use(requestIdMiddleware);
 
-await app.listen({ http: 3000 });
+  await app.listen({ http: 3000 });
 };
 
 bootstrap().catch(console.error);`;
@@ -298,22 +295,22 @@ bootstrap().catch(console.error);`;
 export const contextAccess = `import { MiddlewareHandler } from '@nl-framework/http';
 
 const contextAwareMiddleware: MiddlewareHandler = async (ctx, next) => {
-// Access request details
-console.log('Method:', ctx.request.method);
-console.log('URL:', ctx.request.url);
-console.log('Headers:', Object.fromEntries(ctx.headers.entries()));
-console.log('Query params:', Object.fromEntries(ctx.query.entries()));
-console.log('Route params:', ctx.params);
+  // Access request details
+  console.log('Method:', ctx.request.method);
+  console.log('URL:', ctx.request.url);
+  console.log('Headers:', Object.fromEntries(ctx.headers.entries()));
+  console.log('Query params:', Object.fromEntries(ctx.query.entries()));
+  console.log('Route params:', ctx.params);
 
-// Access route information
-console.log('Controller:', ctx.route.controller.name);
-console.log('Handler:', ctx.route.handlerName);
-console.log('Route path:', ctx.route.definition.path);
+  // Access route information
+  console.log('Controller:', ctx.route.controller.name);
+  console.log('Handler:', ctx.route.handlerName);
+  console.log('Route path:', ctx.route.definition.path);
 
-// Access DI container
-const someService = await ctx.container.resolve(SomeService);
+  // Access DI container
+  const someService = await ctx.container.resolve(SomeService);
 
-return await next();
+  return await next();
 };`;
 
 <div className="space-y-10">

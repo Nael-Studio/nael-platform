@@ -27,27 +27,27 @@ import { EventPattern, createMicroservicesModule } from '@nl-framework/microserv
 
 @Injectable()
 export class NotificationsConsumer {
-constructor(private readonly logger: Logger) {}
+  constructor(private readonly logger: Logger) {}
 
-@EventPattern('notifications.email')
-async handleEmail(payload: { to: string; subject: string }) {
-this.logger.info('Sending email', payload);
-}
+  @EventPattern('notifications.email')
+  async handleEmail(payload: { to: string; subject: string }) {
+    this.logger.info('Sending email', payload);
+  }
 
-@EventPattern({ topic: 'notifications.sms' })
-async handleSms(payload: { to: string; message: string }) {
-this.logger.info('Sending SMS', payload);
-}
+  @EventPattern({ topic: 'notifications.sms' })
+  async handleSms(payload: { to: string; message: string }) {
+    this.logger.info('Sending SMS', payload);
+  }
 }
 
 @Module({
-imports: [
-createMicroservicesModule({
-controllers: [NotificationsConsumer],
-// transport defaults to Dapr pub/sub (redis-pubsub on localhost:3500)
-}),
-],
-providers: [NotificationsConsumer],
+  imports: [
+    createMicroservicesModule({
+      controllers: [NotificationsConsumer],
+      // transport defaults to Dapr pub/sub (redis-pubsub on localhost:3500)
+    }),
+  ],
+  providers: [NotificationsConsumer],
 })
 export class NotificationsModule {};`;
 
@@ -56,15 +56,15 @@ import { MicroserviceClient } from '@nl-framework/microservices';
 
 @Injectable()
 export class OrdersService {
-constructor(private readonly client: MicroserviceClient) {}
+  constructor(private readonly client: MicroserviceClient) {}
 
-async place(order: { id: string; total: number }) {
-// ...persist the order...
-await this.client.emit('notifications.email', {
-to: 'user@example.com',
-subject: 'Order received',
-});
-}
+  async place(order: { id: string; total: number }) {
+    // ...persist the order...
+    await this.client.emit('notifications.email', {
+      to: 'user@example.com',
+      subject: 'Order received',
+    });
+  }
 }
 `;
 

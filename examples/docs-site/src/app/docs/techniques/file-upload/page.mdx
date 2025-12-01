@@ -11,10 +11,10 @@ export const basicUpload = `import { Controller, Post, Req } from '@nl-framework
 
 @Controller('/upload')
 export class UploadController {
-@Post('/')
-async upload(@Req() req: Request) {
-const form = await req.formData();
-const file = form.get('file');
+  @Post('/')
+  async upload(@Req() req: Request) {
+    const form = await req.formData();
+    const file = form.get('file');
 
     if (!(file instanceof File)) {
       return new Response(JSON.stringify({ error: 'file is required' }), {
@@ -35,7 +35,7 @@ const file = form.get('file');
 
     return { name: file.name, size: file.size, type: file.type };
 
-}
+  }
 }`;
 
 export const streamUpload = `@Post('/stream')
@@ -46,15 +46,15 @@ async stream(@Req() req: Request) {
     return new Response('file required', { status: 400 });
   }
 
-// Stream to storage without buffering entire file
-const reader = file.stream().getReader();
-while (true) {
-const chunk = await reader.read();
-if (chunk.done) break;
-await writeChunk(chunk.value); // your storage writer
-}
+  // Stream to storage without buffering entire file
+  const reader = file.stream().getReader();
+  while (true) {
+    const chunk = await reader.read();
+    if (chunk.done) break;
+    await writeChunk(chunk.value); // your storage writer
+  }
 
-return { ok: true };
+  return { ok: true };
 }`;
 
 export const multipleFiles = `@Post('/multi')
@@ -62,15 +62,15 @@ async multi(@Req() req: Request) {
   const form = await req.formData();
   const files = form.getAll('files').filter((f): f is File => f instanceof File);
 
-if (!files.length) {
-return new Response(JSON.stringify({ error: 'No files uploaded' }), {
-status: 400,
-headers: { 'content-type': 'application/json' },
-});
-}
+  if (!files.length) {
+    return new Response(JSON.stringify({ error: 'No files uploaded' }), {
+      status: 400,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
 
-const meta = files.map((f) => ({ name: f.name, size: f.size, type: f.type }));
-return { count: files.length, files: meta };
+  const meta = files.map((f) => ({ name: f.name, size: f.size, type: f.type }));
+  return { count: files.length, files: meta };
 }`;
 
 export const graphqlUpload = `import { GraphQLUpload, FileUpload } from 'graphql-upload';
@@ -79,15 +79,15 @@ import { UseInterceptors } from '@nl-framework/http';
 
 @Resolver()
 export class MediaResolver {
-@Mutation(() => Boolean)
-async uploadImage(
-@Arg('file', () => GraphQLUpload) file: Promise<FileUpload>,
-): Promise<boolean> {
-const { createReadStream, filename, mimetype } = await file;
-const stream = createReadStream();
-await saveStreamToStorage(stream, filename, mimetype); // your storage client
-return true;
-}
+  @Mutation(() => Boolean)
+  async uploadImage(
+    @Arg('file', () => GraphQLUpload) file: Promise<FileUpload>,
+  ): Promise<boolean> {
+    const { createReadStream, filename, mimetype } = await file;
+    const stream = createReadStream();
+    await saveStreamToStorage(stream, filename, mimetype); // your storage client
+    return true;
+  }
 }
 
 // When bootstrapping Apollo/Nael GraphQL, ensure graphql-upload middleware is applied to the HTTP server.
@@ -105,16 +105,16 @@ import {
 
 // Build a StorageModule using ConfigModule to pick the adapter
 export const StorageModule = createStorageModule({
-imports: [ConfigModule.forRoot()],
-inject: [ConfigService],
-useFactory: (config: ConfigService) => {
-if (config.get('storage.provider') === 'azure') {
-return new AzureBlobStorageAdapter({
-accountName: config.get('storage.azure.accountName') as string,
-accountKey: config.get('storage.azure.accountKey') as string,
-container: config.get('storage.azure.container', 'uploads') as string,
-});
-}
+  imports: [ConfigModule.forRoot()],
+  inject: [ConfigService],
+  useFactory: (config: ConfigService) => {
+    if (config.get('storage.provider') === 'azure') {
+      return new AzureBlobStorageAdapter({
+        accountName: config.get('storage.azure.accountName') as string,
+        accountKey: config.get('storage.azure.accountKey') as string,
+        container: config.get('storage.azure.container', 'uploads') as string,
+      });
+    }
 
     return new S3StorageAdapter({
       bucket: config.get('storage.s3.bucket') as string,
@@ -126,17 +126,17 @@ container: config.get('storage.azure.container', 'uploads') as string,
       urlPrefix: config.get('storage.s3.urlPrefix') as string | undefined,
     });
 
-},
+  },
 });
 
 @Injectable()
 export class UploadsService {
-constructor(@Inject(STORAGE_ADAPTER) private readonly storage: StorageAdapter) {}
+  constructor(@Inject(STORAGE_ADAPTER) private readonly storage: StorageAdapter) {}
 
-async save(key: string, file: File) {
-const buffer = Buffer.from(await file.arrayBuffer());
-return this.storage.uploadObject(key, buffer, { contentType: file.type });
-}
+  async save(key: string, file: File) {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    return this.storage.uploadObject(key, buffer, { contentType: file.type });
+  }
 }
 
 // config/storage.yaml

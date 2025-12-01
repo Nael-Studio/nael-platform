@@ -10,9 +10,9 @@ export const seedSnippet = `import { Seed, type SeederContext } from '@nl-framew
 
 @Seed({ name: 'initial-users', environments: ['development', 'test'] })
 export class InitialUsersSeed {
-async run(context: SeederContext) {
-const users = await context.getRepository(User);
-const existing = await users.count();
+  async run(context: SeederContext) {
+    const users = await context.getRepository(User);
+    const existing = await users.count();
 
     if (existing > 0) {
       return;
@@ -23,21 +23,19 @@ const existing = await users.count();
       { email: 'dev@example.com', name: 'Developer' },
     ]);
 
-}
-}`;
-
-export const runnerSnippet = `import { Inject, Injectable, OnModuleInit } from '@nl-framework/core';
+  }
+}`;export const runnerSnippet = `import { Inject, Injectable, OnModuleInit } from '@nl-framework/core';
 import { getSeedRunnerToken, type SeedRunner } from '@nl-framework/orm';
 
 @Injectable()
 export class ManualSeeder implements OnModuleInit {
-constructor(
-@Inject(getSeedRunnerToken('analytics')) private readonly runner: SeedRunner,
-) {}
+  constructor(
+    @Inject(getSeedRunnerToken('analytics')) private readonly runner: SeedRunner,
+  ) {}
 
-async onModuleInit() {
-await this.runner.run();
-}
+  async onModuleInit() {
+    await this.runner.run();
+  }
 }`;
 
 export const optionsSnippet = `OrmModule.forRoot({

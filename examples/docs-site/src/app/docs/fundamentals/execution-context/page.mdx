@@ -11,22 +11,22 @@ import { Controller, Get, Injectable, Scope } from '@nl-framework/core';
 
 @Injectable({ scope: Scope.REQUEST })
 class RequestMetadata {
-readonly startedAt = Date.now();
-url?: string;
+  readonly startedAt = Date.now();
+  url?: string;
 }
 
 @Controller('health')
 class HealthController {
-constructor(private readonly metadata: RequestMetadata) {}
+  constructor(private readonly metadata: RequestMetadata) {}
 
-@Get()
-status() {
-return {
-ok: true,
-receivedAt: this.metadata.startedAt,
-url: this.metadata.url,
-};
-}
+  @Get()
+  status() {
+    return {
+      ok: true,
+      receivedAt: this.metadata.startedAt,
+      url: this.metadata.url,
+    };
+  }
 }
 
 const app = await createHttpApplication(AppModule);
@@ -46,7 +46,7 @@ export const manualContextSnippet = `import { Application, Scope, Injectable } f
 
 @Injectable({ scope: Scope.REQUEST })
 class JobState {
-id?: string;
+  id?: string;
 }
 
 const app = new Application();
@@ -54,23 +54,23 @@ const context = await app.bootstrap(AppModule);
 
 const jobId = context.createContextId('nightly-report');
 try {
-const state = await context.get(JobState, { contextId: jobId });
-state.id = 'job-42';
-await runReport(state);
+  const state = await context.get(JobState, { contextId: jobId });
+  state.id = 'job-42';
+  await runReport(state);
 } finally {
-context.releaseContext(jobId);
+  context.releaseContext(jobId);
 }`;
 
 export const moduleRefSnippet = `import { Injectable, ModuleRef } from '@nl-framework/core';
 
 @Injectable()
 class ReportRunner {
-constructor(private readonly moduleRef: ModuleRef) {}
+  constructor(private readonly moduleRef: ModuleRef) {}
 
-async execute() {
-const mailer = await this.moduleRef.resolve(MailerService, { strict: false });
-await mailer.send();
-}
+  async execute() {
+    const mailer = await this.moduleRef.resolve(MailerService, { strict: false });
+    await mailer.send();
+  }
 }`;
 
 <article className="space-y-8">

@@ -12,33 +12,32 @@ import { CallHandler, HttpInterceptor, HttpExecutionContext } from '@nl-framewor
 
 @Injectable()
 export class LoggingInterceptor implements HttpInterceptor {
-async intercept(context: HttpExecutionContext, next: CallHandler) {
-const start = Date.now();
-console.log('Before handler', context.getRoute().handlerName);
+  async intercept(context: HttpExecutionContext, next: CallHandler) {
+    const start = Date.now();
+    console.log('Before handler', context.getRoute().handlerName);
 
     const result = await next.handle();
 
     console.log('After handler', Date.now() - start, 'ms');
     return result;
-
-}
+  }
 }`;
 
 export const controllerUsage = `import { Controller, Get, UseInterceptors } from '@nl-framework/http';
 
-@UseInterceptors(LoggingInterceptor)
 @Controller('/reports')
+@UseInterceptors(LoggingInterceptor)
 export class ReportsController {
-@Get()
-async list() {
-return { reports: [] };
-}
+  @Get()
+  async list() {
+    return { reports: [] };
+  }
 
-@UseInterceptors(RequestTimingInterceptor)
-@Get('/daily')
-daily() {
-return { status: 'ok' };
-}
+  @Get('/daily')
+  @UseInterceptors(RequestTimingInterceptor)
+  daily() {
+    return { status: 'ok' };
+  }
 }`;
 
 export const functionalInterceptor = `import { InterceptorFunction } from '@nl-framework/http';
@@ -52,18 +51,18 @@ export const CacheInterceptor: InterceptorFunction = async (context, next) => {
     });
   }
 
-const result = await next.handle();
-await context.getContainer().resolve(CacheStore).set(cacheKey, result);
-return result;
+  const result = await next.handle();
+  await context.getContainer().resolve(CacheStore).set(cacheKey, result);
+  return result;
 };
 
 @Controller('/inventory')
 export class InventoryController {
-@Get()
-@UseInterceptors(CacheInterceptor)
-list() {
-return this.service.all();
-}
+  @Get()
+  @UseInterceptors(CacheInterceptor)
+  list() {
+    return this.service.all();
+  }
 }`;
 
 export const globalInterceptor = `import { registerHttpInterceptor } from '@nl-framework/http';
@@ -83,27 +82,27 @@ import {
 } from '@nl-framework/graphql';
 
 class EnvelopeInterceptor implements GraphqlInterceptor {
-async intercept(\_context: unknown, next: GraphqlCallHandler) {
-const result = await next.handle();
-return { data: result };
-}
+  async intercept(_context: unknown, next: GraphqlCallHandler) {
+    const result = await next.handle();
+    return { data: result };
+  }
 }
 
 registerGraphqlInterceptor(EnvelopeInterceptor);
 
 @ObjectType()
 class Report {
-@Field()
-message!: string;
+  @Field()
+  message!: string;
 }
 
 @Resolver(() => Report)
 @UseInterceptors(EnvelopeInterceptor)
 export class ReportResolver {
-@Query(() => Report)
-stats() {
-return { message: 'report' };
-}
+  @Query(() => Report)
+  stats() {
+    return { message: 'report' };
+  }
 }`;
 
 export const responseMapping = `import { CallHandler, HttpExecutionContext, HttpInterceptor } from '@nl-framework/http';
@@ -118,10 +117,10 @@ export class EnvelopeInterceptor implements HttpInterceptor {
 @Controller('/users')
 @UseInterceptors(EnvelopeInterceptor)
 export class UsersController {
-@Get()
-list() {
-return [{ id: 1, email: 'ada@example.com' }];
-}
+  @Get()
+  list() {
+    return [{ id: 1, email: 'ada@example.com' }];
+  }
 }`;
 
 export const exceptionMapping = `import { HttpInterceptor, CallHandler, HttpExecutionContext } from '@nl-framework/http';
@@ -148,9 +147,9 @@ export const timeoutInterceptor = `import { HttpInterceptor, HttpExecutionContex
 export class TimeoutInterceptor implements HttpInterceptor {
   constructor(private readonly timeoutMs = 5000) {}
 
-async intercept(\_context: HttpExecutionContext, next: CallHandler) {
-const controller = new AbortController();
-const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+  async intercept(_context: HttpExecutionContext, next: CallHandler) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
 
     try {
       return await Promise.race([
@@ -160,8 +159,7 @@ const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
     } finally {
       clearTimeout(timeout);
     }
-
-}
+  }
 }`;
 
 <article className="space-y-8">
@@ -177,7 +175,7 @@ const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
 
       <Card className="border-purple-200 bg-purple-50 dark:border-purple-900/50 dark:bg-purple-950">
         <CardContent className="pt-6 text-sm text-purple-900 dark:text-purple-50">
-          <p>
+          <div>
             <strong>Key pipeline order:</strong> middleware ➜ guards ➜ <strong>interceptors</strong> ➜ pipes ➜ handler ➜ filters.
             Interceptors share the same `HttpExecutionContext` as guards and can short-circuit requests by returning
             their own `Response` objects.
@@ -262,10 +260,10 @@ const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
         <h2 className="text-2xl font-semibold">Best practices</h2>
         <Card className="border-border/70">
           <CardContent className="space-y-2 pt-6 text-sm text-muted-foreground">
-            <p><strong>Be explicit about order.</strong> Declare interceptors from most global to most specific to avoid surprises.</div>
-            <p><strong>Keep them stateless when global.</strong> If an interceptor needs dependencies, register it via DI so the container can manage scope.</div>
-            <p><strong>Return consistent shapes.</strong> When transforming responses, wrap data predictably so clients know what to expect.</div>
-            <p><strong>Short-circuit intentionally.</strong> Always document when an interceptor might skip the underlying handler (caching, feature flags, etc.).</div>
+            <div><strong>Be explicit about order.</strong> Declare interceptors from most global to most specific to avoid surprises.</div>
+            <div><strong>Keep them stateless when global.</strong> If an interceptor needs dependencies, register it via DI so the container can manage scope.</div>
+            <div><strong>Return consistent shapes.</strong> When transforming responses, wrap data predictably so clients know what to expect.</div>
+            <div><strong>Short-circuit intentionally.</strong> Always document when an interceptor might skip the underlying handler (caching, feature flags, etc.).</div>
           </CardContent>
         </Card>
       </section>

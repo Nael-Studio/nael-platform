@@ -12,28 +12,28 @@ export const gzipMiddleware = `import { MiddlewareHandler } from '@nl-framework/
 export const compressionMiddleware: MiddlewareHandler = async (ctx, next) => {
   const res = await next();
 
-const acceptEncoding = ctx.request.headers.get('accept-encoding') ?? '';
-if (!acceptEncoding.includes('gzip')) {
-return res;
-}
+  const acceptEncoding = ctx.request.headers.get('accept-encoding') ?? '';
+  if (!acceptEncoding.includes('gzip')) {
+    return res;
+  }
 
-const contentType = res.headers.get('content-type') ?? '';
-if (!contentType.includes('application/json')) {
-return res;
-}
+  const contentType = res.headers.get('content-type') ?? '';
+  if (!contentType.includes('application/json')) {
+    return res;
+  }
 
-const text = await res.text();
-const compressed = Bun.gzipSync(Buffer.from(text));
+  const text = await res.text();
+  const compressed = Bun.gzipSync(Buffer.from(text));
 
-const headers = new Headers(res.headers);
-headers.set('content-encoding', 'gzip');
-headers.set('content-length', compressed.length.toString());
+  const headers = new Headers(res.headers);
+  headers.set('content-encoding', 'gzip');
+  headers.set('content-length', compressed.length.toString());
 
-return new Response(compressed, {
-status: res.status,
-statusText: res.statusText,
-headers,
-});
+  return new Response(compressed, {
+    status: res.status,
+    statusText: res.statusText,
+    headers,
+  });
 };`;
 
 export const applyMiddleware = `import { NaelFactory } from '@nl-framework/platform';
@@ -42,7 +42,7 @@ const app = await NaelFactory.create(AppModule);
 const http = app.getHttpApplication();
 
 if (http) {
-http.use(compressionMiddleware);
+  http.use(compressionMiddleware);
 }
 
 await app.listen({ http: 3000 });`;

@@ -26,26 +26,26 @@ export const CACHE_INTERCEPTOR = Symbol('cache:interceptor');
 @Controller('/posts')
 @UseInterceptors(CACHE_INTERCEPTOR)
 export class PostsController {
-constructor(private readonly service: PostsService) {}
+  constructor(private readonly service: PostsService) {}
 
-@Get('/')
-list() {
-return this.service.listPublished();
-}
+  @Get('/')
+  list() {
+    return this.service.listPublished();
+  }
 }
 
 @Module({
-imports: [ConfigModule.forRoot()],
-controllers: [PostsController],
-providers: [
-{
-provide: CACHE_STORE,
-inject: [ConfigService],
-useFactory: (config: ConfigService<{ cache: any }>): CacheStore => {
-const ttl = config.get('cache.ttlMs', 30_000) as number;
-const prefix = config.get('cache.prefix', 'api') as string;
-const redisUrl = config.get('cache.redisUrl') as string | undefined;
-const maxEntries = config.get('cache.maxEntries', 500) as number;
+  imports: [ConfigModule.forRoot()],
+  controllers: [PostsController],
+  providers: [
+    {
+      provide: CACHE_STORE,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService<{ cache: any }>): CacheStore => {
+        const ttl = config.get('cache.ttlMs', 30_000) as number;
+        const prefix = config.get('cache.prefix', 'api') as string;
+        const redisUrl = config.get('cache.redisUrl') as string | undefined;
+        const maxEntries = config.get('cache.maxEntries', 500) as number;
 
         if (redisUrl) {
           const client = new Redis(redisUrl);
@@ -66,7 +66,7 @@ const maxEntries = config.get('cache.maxEntries', 500) as number;
         }),
     },
 
-],
+  ],
 })
 export class PostsModule {}`;
 
@@ -82,29 +82,29 @@ export const GRAPHQL_CACHE = Symbol('cache:graphql');
 @Resolver()
 @UseInterceptors(GRAPHQL_CACHE)
 export class ReportsResolver {
-@Query(() => [String])
-recentReports() {
-return this.service.list();
-}
+  @Query(() => [String])
+  recentReports() {
+    return this.service.list();
+  }
 }
 
 @Module({
-imports: [ConfigModule.forRoot()],
-providers: [
-ReportsResolver,
-{
-provide: GRAPHQL_CACHE,
-inject: [ConfigService],
-useFactory: (config: ConfigService<{ cache: any }>) => {
-const store = new InMemoryCacheStore({ ttl: config.get('cache.ttlMs', 15_000) as number });
-return new GraphqlCacheInterceptor({
-store,
-ttl: config.get('cache.ttlMs', 15_000) as number,
-key: (ctx) => buildCacheKey('reports', ctx.getResolverHandlerName(), ctx.getArgs()),
-});
-},
-},
-],
+  imports: [ConfigModule.forRoot()],
+  providers: [
+    ReportsResolver,
+    {
+      provide: GRAPHQL_CACHE,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService<{ cache: any }>) => {
+        const store = new InMemoryCacheStore({ ttl: config.get('cache.ttlMs', 15_000) as number });
+        return new GraphqlCacheInterceptor({
+          store,
+          ttl: config.get('cache.ttlMs', 15_000) as number,
+          key: (ctx) => buildCacheKey('reports', ctx.getResolverHandlerName(), ctx.getArgs()),
+        });
+      },
+    },
+  ],
 })
 export class ReportsModule {}`;
 
@@ -120,37 +120,37 @@ export const CACHE_INTERCEPTOR = Symbol('cache:interceptor');
 @Controller('/products')
 @UseInterceptors(CACHE_INTERCEPTOR)
 export class ProductsController {
-@Get('/')
-list() {
-return this.service.all();
-}
+  @Get('/')
+  list() {
+    return this.service.all();
+  }
 }
 
 @Module({
-imports: [ConfigModule.forRoot()],
-controllers: [ProductsController],
-providers: [
-{
-provide: CACHE_STORE,
-inject: [ConfigService],
-useFactory: (config: ConfigService<{ cache: any }>) => {
-const client = new Redis(config.get('cache.redisUrl', process.env.REDIS_URL!) as string);
-return new RedisCacheStore(client, {
-prefix: config.get('cache.prefix', 'api') as string,
-ttl: config.get('cache.ttlMs', 60_000) as number,
-});
-},
-},
-{
-provide: CACHE_INTERCEPTOR,
-inject: [CACHE_STORE, ConfigService],
-useFactory: (store, config: ConfigService<{ cache: any }>) =>
-new HttpCacheInterceptor({
-store,
-ttl: config.get('cache.ttlMs', 60_000) as number,
-}),
-},
-],
+  imports: [ConfigModule.forRoot()],
+  controllers: [ProductsController],
+  providers: [
+    {
+      provide: CACHE_STORE,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService<{ cache: any }>) => {
+        const client = new Redis(config.get('cache.redisUrl', process.env.REDIS_URL!) as string);
+        return new RedisCacheStore(client, {
+          prefix: config.get('cache.prefix', 'api') as string,
+          ttl: config.get('cache.ttlMs', 60_000) as number,
+        });
+      },
+    },
+    {
+      provide: CACHE_INTERCEPTOR,
+      inject: [CACHE_STORE, ConfigService],
+      useFactory: (store, config: ConfigService<{ cache: any }>) =>
+        new HttpCacheInterceptor({
+          store,
+          ttl: config.get('cache.ttlMs', 60_000) as number,
+        }),
+    },
+  ],
 })
 export class ProductsModule {}`;
 
@@ -165,9 +165,9 @@ export async function fetchProfile(id: string) {
     return cached;
   }
 
-const profile = await queryDatabase(id);
-await cache.set(key, profile, { ttl: 10_000 });
-return profile;
+  const profile = await queryDatabase(id);
+  await cache.set(key, profile, { ttl: 10_000 });
+  return profile;
 }
 
 export async function invalidateProfile(id: string) {

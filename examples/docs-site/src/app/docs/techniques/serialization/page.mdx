@@ -27,34 +27,34 @@ export const HTTP_SERIALIZER = Symbol('serializer:http');
 @UseInterceptors(HTTP_SERIALIZER)
 @SerializeOptions({ groups: ['public'] })
 export class UsersController {
-@Get('/')
-list() {
-return this.service.all(); // class instances are transformed to plain JSON
-}
+  @Get('/')
+  list() {
+    return this.service.all(); // class instances are transformed to plain JSON
+  }
 
-@Get('/admin')
-@SerializeOptions({ groups: ['admin'] })
-adminView() {
-return this.service.all(); // per-handler overrides
-}
+  @Get('/admin')
+  @SerializeOptions({ groups: ['admin'] })
+  adminView() {
+    return this.service.all(); // per-handler overrides
+  }
 }
 
 @Module({
-imports: [ConfigModule.forRoot()],
-controllers: [UsersController],
-providers: [
-{
-provide: HTTP_SERIALIZER,
-inject: [ConfigService],
-useFactory: (config: ConfigService<{ serialization: any }>) =>
-new HttpSerializationInterceptor({
-transformOptions: {
-groups: config.get('serialization.groups', ['public']) as string[],
-exposeUnsetFields: false,
-},
-}),
-},
-],
+  imports: [ConfigModule.forRoot()],
+  controllers: [UsersController],
+  providers: [
+    {
+      provide: HTTP_SERIALIZER,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService<{ serialization: any }>) =>
+        new HttpSerializationInterceptor({
+          transformOptions: {
+            groups: config.get('serialization.groups', ['public']) as string[],
+            exposeUnsetFields: false,
+          },
+        }),
+    },
+  ],
 })
 export class UsersModule {}`;
 
@@ -71,27 +71,27 @@ export const GQL_SERIALIZER = Symbol('serializer:graphql');
 @UseInterceptors(GQL_SERIALIZER)
 @SerializeOptions({ groups: ['public'] })
 export class ReportsResolver {
-@Query(() => [Report])
-reports() {
-return this.service.list(); // returns DTO instances
-}
+  @Query(() => [Report])
+  reports() {
+    return this.service.list(); // returns DTO instances
+  }
 }
 
 @Module({
-imports: [ConfigModule.forRoot()],
-providers: [
-ReportsResolver,
-{
-provide: GQL_SERIALIZER,
-inject: [ConfigService],
-useFactory: (config: ConfigService<{ serialization: any }>) =>
-new GraphqlSerializationInterceptor({
-transformOptions: {
-groups: config.get('serialization.groups', ['public']) as string[],
-},
-}),
-},
-],
+  imports: [ConfigModule.forRoot()],
+  providers: [
+    ReportsResolver,
+    {
+      provide: GQL_SERIALIZER,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService<{ serialization: any }>) =>
+        new GraphqlSerializationInterceptor({
+          transformOptions: {
+            groups: config.get('serialization.groups', ['public']) as string[],
+          },
+        }),
+    },
+  ],
 })
 export class ReportsModule {}`;
 
@@ -102,10 +102,10 @@ class UserView {
 id!: string;
 email!: string;
 passwordHash!: string;
-}
+  }
 
 export function toPublicJson(user: UserView) {
-  return serialize(user, { groups: ['public'] });
+    return serialize(user, { groups: ['public'] });
 }`;
 
 <article className="space-y-8">

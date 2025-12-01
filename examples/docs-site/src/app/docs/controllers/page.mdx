@@ -10,50 +10,50 @@ export const basicController = `import { Controller, Get } from '@nl-framework/h
 
 @Controller('users')
 export class UsersController {
-@Get()
-findAll(): string {
-return 'This action returns all users';
-}
+  @Get()
+  findAll(): string {
+    return 'This action returns all users';
+  }
 }`;
 
 export const postMethod = `import { Controller, Get, Post } from '@nl-framework/http';
 
 @Controller('users')
 export class UsersController {
-@Post()
-create(): string {
-return 'This action adds a new user';
-}
+  @Post()
+  create(): string {
+    return 'This action adds a new user';
+  }
 
-@Get()
-findAll(): string {
-return 'This action returns all users';
-}
+  @Get()
+  findAll(): string {
+    return 'This action returns all users';
+  }
 }`;
 
 export const allMethods = `import { Controller, Get, Post, Put, Delete, Patch } from '@nl-framework/http';
 
 @Controller('users')
 export class UsersController {
-@Post()
-create() {}
+  @Post()
+  create() {}
 
-@Get()
-findAll() {}
+  @Get()
+  findAll() {}
 
-@Get(':id')
-findOne(@Param('id') id: string) {
-return \`This action returns user #\${id}\`;
-}
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return \`This action returns user #\${id}\`;
+  }
 
-@Put(':id')
-update() {}
+  @Put(':id')
+  update() {}
 
-@Delete(':id')
-remove() {}
+  @Delete(':id')
+  remove() {}
 
-@Patch(':id')
-patch() {}
+  @Patch(':id')
+  patch() {}
 }`;
 
 export const routeParams = `@Get(':id')
@@ -64,14 +64,14 @@ findOne(@Param('id') id: string): string {
 export const requestBody = `import { Body, Post } from '@nl-framework/http';
 
 class CreateUserDto {
-name: string;
-email: string;
-age: number;
+  name: string;
+  email: string;
+  age: number;
 }
 
 @Post()
 create(@Body() createUserDto: CreateUserDto) {
-return 'This action adds a new user';
+  return 'This action adds a new user';
 }`;
 
 export const fullRequest = `import { Req } from '@nl-framework/http';
@@ -79,7 +79,7 @@ import { Request } from '@nl-framework/platform';
 
 @Get()
 findAll(@Req() request: Request) {
-return request.headers;
+  return request.headers;
 }`;
 
 export const asyncController = `@Get()
@@ -92,7 +92,7 @@ export const statusCode = `import { Post, HttpCode } from '@nl-framework/http';
 @Post()
 @HttpCode(204)
 create() {
-return 'This action adds a new user';
+  return 'This action adds a new user';
 }`;
 
 export const customHeaders = `import { Post, Header } from '@nl-framework/http';
@@ -100,7 +100,7 @@ export const customHeaders = `import { Post, Header } from '@nl-framework/http';
 @Post()
 @Header('Cache-Control', 'no-store')
 create() {
-return 'This action adds a new user';
+  return 'This action adds a new user';
 }`;
 
 export const redirect = `import { Get, Redirect } from '@nl-framework/http';

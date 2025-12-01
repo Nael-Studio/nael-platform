@@ -10,18 +10,18 @@ export const multiConnectionSnippet = `import { Module } from '@nl-framework/cor
 import { OrmModule, createMongoDriver } from '@nl-framework/orm';
 
 @Module({
-imports: [
-OrmModule.forRoot({
-connectionName: 'tenant-us',
-driver: createMongoDriver({ uri: process.env.MONGO_URI_US!, dbName: 'tenant_us' }),
-}),
-OrmModule.forRoot({
-connectionName: 'tenant-eu',
-driver: createMongoDriver({ uri: process.env.MONGO_URI_EU!, dbName: 'tenant_eu' }),
-}),
-OrmModule.forFeature({ connectionName: 'tenant-us', entities: [Invoice] }),
-OrmModule.forFeature({ connectionName: 'tenant-eu', entities: [Invoice] }),
-],
+  imports: [
+    OrmModule.forRoot({
+      connectionName: 'tenant-us',
+      driver: createMongoDriver({ uri: process.env.MONGO_URI_US!, dbName: 'tenant_us' }),
+    }),
+    OrmModule.forRoot({
+      connectionName: 'tenant-eu',
+      driver: createMongoDriver({ uri: process.env.MONGO_URI_EU!, dbName: 'tenant_eu' }),
+    }),
+    OrmModule.forFeature({ connectionName: 'tenant-us', entities: [Invoice] }),
+    OrmModule.forFeature({ connectionName: 'tenant-eu', entities: [Invoice] }),
+  ],
 })
 export class TenantOrmModule {}`;
 
@@ -29,26 +29,26 @@ export const moduleRefSnippet = `import { Inject, Injectable, ModuleRef, Scope }
 import { getRepositoryToken, type OrmRepository } from '@nl-framework/orm';
 
 interface TenantContext {
-connection: 'tenant-us' | 'tenant-eu';
-tenantId: string;
+  connection: 'tenant-us' | 'tenant-eu';
+  tenantId: string;
 }
 
 @Injectable({ scope: Scope.REQUEST })
 export class TenantInvoicesService {
-constructor(
-private readonly tenant: TenantContext,
-private readonly moduleRef: ModuleRef,
-) {}
+  constructor(
+    private readonly tenant: TenantContext,
+    private readonly moduleRef: ModuleRef,
+  ) {}
 
-async listInvoices() {
-const token = getRepositoryToken(Invoice, this.tenant.connection);
-const repository = (await this.moduleRef.resolve(token, { strict: false })) as OrmRepository<Invoice>;
-return repository.find({ tenantId: this.tenant.tenantId });
-}
+  async listInvoices() {
+    const token = getRepositoryToken(Invoice, this.tenant.connection);
+    const repository = (await this.moduleRef.resolve(token, { strict: false })) as OrmRepository<Invoice>;
+    return repository.find({ tenantId: this.tenant.tenantId });
+  }
 }`;
 
 export const configSnippet = `const connectionName = tenant.region === 'eu' ? 'tenant-eu' : 'tenant-us';
-return {
+    return {
   connectionName,
   driver: createMongoDriver({
     uri: secrets.getUriFor(tenant),

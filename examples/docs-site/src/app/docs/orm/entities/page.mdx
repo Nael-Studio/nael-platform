@@ -10,33 +10,33 @@ export const basicDocumentSnippet = `import { Document } from '@nl-framework/orm
 
 @Document()
 export class User {
-id!: string;
-email!: string;
-name!: string;
-createdAt!: Date;
-updatedAt!: Date;
-deletedAt?: Date | null;
+  id!: string;
+  email!: string;
+  name!: string;
+  createdAt!: Date;
+  updatedAt!: Date;
+  deletedAt?: Date | null;
 }`;
 
 export const optionsSnippet = `import { Document } from '@nl-framework/orm';
 
 @Document({ collection: 'tenants', timestamps: true, softDelete: false })
 export class Tenant {
-id!: string;
-slug!: string;
-plan!: 'free' | 'enterprise';
+  id!: string;
+  slug!: string;
+  plan!: 'free' | 'enterprise';
 }`;
 
 export const manualRegistrationSnippet = `import { Module } from '@nl-framework/core';
 import { OrmModule, createMongoDriver } from '@nl-framework/orm';
 
 @Module({
-imports: [
-OrmModule.forRoot({
-driver: createMongoDriver({ uri: process.env.MONGO_URI!, dbName: 'app-db' }),
-entities: [User, Tenant],
-}),
-],
+  imports: [
+    OrmModule.forRoot({
+      driver: createMongoDriver({ uri: process.env.MONGO_URI!, dbName: 'app-db' }),
+      entities: [User, Tenant],
+    }),
+  ],
 })
 export class AppModule {}`;
 

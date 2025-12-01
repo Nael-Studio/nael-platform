@@ -10,15 +10,15 @@ export const loaderSnippet = `import { ConfigModule } from '@nl-framework/config
 import { Module } from '@nl-framework/core';
 
 @Module({
-imports: [
-ConfigModule.forRoot({
-dir: 'config',
-path: 'env.yaml',
-overrides: {
-app: { host: '0.0.0.0', port: 4000 },
-},
-}),
-],
+  imports: [
+    ConfigModule.forRoot({
+      dir: 'config',
+      path: 'env.yaml',
+      overrides: {
+        app: { host: '0.0.0.0', port: 4000 },
+      },
+    }),
+  ],
 })
 export class AppModule {}`;
 
@@ -32,9 +32,9 @@ app:
 # config/production.yaml
 
 app:
-port: 8080
-features:
-cache: true`;
+  port: 8080
+  features:
+    cache: true`;
 
 export const featureSnippet = `import { Inject, Injectable, Module } from '@nl-framework/core';
 import { ConfigModule, getConfigFeatureToken } from '@nl-framework/config';
@@ -43,23 +43,23 @@ const databaseConfigToken = getConfigFeatureToken('database');
 
 @Injectable()
 class DatabaseClient {
-constructor(@Inject(databaseConfigToken) private readonly config: { url: string }) {}
+  constructor(@Inject(databaseConfigToken) private readonly config: { url: string }) {}
 
-connect() {
-return connectToDatabase(this.config.url);
-}
+  connect() {
+    return connectToDatabase(this.config.url);
+  }
 }
 
 @Module({
-imports: [
-ConfigModule.forFeature({
-path: 'database',
-transform: (value) => ({
-url: value.url ?? 'mongodb://localhost:27017/app',
-}),
-}),
-],
-providers: [DatabaseClient],
+  imports: [
+    ConfigModule.forFeature({
+      path: 'database',
+      transform: (value) => ({
+        url: value.url ?? 'mongodb://localhost:27017/app',
+      }),
+    }),
+  ],
+  providers: [DatabaseClient],
 })
 export class DatabaseModule {}`;
 
@@ -80,15 +80,15 @@ import { ConfigService } from '@nl-framework/config';
 
 @Injectable()
 export class AppService {
-constructor(private readonly config: ConfigService) {}
+  constructor(private readonly config: ConfigService) {}
 
-port() {
-return this.config.get<number>('app.port', 3000);
-}
+  port() {
+    return this.config.get<number>('app.port', 3000);
+  }
 
-featureEnabled(name: string) {
-return this.config.get<boolean>('app.features.' + name, false);
-}
+  featureEnabled(name: string) {
+    return this.config.get<boolean>('app.features.' + name, false);
+  }
 }`;
 
 <article className="space-y-8">

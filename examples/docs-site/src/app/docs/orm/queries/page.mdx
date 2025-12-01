@@ -94,7 +94,7 @@ this.collection = await this.connection.getCollection(Invoice);
 }`;
 
 export const bestPracticesSnippet = `// Request-scoped service keeping tenant context
-await this.moduleRef.resolve(getRepositoryToken(User, tenantConnection), { strict: false });
+    await this.moduleRef.resolve(getRepositoryToken(User, tenantConnection), { strict: false });
 
 // Prefer projection for large documents
 await this.users.find({ plan: 'enterprise' }, { projection: { email: 1, name: 1 } });
