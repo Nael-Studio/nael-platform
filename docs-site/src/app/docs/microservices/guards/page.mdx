@@ -75,7 +75,8 @@ export class TenantConsumer {
   <section className="space-y-4" id="apply">
     <h2 className="text-2xl font-semibold">Apply to consumers</h2>
     <div className="text-muted-foreground">
-      Decorate the consumer or method with <code>@UseGuards</code>. Guards run before pipes and handlers.
+      Decorate the consumer or method with <code>@UseGuards</code>. Guards run before pipes and handlers. Class-based
+      guards can be resolved from the module registry; pass instances for inline logic.
     </div>
     <CodeBlock code={consumer} title="secure.consumer.ts" />
   </section>
@@ -84,7 +85,8 @@ export class TenantConsumer {
     <h2 className="text-2xl font-semibold">Dispatching</h2>
     <div className="text-muted-foreground">
       The <code>MessageDispatcher</code> executes guards when dispatching messages. Wire your transport to call{" "}
-      <code>dispatcher.dispatch(pattern, data)</code>.
+      <code>dispatcher.dispatch(pattern, data)</code>. Guard class tokens are resolved from the module registry; inline
+      instances are used as-is.
     </div>
     <CodeBlock code={dispatcher} title="dispatcher wiring" />
   </section>

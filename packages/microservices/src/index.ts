@@ -26,3 +26,9 @@ export {
 export { MessageDispatcher } from './dispatcher/message-dispatcher';
 export { UseGuards, type CanActivate, type GuardToken } from './decorators/guards';
 export { BetterAuthMicroGuard, type BetterAuthMicroGuardOptions } from './guards/better-auth-guard';
+export {
+  UseInterceptors,
+  type MicroserviceInterceptor,
+  type MicroserviceExecutionContext,
+  type InterceptorToken,
+} from './decorators/interceptors';

@@ -1,4 +1,4 @@
-import { Injectable, Module } from '@nl-framework/core';
+import { Injectable, Module, type ClassType as CoreClassType } from '@nl-framework/core';
 import type { ClassType } from '@nl-framework/core';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
 import { MicroserviceClient } from './client/microservice-client';
@@ -10,6 +10,7 @@ import { MessageDispatcher } from './dispatcher/message-dispatcher';
 export interface MicroservicesModuleOptions {
   transport?: Transport;
   controllers?: ClassType[];
+  providers?: CoreClassType[];
 }
 
 const MICROSERVICE_CLIENT = Symbol.for('nl:microservices:client');
@@ -20,6 +21,7 @@ export class MicroservicesModule {
   private logger: Logger;
   private dispatcher?: MessageDispatcher;
   private controllerInstances: any[] = [];
+  private instanceRegistry = new Map<CoreClassType, any>();
 
   constructor(
     private readonly loggerFactory: LoggerFactory,
@@ -31,7 +33,7 @@ export class MicroservicesModule {
   async onModuleInit(): Promise<void> {
     const transport = this.options.transport ?? new DaprTransport({ logger: this.logger });
     this.client = new MicroserviceClient(transport);
-    this.dispatcher = new MessageDispatcher();
+    this.dispatcher = new MessageDispatcher((token) => this.instanceRegistry.get(token as CoreClassType));
 
     await this.client.connect();
     this.logger.info('Microservices module initialized');
@@ -66,6 +68,7 @@ export class MicroservicesModule {
       try {
         const instance = new Controller();
         this.controllerInstances.push(instance);
+        this.instanceRegistry.set(Controller as unknown as CoreClassType, instance);
       } catch (err) {
         this.logger.error(`Failed to instantiate controller ${Controller.name}`, { err });
       }
@@ -117,6 +120,7 @@ export function createMicroservicesModule(options: MicroservicesModuleOptions = 
       MessageDispatcher,
       DynamicMicroservicesModuleImpl,
       ...(options.controllers ?? []),
+      ...(options.providers ?? []),
     ],
     exports: [MICROSERVICE_CLIENT, MicroserviceClient, MessageDispatcher, DynamicMicroservicesModuleImpl],
   })

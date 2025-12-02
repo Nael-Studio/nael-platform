@@ -3,6 +3,12 @@ import type { ClassType } from '@nl-framework/core';
 import type { MessagePattern } from '../interfaces/transport';
 import { getMessagePatternMetadata } from '../decorators/patterns';
 import { getGuards, type GuardToken, type CanActivate } from '../decorators/guards';
+import {
+  getInterceptors,
+  type InterceptorToken,
+  type MicroserviceInterceptor,
+  type CallHandler,
+} from '../decorators/interceptors';
 
 type HandlerEntry = {
   pattern: MessagePattern;
@@ -12,10 +18,15 @@ type HandlerEntry = {
   filters: Array<ExceptionFilter | ClassType<ExceptionFilter>>;
   pipes: Array<PipeTransform | ClassType<PipeTransform>>;
   guards: GuardToken[];
+  interceptors: InterceptorToken[];
 };
+
+type TokenResolver = <T>(token: ClassType<T>) => T | undefined;
 
 export class MessageDispatcher {
   private handlers: HandlerEntry[] = [];
+
+  constructor(private readonly resolveToken?: TokenResolver) {}
 
   registerController(controller: any) {
     const proto = Object.getPrototypeOf(controller);
@@ -26,6 +37,7 @@ export class MessageDispatcher {
       const filters = this.collectFilters(proto, property);
       const pipes = this.collectPipes(proto, property);
       const guards = this.collectGuards(proto, property);
+      const interceptors = this.collectInterceptors(proto, property);
       this.handlers.push({
         pattern: metadata.pattern,
         isEvent: metadata.isEvent,
@@ -34,6 +46,7 @@ export class MessageDispatcher {
         filters,
         pipes,
         guards,
+        interceptors,
       });
     }
   }
@@ -47,7 +60,8 @@ export class MessageDispatcher {
     try {
       await this.runGuards(handler.guards, pattern, data);
       const transformed = await this.applyPipes(handler.pipes, data);
-      const result = await handler.controller[handler.methodName](transformed);
+      const executeHandler = async () => handler.controller[handler.methodName](transformed);
+      const result = await this.applyInterceptors(handler.interceptors, { pattern, data }, executeHandler);
       return handler.isEvent ? undefined : result;
     } catch (err) {
       const caught = await this.handleError(handler.filters, err);
@@ -104,18 +118,52 @@ export class MessageDispatcher {
     return [...classGuards, ...methodGuards];
   }
 
+  private collectInterceptors(proto: any, property: string): InterceptorToken[] {
+    const methodInterceptors = getInterceptors(proto, property) ?? [];
+    const classInterceptors = getInterceptors(proto) ?? [];
+    return [...classInterceptors, ...methodInterceptors];
+  }
+
   private instantiate<T>(ref: T | ClassType<T>): T {
     if (typeof ref === 'function') {
+      const resolved = this.resolveToken?.(ref as ClassType<T>);
+      if (resolved) return resolved;
       return new (ref as ClassType<T>)();
     }
     return ref;
   }
 
   private instantiateGuard(ref: GuardToken): CanActivate {
-    if (typeof ref === 'function' && !(ref as any).canActivate) {
+    if (typeof ref === 'function') {
+      const resolved = this.resolveToken?.(ref as ClassType<CanActivate>);
+      if (resolved) return resolved;
       return new (ref as ClassType<CanActivate>)();
     }
     return ref as CanActivate;
+  }
+
+  private instantiateInterceptor(ref: InterceptorToken): MicroserviceInterceptor {
+    if (typeof ref === 'function') {
+      const resolved = this.resolveToken?.(ref as ClassType<MicroserviceInterceptor>);
+      if (resolved) return resolved;
+      return new (ref as ClassType<MicroserviceInterceptor>)();
+    }
+    return ref as MicroserviceInterceptor;
+  }
+
+  private async applyInterceptors(
+    tokens: InterceptorToken[],
+    context: { pattern: MessagePattern; data: unknown },
+    handler: () => Promise<unknown>,
+  ) {
+    const chain = tokens
+      .map((token) => this.instantiateInterceptor(token))
+      .reverse()
+      .reduce(
+        (next, interceptor) => () => interceptor.intercept(context, { handle: next } as CallHandler),
+        handler,
+      );
+    return chain();
   }
 
   private matchPattern(left: MessagePattern, right: MessagePattern) {

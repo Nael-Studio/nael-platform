@@ -1,0 +1,84 @@
+---
+title: 'Interceptors · Microservices'
+description: 'Wrap microservice handlers with interceptors for logging, mapping, and cross-cutting concerns.'
+---
+
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const interceptorDef = `import type { MicroserviceInterceptor, MicroserviceExecutionContext, CallHandler } from '@nl-framework/microservices';
+
+export class LoggingInterceptor implements MicroserviceInterceptor {
+  async intercept(context: MicroserviceExecutionContext, next: CallHandler) {
+    const start = performance.now();
+    const result = await next.handle();
+    const ms = (performance.now() - start).toFixed(1);
+    console.log('[micro]', context.pattern, ms + 'ms');
+    return result;
+  }
+}`;
+
+export const consumer = `import { Injectable, UseInterceptors } from '@nl-framework/core';
+import { MessagePattern, UseInterceptors as MicroUseInterceptors } from '@nl-framework/microservices';
+import { LoggingInterceptor } from './logging.interceptor';
+
+@Injectable()
+@MicroUseInterceptors(new LoggingInterceptor())
+export class ReportsConsumer {
+  @MessagePattern('reports.generate')
+  async generate(payload: { id: string }) {
+    return { ok: true, id: payload.id };
+  }
+}`;
+
+export const dispatcher = `import { MessageDispatcher } from '@nl-framework/microservices';
+// When your transport delivers a message:
+const dispatcher = await app.get(MessageDispatcher);
+await dispatcher?.dispatch('reports.generate', { id: 'r-1' }); // interceptor runs before handler`;
+
+<article className="space-y-8">
+  <div className="space-y-3">
+    <Badge className="bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-50">Microservices</Badge>
+    <h1 className="text-4xl font-semibold tracking-tight">Interceptors</h1>
+    <div className="text-lg text-muted-foreground max-w-3xl">
+      Interceptors wrap microservice handlers so you can log, map responses, or add cross-cutting behavior.
+    </div>
+  </div>
+
+  <section className="space-y-4" id="define">
+    <h2 className="text-2xl font-semibold">Define an interceptor</h2>
+    <div className="text-muted-foreground">
+      Implement <code>MicroserviceInterceptor</code> and call <code>next.handle()</code> to continue. You can mutate data
+      or the result.
+    </div>
+    <CodeBlock code={interceptorDef} title="logging.interceptor.ts" />
+  </section>
+
+  <section className="space-y-4" id="apply">
+    <h2 className="text-2xl font-semibold">Apply to consumers</h2>
+    <div className="text-muted-foreground">
+      Decorate the consumer or method with <code>@UseInterceptors</code> (microservices variant). Interceptors run after
+      guards and before the handler.
+    </div>
+    <CodeBlock code={consumer} title="reports.consumer.ts" />
+  </section>
+
+  <section className="space-y-4" id="dispatch">
+    <h2 className="text-2xl font-semibold">Dispatching</h2>
+    <div className="text-muted-foreground">
+      The <code>MessageDispatcher</code> executes interceptors when you dispatch messages. Wire your transport to call{" "}
+      <code>dispatcher.dispatch(pattern, data)</code>. Class-based interceptors resolve from the module registry; inline
+      instances run as provided.
+    </div>
+    <CodeBlock code={dispatcher} title="dispatcher wiring" />
+  </section>
+
+  <section className="space-y-4" id="tips">
+    <h2 className="text-2xl font-semibold">Tips</h2>
+    <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+      <li>Interceptors wrap the handler; order is last-registered first-called.</li>
+      <li>Use DI: class-based interceptors resolve from the module registry; inline instances work too.</li>
+      <li>Combine with guards/pipes/filters for a full pipeline.</li>
+    </ul>
+  </section>
+</article>
