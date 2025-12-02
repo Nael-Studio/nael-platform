@@ -1,6 +1,6 @@
 # @nl-framework/auth
 
-Authentication toolkit built around Better Auth with first-class HTTP routes, guards, middleware, and GraphQL helpers for session-aware Nael applications.
+Authentication toolkit built around Better Auth with first-class HTTP routes, guards, middleware, and GraphQL helpers for session-aware NL Framework applications.
 
 ## Installation
 

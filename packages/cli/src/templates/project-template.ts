@@ -16,7 +16,7 @@ const createPackageJson = (ctx: ProjectTemplateContext): string =>
     {
       name: ctx.packageName,
       version: '0.0.1',
-      description: 'A Bun-native service generated with the Nael Framework CLI.',
+      description: 'A Bun-native service generated with the NL Framework Framework CLI.',
       type: 'module',
       packageManager: `bun@${ctx.bunVersion}`,
       scripts: {
@@ -74,7 +74,7 @@ dist
 
 const readme = (ctx: ProjectTemplateContext) => `# ${ctx.projectName}
 
-This project was generated with the Nael Framework CLI and is ready to run on Bun.
+This project was generated with the NL Framework Framework CLI and is ready to run on Bun.
 
 ## Quick start
 
@@ -99,7 +99,7 @@ Then visit <http://localhost:3000> to verify the service is healthy.
 - Add controllers, services, and providers under \`src/\`.
 - Customize scheduled jobs in \`src/app.scheduler.ts\` to match your domain needs.
 - Configure additional environment settings in \`config/default.yaml\`.
-- Consult the Nael documentation via the MCP server for deeper guidance.
+- Consult the NL Framework documentation via the MCP server for deeper guidance.
 `;
 
 const appConfig = `export interface AppConfig {
@@ -148,13 +148,13 @@ export class AppModule {}
 `;
 
 const mainTs = `import 'reflect-metadata';
-import { NaelFactory } from '@nl-framework/platform';
+import { NL FrameworkFactory } from '@nl-framework/platform';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
 import { AppModule } from './app.module';
 import type { AppConfig } from './app.config';
 
 const bootstrap = async () => {
-  const app = await NaelFactory.create(AppModule);
+  const app = await NL FrameworkFactory.create(AppModule);
 
   const loggerFactory = await app.get<LoggerFactory>(LoggerFactory);
   const appLogger = loggerFactory.create({ context: 'Bootstrap' });
@@ -165,7 +165,7 @@ const bootstrap = async () => {
 
   await app.listen({ http: port });
   const displayHost = host === '0.0.0.0' ? 'localhost' : host;
-  appLogger.info('Nael application ready', {
+  appLogger.info('NL Framework application ready', {
     url: \`http://\${displayHost}:\${port}\`,
   });
 

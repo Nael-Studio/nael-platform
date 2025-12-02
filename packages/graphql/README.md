@@ -1,6 +1,6 @@
 # @nl-framework/graphql
 
-Code-first GraphQL layer for the Nael Framework with resolver decorators, schema generation, and Apollo Federation support.
+Code-first GraphQL layer for the NL Framework Framework with resolver decorators, schema generation, and Apollo Federation support.
 
 ## Installation
 
@@ -13,14 +13,14 @@ bun add @nl-framework/graphql graphql
 - **Resolver decorators** – annotate queries, mutations, subscriptions, and field resolvers with expressive decorators.
 - **Schema tooling** – generate SDL from TypeScript metadata or stitch existing schemas with federation directives.
 - **Input sanitization** – arguments decorated with class-validator rules are transformed via `class-transformer` before resolvers execute, rejecting invalid payloads with `BAD_USER_INPUT` errors.
-- **Module integration** – register resolvers alongside providers using standard Nael modules.
+- **Module integration** – register resolvers alongside providers using standard NL Framework modules.
 
 ## Quick start
 
 ```ts
 import { Module } from '@nl-framework/core';
 import { Resolver, Query, Mutation, Args, InputType, Field } from '@nl-framework/graphql';
-import { NaelFactory } from '@nl-framework/platform';
+import { NL FrameworkFactory } from '@nl-framework/platform';
 import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
 
 @InputType()
@@ -59,7 +59,7 @@ class UsersResolver {
 })
 class GraphqlModule {}
 
-const app = await NaelFactory.create(GraphqlModule);
+const app = await NL FrameworkFactory.create(GraphqlModule);
 const { graphql } = await app.listen({ http: 4000 });
 console.log('GraphQL ready at', graphql?.url ?? 'http://localhost:4000/graphql');
 ```

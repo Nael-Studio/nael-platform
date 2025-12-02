@@ -1,7 +1,7 @@
 {
   "name": "@nl-framework/storage",
   "version": "0.0.1",
-  "description": "Pluggable storage adapters for Nael apps (S3 and Azure Blob).",
+  "description": "Pluggable storage adapters for NL Framework apps (S3 and Azure Blob).",
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",

@@ -1,6 +1,6 @@
 ---
-title: 'Exception Filters · Nael Platform'
-description: 'Learn how to use exception filters for centralized error handling and custom error responses in Nael applications.'
+title: 'Exception Filters · NL Framework'
+description: 'Learn how to use exception filters for centralized error handling and custom error responses in NL Framework applications.'
 ---
 
 import Link from 'next/link';
@@ -235,11 +235,11 @@ export class LoggingExceptionFilter implements ExceptionFilter {
 }`;
 
 export const multipleFilters = `import { registerExceptionFilters } from '@nl-framework/http';
-import { NaelFactory } from '@nl-framework/platform';
+import { NL FrameworkFactory } from '@nl-framework/platform';
 import { LoggerFactory } from '@nl-framework/logger';
 
 const bootstrap = async () => {
-  const app = await NaelFactory.create(AppModule);
+  const app = await NL FrameworkFactory.create(AppModule);
   const loggerFactory = await app.get(LoggerFactory);
 
   // Register filters in order

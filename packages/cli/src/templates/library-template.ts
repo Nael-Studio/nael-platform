@@ -14,7 +14,7 @@ const createPackageJson = (ctx: LibraryTemplateContext): string =>
     {
       name: ctx.packageName,
       version: '0.0.1',
-      description: 'Shareable library generated with the Nael Framework CLI.',
+      description: 'Shareable library generated with the NL Framework Framework CLI.',
       type: 'module',
       packageManager: `bun@${ctx.bunVersion}`,
       exports: {
@@ -73,7 +73,7 @@ const modulesIndex = (ctx: LibraryTemplateContext): string => `export * from './
 
 const readme = (ctx: LibraryTemplateContext) => `# ${ctx.libraryName}
 
-Generated with the Nael Framework CLI. This library exports feature modules that can be consumed by your Nael services or other libraries.
+Generated with the NL Framework Framework CLI. This library exports feature modules that can be consumed by your NL Framework services or other libraries.
 
 ## Build
 

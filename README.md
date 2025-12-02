@@ -1,6 +1,6 @@
-# Nael Platform
+# NL Framework
 
-Nael Platform is a [NestJS](https://nestjs.com/)-inspired application framework built on top of [Bun](https://bun.sh). It exists because we love Nest's developer ergonomics but grew frustrated with how heavy the experience can feel in modern tooling stacks: long boot times, CommonJS-centric builds that complicate native ESM adoption, and slow feedback loops when pairing with newer libraries that expect pure ESM runtimes. By embracing Bun end-to-end—TypeScript transpilation, test running, package management, and production serving—we get dramatically faster startup, tighter iteration loops, and first-class ESM compatibility while keeping the modular architecture, decorators, and structured tooling that make Nest approachable. The project is actively under development and the API surface is expected to evolve.
+NL Framework is a [NestJS](https://nestjs.com/)-inspired application framework built on top of [Bun](https://bun.sh). It exists because we love Nest's developer ergonomics but grew frustrated with how heavy the experience can feel in modern tooling stacks: long boot times, CommonJS-centric builds that complicate native ESM adoption, and slow feedback loops when pairing with newer libraries that expect pure ESM runtimes. By embracing Bun end-to-end—TypeScript transpilation, test running, package management, and production serving—we get dramatically faster startup, tighter iteration loops, and first-class ESM compatibility while keeping the modular architecture, decorators, and structured tooling that make Nest approachable. The project is actively under development and the API surface is expected to evolve.
 
 ## Table of Contents
 
@@ -44,7 +44,7 @@ Explore the `examples/` folder for runnable samples that demonstrate the current
 - `examples/auth-multi-tenant-graphql` – Better Auth multi-tenant GraphQL example using the multi-tenant guard and shared HTTP auth routes
 - `examples/basic-graphql` – standalone GraphQL server with resolver discovery
 - `examples/federated-graphql` – subgraph service suitable for Apollo Federation
-- `examples/federation-gateway` – single-port HTTP + GraphQL gateway using NaelFactory
+- `examples/federation-gateway` – single-port HTTP + GraphQL gateway using NL FrameworkFactory
 - `examples/mongo-orm` – REST API backed by the Mongo ORM with seeding and soft deletes
 - `examples/scheduler` – background job scheduler demo showcasing cron, interval, timeout, and dynamic jobs powered by Bun workers
 - **`examples/microservices` – event-driven microservice with Dapr pub/sub, message pattern handlers, and deployment guides**
@@ -58,14 +58,14 @@ The roadmap tracks both the pieces that already landed and the ones we still pla
 - [x] Modular application core with dependency injection and scoped contexts
 - [x] HTTP module with decorator-driven routing, middleware, and Bun-native server
 - [x] GraphQL module with schema-first resolver discovery and federation hooks
-- [x] NaelFactory-powered Apollo Federation gateway running alongside HTTP routes
+- [x] NL FrameworkFactory-powered Apollo Federation gateway running alongside HTTP routes
 - [x] Structured logger with pluggable transports (console provided)
 - [x] Config module with file-based loaders, async options, and feature slicing helpers
 - [x] MongoDB ORM module with repositories, timestamps, soft delete, and seeding support
 - [x] Better Auth integration across HTTP and GraphQL, including session-aware proxy resolvers for the full Better Auth API
 - [x] **Microservices module with NestJS-inspired message patterns (@MessagePattern, @EventPattern), Dapr transport integration, and MicroserviceClient for pub/sub messaging**
 - [x] **Scheduler module delivering Bun Worker-backed `@Cron`, `@Interval`, and `@Timeout` decorators with run-time registry APIs**
-- [x] Bun-native CLI for bootstrapping new services (`nl new <project-name>`), feature modules (`nl g module <module-name>`), controllers (`nl g controller <controller-name> --module <module-name>`), services (`nl g service <service-name> --module <module-name>`), resolvers (`nl g resolver <resolver-name> --module <module-name>`), models (`nl g model <model-name> --module <module-name>`), and shared libraries (`nl g lib <lib-name>`) with ready-to-run Nael scaffolding
+- [x] Bun-native CLI for bootstrapping new services (`nl new <project-name>`), feature modules (`nl g module <module-name>`), controllers (`nl g controller <controller-name> --module <module-name>`), services (`nl g service <service-name> --module <module-name>`), resolvers (`nl g resolver <resolver-name> --module <module-name>`), models (`nl g model <model-name> --module <module-name>`), and shared libraries (`nl g lib <lib-name>`) with ready-to-run NL Framework scaffolding
 - [x] Nest-style interceptor pipeline with `@UseInterceptors()`, global `registerHttpInterceptor()`, and request/response wrapping
 
 ### Planned
@@ -86,7 +86,7 @@ The roadmap tracks both the pieces that already landed and the ones we still pla
 
 ## Module Documentation
 
-Nael Platform is built around a modular architecture where each package provides focused functionality while integrating seamlessly through dependency injection. Below is comprehensive documentation for each module.
+NL Framework is built around a modular architecture where each package provides focused functionality while integrating seamlessly through dependency injection. Below is comprehensive documentation for each module.
 
 ### Core Module (`@nl-framework/core`)
 
@@ -274,7 +274,7 @@ Unified factory for running HTTP and GraphQL servers together on a single port, 
 
 **Key Features:**
 
-- **NaelFactory**: Single entry point for creating integrated applications
+- **NL FrameworkFactory**: Single entry point for creating integrated applications
 - **Shared Context**: HTTP and GraphQL share the same DI container
 - **Federation Gateway**: Built-in Apollo Gateway for subgraph aggregation
 - **Flexible Deployment**: Run as monolith or separate services
@@ -283,7 +283,7 @@ Unified factory for running HTTP and GraphQL servers together on a single port, 
 **Example:**
 
 ```typescript
-import { NaelFactory } from '@nl-framework/platform';
+import { NL FrameworkFactory } from '@nl-framework/platform';
 
 @Module({
   imports: [HttpModule.forRoot(), GraphqlModule.forRoot({ schemaPath: './schema.graphql' })],
@@ -293,7 +293,7 @@ import { NaelFactory } from '@nl-framework/platform';
 export class AppModule {}
 
 // Create unified application
-const factory = await NaelFactory.create(AppModule);
+const factory = await NL FrameworkFactory.create(AppModule);
 
 // Access both HTTP and GraphQL applications
 const httpApp = factory.getHttpApplication();
@@ -306,9 +306,9 @@ await httpApp.start({ port: 3000 });
 **Federation Gateway:**
 
 ```typescript
-import { NaelFactory } from '@nl-framework/platform';
+import { NL FrameworkFactory } from '@nl-framework/platform';
 
-const factory = await NaelFactory.createGateway(AppModule, {
+const factory = await NL FrameworkFactory.createGateway(AppModule, {
   gateway: {
     supergraphSdl: './supergraph.graphql',
     // or serviceList for dynamic composition
@@ -685,7 +685,7 @@ registerBetterAuthMultiTenantHttpRoutes(authService, httpOptions, {
 
 ### Scheduler Module (`@nl-framework/scheduler`)
 
-Background job scheduling with Bun Worker-powered timers, inspired by NestJS Schedule but tuned for Nael's DI container and ESM-first runtime.
+Background job scheduling with Bun Worker-powered timers, inspired by NestJS Schedule but tuned for NL Framework's DI container and ESM-first runtime.
 
 **Key Features:**
 
@@ -739,7 +739,7 @@ For test environments, provide a custom worker factory via the `SCHEDULER_WORKER
 
 ## Microservices Architecture
 
-Nael Platform includes a comprehensive microservices module (`@nl-framework/microservices`) that brings NestJS-style message patterns to Bun with first-class Dapr integration. The architecture supports event-driven communication patterns while maintaining the same decorator-based developer experience as the HTTP and GraphQL modules.
+NL Framework includes a comprehensive microservices module (`@nl-framework/microservices`) that brings NestJS-style message patterns to Bun with first-class Dapr integration. The architecture supports event-driven communication patterns while maintaining the same decorator-based developer experience as the HTTP and GraphQL modules.
 
 ### Key Features
 
@@ -824,7 +824,7 @@ bun install
 bun run src/main.ts
 ```
 
-This generates a Bun-native project with `NaelFactory`, logging, configuration, and starter HTTP endpoints already wired up.
+This generates a Bun-native project with `NL FrameworkFactory`, logging, configuration, and starter HTTP endpoints already wired up.
 
 While the API is still in flux, you can also experiment locally by cloning the repository and running the examples:
 
@@ -874,7 +874,7 @@ Quick reference for all framework packages:
 
 ## Architecture Principles
 
-Nael Platform follows these core architectural principles:
+NL Framework follows these core architectural principles:
 
 1. **Modularity First**: Every feature is a self-contained module that can be imported independently
 2. **Decorator-Driven**: Familiar NestJS-style decorators for routing, DI, and metadata
@@ -930,4 +930,4 @@ Add the secret to the repository (or organization) settings before pushing tags;
 
 ## Contributing
 
-Because Nael Platform is in active development, we recommend opening a discussion or issue before embarking on larger contributions. Feedback on architecture, ergonomics, and missing features is especially welcome.
+Because NL Framework is in active development, we recommend opening a discussion or issue before embarking on larger contributions. Feedback on architecture, ergonomics, and missing features is especially welcome.

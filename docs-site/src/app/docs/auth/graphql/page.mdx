@@ -23,16 +23,16 @@ export class ProfileResolver {
   }
 }`;
 
-export const contextNote = `// When bootstrapping Nael GraphQL:
+export const contextNote = `// When bootstrapping NL Framework GraphQL:
 // Ensure your GraphQL adapter injects request/response into the context
 // so BetterAuthGuard can read cookies and write headers when needed.
 `;
 
-export const graphqlBootstrap = `import { NaelFactory } from '@nl-framework/platform';
+export const graphqlBootstrap = `import { NL FrameworkFactory } from '@nl-framework/platform';
 import { AppModule } from './app.module';
 import { BetterAuthSessionStore } from '@nl-framework/auth';
 
-const app = await NaelFactory.create(AppModule);
+const app = await NL FrameworkFactory.create(AppModule);
 const gql = app.getGraphQLApplication();
 
 // Share the same session store instance

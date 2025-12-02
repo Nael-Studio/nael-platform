@@ -1,6 +1,6 @@
 ---
 title: 'Compression · Techniques'
-description: 'Add response compression with HTTP middleware in Nael applications using Bun'
+description: 'Add response compression with HTTP middleware in NL Framework applications using Bun'
 ---
 
 import Link from 'next/link';
@@ -36,9 +36,9 @@ export const compressionMiddleware: MiddlewareHandler = async (ctx, next) => {
   });
 };`;
 
-export const applyMiddleware = `import { NaelFactory } from '@nl-framework/platform';
+export const applyMiddleware = `import { NL FrameworkFactory } from '@nl-framework/platform';
 
-const app = await NaelFactory.create(AppModule);
+const app = await NL FrameworkFactory.create(AppModule);
 const http = app.getHttpApplication();
 
 if (http) {
@@ -57,7 +57,7 @@ export const streamExample = `// For streams, pre-compress assets or use Bun.gzi
         </Badge>
         <h1 className="text-4xl font-semibold tracking-tight">Compression</h1>
         <div className="text-lg text-muted-foreground">
-          Use HTTP middleware to gzip JSON responses when clients advertise support. Nael does not bundle a compressor by
+          Use HTTP middleware to gzip JSON responses when clients advertise support. NL Framework does not bundle a compressor by
           default; Bun&apos;s `gzipSync` makes it straightforward to add.
         </div>
       </div>

@@ -1,8 +1,8 @@
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { createNaelMcpServer } from './server';
+import { createNL FrameworkMcpServer } from './server';
 
 async function main(): Promise<void> {
-  const server = createNaelMcpServer();
+  const server = createNL FrameworkMcpServer();
   const transport = new StdioServerTransport();
 
   transport.onerror = (error: Error) => {

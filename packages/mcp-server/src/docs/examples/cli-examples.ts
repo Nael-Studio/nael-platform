@@ -4,13 +4,13 @@ export const cliExamples: ExampleCatalogEntry[] = [
   {
     id: 'cli-service-bootstrap',
     category: 'cli',
-    title: 'Bootstrap a new Nael service',
+    title: 'Bootstrap a new NL Framework service',
     description: 'Use the CLI to generate a service, install dependencies, and start the development server.',
     code: `nl new billing-service --install
 cd billing-service
 bun run src/main.ts`,
     explanation:
-      'The `nl new` command creates a production-ready Bun project with Nael modules preconfigured. Pass `--install` to automatically install dependencies before booting.',
+      'The `nl new` command creates a production-ready Bun project with NL Framework modules preconfigured. Pass `--install` to automatically install dependencies before booting.',
     tags: ['cli', 'bootstrap'],
     relatedPackages: ['@nl-framework/cli', '@nl-framework/platform'],
   },

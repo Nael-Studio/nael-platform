@@ -1,6 +1,6 @@
 ---
 title: 'BetterAuth overview · Auth'
-description: 'Install BetterAuth for Nael, proxy hosted routes, and share session context across transports.'
+description: 'Install BetterAuth for NL Framework, proxy hosted routes, and share session context across transports.'
 ---
 
 import Link from 'next/link';
@@ -13,9 +13,9 @@ export const installBetterAuth = `bun add @nl-framework/auth better-auth @better
 <article className="space-y-8">
   <div className="space-y-3">
     <Badge className="bg-purple-100 text-purple-900 dark:bg-purple-900/30 dark:text-purple-50">Auth</Badge>
-    <h1 className="text-4xl font-semibold tracking-tight">BetterAuth in Nael</h1>
+    <h1 className="text-4xl font-semibold tracking-tight">BetterAuth in NL Framework</h1>
     <div className="text-lg text-muted-foreground max-w-3xl">
-      Nael treats BetterAuth as a first-class identity provider. Proxy the hosted auth router, reuse the same session
+      NL Framework treats BetterAuth as a first-class identity provider. Proxy the hosted auth router, reuse the same session
       cookies for REST and GraphQL, and hydrate tenant-specific secrets when you run multi-tenant deployments.
     </div>
   </div>
@@ -23,7 +23,7 @@ export const installBetterAuth = `bun add @nl-framework/auth better-auth @better
   <section className="space-y-4" id="install">
     <h2 className="text-2xl font-semibold">Install packages</h2>
     <div className="text-muted-foreground">
-      Add the Nael auth module plus the BetterAuth SDK. Everything runs on Bun&apos;s native fetch implementation.
+      Add the NL Framework auth module plus the BetterAuth SDK. Everything runs on Bun&apos;s native fetch implementation.
     </div>
     <CodeBlock code={installBetterAuth} title="Install" />
   </section>
@@ -31,7 +31,7 @@ export const installBetterAuth = `bun add @nl-framework/auth better-auth @better
   <section className="space-y-4" id="exports">
     <h2 className="text-2xl font-semibold">Exports you get</h2>
     <div className="text-muted-foreground">
-      The Nael auth package wraps BetterAuth and exposes a small set of building blocks for both HTTP and GraphQL.
+      The NL Framework auth package wraps BetterAuth and exposes a small set of building blocks for both HTTP and GraphQL.
       Keep these symbols shared across transports to avoid duplicate lookups.
     </div>
     <div className="grid gap-4 md:grid-cols-2">

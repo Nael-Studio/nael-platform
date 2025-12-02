@@ -23,7 +23,7 @@ const inputSchema = z.object({
 
 export const searchApiTool: McpTool<typeof inputSchema> = {
   name: 'search-api',
-  description: 'Search for decorators, classes, methods, or interfaces in Nael Framework with usage examples.',
+  description: 'Search for decorators, classes, methods, or interfaces in NL Framework Framework with usage examples.',
   inputSchema,
   async handler(args) {
     const query = args.query.trim();

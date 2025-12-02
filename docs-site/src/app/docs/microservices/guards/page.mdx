@@ -1,0 +1,103 @@
+---
+title: 'Guards · Microservices'
+description: 'Protect microservice handlers with guards and @UseGuards.'
+---
+
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const guardDef = `import { CanActivate } from '@nl-framework/microservices';
+
+export class AuthGuard implements CanActivate {
+  async canActivate(context: { pattern: string | Record<string, unknown>; data: unknown }) {
+    // add your auth logic here; throw or return false to block
+    const token = (context.data as any)?.token;
+    return Boolean(token);
+  }
+}`;
+
+export const consumer = `import { Injectable } from '@nl-framework/core';
+import { MessagePattern, UseGuards } from '@nl-framework/microservices';
+import { AuthGuard } from './auth.guard';
+
+@Injectable()
+@UseGuards(new AuthGuard())
+export class SecureConsumer {
+  @MessagePattern('secure.echo')
+  echo(payload: { token?: string; message: string }) {
+    return { message: payload.message };
+  }
+}`;
+
+export const dispatcher = `import { MessageDispatcher } from '@nl-framework/microservices';
+
+// When wiring your transport:
+const dispatcher = await app.get(MessageDispatcher);
+await dispatcher?.dispatch('secure.echo', { token: 'abc', message: 'hi' }); // allowed
+await dispatcher?.dispatch('secure.echo', { message: 'hi' }); // blocked (throws)`;
+
+export const betterAuthGuard = `import { BetterAuthMicroGuard, UseGuards } from '@nl-framework/microservices';
+import { Injectable } from '@nl-framework/core';
+import { MessagePattern } from '@nl-framework/microservices';
+
+const betterAuth = new BetterAuthMicroGuard({
+  upstreamUrl: 'https://auth.nael.dev',
+  tokenField: 'token', // expects payload.token
+});
+
+@Injectable()
+@UseGuards(betterAuth)
+export class TenantConsumer {
+  @MessagePattern('tenant.events.created')
+  handle(payload: { token?: string; tenantId: string }) {
+    return { ok: true, tenant: payload.tenantId };
+  }
+}`;
+
+<article className="space-y-8">
+  <div className="space-y-3">
+    <Badge className="bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-50">Microservices</Badge>
+    <h1 className="text-4xl font-semibold tracking-tight">Guards</h1>
+    <div className="text-lg text-muted-foreground max-w-3xl">
+      Use guards to block execution of message/event handlers based on custom logic (auth, feature flags, etc.).
+    </div>
+  </div>
+
+  <section className="space-y-4" id="define">
+    <h2 className="text-2xl font-semibold">Define a guard</h2>
+    <div className="text-muted-foreground">
+      Implement <code>CanActivate</code> and return truthy/falsey or throw to control access. The context includes the
+      pattern and payload.
+    </div>
+    <CodeBlock code={guardDef} title="auth.guard.ts" />
+  </section>
+
+  <section className="space-y-4" id="apply">
+    <h2 className="text-2xl font-semibold">Apply to consumers</h2>
+    <div className="text-muted-foreground">
+      Decorate the consumer or method with <code>@UseGuards</code>. Guards run before pipes and handlers.
+    </div>
+    <CodeBlock code={consumer} title="secure.consumer.ts" />
+  </section>
+
+  <section className="space-y-4" id="dispatch">
+    <h2 className="text-2xl font-semibold">Dispatching</h2>
+    <div className="text-muted-foreground">
+      The <code>MessageDispatcher</code> executes guards when dispatching messages. Wire your transport to call{" "}
+      <code>dispatcher.dispatch(pattern, data)</code>.
+    </div>
+    <CodeBlock code={dispatcher} title="dispatcher wiring" />
+  </section>
+
+  <section className="space-y-4" id="tips">
+    <h2 className="text-2xl font-semibold">Tips</h2>
+    <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+      <li>Guards run before pipes/filters; throw to propagate an error or return false to block.</li>
+      <li>
+        For BetterAuth, use <code>BetterAuthMicroGuard</code> and include a token in the payload. Customize
+        <code>tokenField</code> or <code>validateSession</code> if needed.
+      </li>
+      <li>Use class-based guards for DI/constructor params; pass instances for simple inline logic.</li>
+    </ul>
+  </section>
+</article>

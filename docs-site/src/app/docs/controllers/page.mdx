@@ -1,6 +1,6 @@
 ---
-title: 'Controllers · Nael Platform'
-description: 'Learn how to create and use controllers to handle incoming requests in Nael Platform.'
+title: 'Controllers · NL Framework'
+description: 'Learn how to create and use controllers to handle incoming requests in NL Framework.'
 ---
 
 import Link from 'next/link';
@@ -144,7 +144,7 @@ export class AccountController {
         </div>
         <CodeBlock code={basicController} title="users.controller.ts" />
         <div className="text-sm text-muted-foreground">
-          The `@Get()` HTTP request method decorator before the `findAll()` method tells Nael to create a handler for
+          The `@Get()` HTTP request method decorator before the `findAll()` method tells NL Framework to create a handler for
           a specific endpoint for HTTP requests. The endpoint corresponds to the HTTP request method (GET in this case) and the route path.
         </div>
       </section>
@@ -152,8 +152,8 @@ export class AccountController {
       <section className="space-y-4">
         <h2 className="text-2xl font-semibold">Request object</h2>
         <div className="text-muted-foreground">
-          Handlers often need access to the client request details. Nael provides access to the request object. We can access the request object
-          by instructing Nael to inject it by adding the `@Req()` decorator to the handler&apos;s signature.
+          Handlers often need access to the client request details. NL Framework provides access to the request object. We can access the request object
+          by instructing NL Framework to inject it by adding the `@Req()` decorator to the handler&apos;s signature.
         </div>
         <CodeBlock code={fullRequest} title="Using request object" />
         <div className="text-sm text-muted-foreground">
@@ -170,7 +170,7 @@ export class AccountController {
         </div>
         <CodeBlock code={postMethod} title="POST handler" />
         <div className="text-sm text-muted-foreground">
-          Nael provides decorators for all of the standard HTTP methods: `@Get()`, `@Post()`, `@Put()`, `@Delete()`, `@Patch()`, `@Options()`, and `@Head()`.
+          NL Framework provides decorators for all of the standard HTTP methods: `@Get()`, `@Post()`, `@Put()`, `@Delete()`, `@Patch()`, `@Options()`, and `@Head()`.
           In addition, `@All()` defines an endpoint that handles all of them.
         </div>
       </section>
@@ -236,12 +236,12 @@ export class AccountController {
       <section className="space-y-4">
         <h2 className="text-2xl font-semibold">Asynchronicity</h2>
         <div className="text-muted-foreground">
-          Nael supports async functions. Every async function has to return a `Promise`. This means that you can return a deferred value
-          that Nael will be able to resolve by itself.
+          NL Framework supports async functions. Every async function has to return a `Promise`. This means that you can return a deferred value
+          that NL Framework will be able to resolve by itself.
         </div>
         <CodeBlock code={asyncController} title="Async controller" />
         <div className="text-sm text-muted-foreground">
-          Furthermore, Nael route handlers are even more powerful by being able to return Bun streams. Nael will automatically resolve the stream.
+          Furthermore, NL Framework route handlers are even more powerful by being able to return Bun streams. NL Framework will automatically resolve the stream.
         </div>
       </section>
 
@@ -261,7 +261,7 @@ export class AccountController {
         <h2 className="text-2xl font-semibold">Full resource example</h2>
         <CodeBlock code={allMethods} title="Full CRUD controller" />
         <div className="text-sm text-muted-foreground">
-          With the above controller fully defined, Nael knows exactly how to map every route. Note that Nael employs dependency injection,
+          With the above controller fully defined, NL Framework knows exactly how to map every route. Note that NL Framework employs dependency injection,
           so we can inject the `UsersService` into the controller&apos;s constructor.
         </div>
       </section>

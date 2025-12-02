@@ -4,7 +4,7 @@ export const cliDocumentation: PackageDocumentation = {
   name: '@nl-framework/cli',
   version: '0.1.5',
   description:
-    'Bun-native command line interface for scaffolding Nael Framework services, feature modules, HTTP controllers, providers, GraphQL resolvers, models, and reusable libraries.',
+    'Bun-native command line interface for scaffolding NL Framework Framework services, feature modules, HTTP controllers, providers, GraphQL resolvers, models, and reusable libraries.',
   installation: `# Install globally
 bun add -g @nl-framework/cli
 
@@ -14,7 +14,7 @@ bunx @nl-framework/cli nl --help`,
     {
       title: 'Instant project bootstrap',
       description:
-        'Run `nl new` to create a fully configured Nael service with Bun scripts, TypeScript config, runtime dependencies, and a starter HTTP controller.',
+        'Run `nl new` to create a fully configured NL Framework service with Bun scripts, TypeScript config, runtime dependencies, and a starter HTTP controller.',
       icon: '🚀',
     },
     {

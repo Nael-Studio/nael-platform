@@ -7,7 +7,7 @@ This example shows how to combine the NL Framework HTTP stack with the driver-ba
 - `OrmModule.forRoot` + `createMongoDriver` configuration with automatic, history-aware seed execution
 - `OrmRepository` usage from services and seeds
 - REST handlers built with `@nl-framework/http`
-- Config-driven HTTP server bootstrap via `NaelFactory`
+- Config-driven HTTP server bootstrap via `NL FrameworkFactory`
 
 ## Prerequisites
 

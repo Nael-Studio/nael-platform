@@ -1,7 +1,7 @@
 {
   "name": "@nl-framework/mcp-server",
   "version": "0.2.17",
-  "description": "Model Context Protocol server for the Nael Framework. Provides interactive documentation, scaffolding prompts, and project bootstrap helpers for AI assistants.",
+  "description": "Model Context Protocol server for the NL Framework Framework. Provides interactive documentation, scaffolding prompts, and project bootstrap helpers for AI assistants.",
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",

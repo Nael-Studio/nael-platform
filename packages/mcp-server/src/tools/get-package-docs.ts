@@ -26,7 +26,7 @@ const inputSchema = z.object({
 export const getPackageDocsTool: McpTool<typeof inputSchema> = {
   name: 'get-package-docs',
   description:
-    'Get comprehensive documentation for a specific Nael Framework package including features, installation, API reference, and examples.',
+    'Get comprehensive documentation for a specific NL Framework Framework package including features, installation, API reference, and examples.',
   inputSchema,
   async handler(args) {
     const doc = docs.packages[args.packageName as keyof typeof docs.packages];

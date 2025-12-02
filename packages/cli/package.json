@@ -1,7 +1,7 @@
 {
   "name": "@nl-framework/cli",
   "version": "0.2.17",
-  "description": "Command-line interface for generating Bun-native Nael Framework projects.",
+  "description": "Command-line interface for generating Bun-native NL Framework Framework projects.",
   "type": "module",
   "bin": {
     "nl": "./dist/bin.js"

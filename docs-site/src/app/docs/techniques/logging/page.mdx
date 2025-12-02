@@ -1,13 +1,13 @@
 ---
 title: 'Logging · Techniques'
-description: 'Structured logging with DI-friendly factories, request middleware, and transport customization in Nael.'
+description: 'Structured logging with DI-friendly factories, request middleware, and transport customization in NL Framework.'
 ---
 
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { CodeBlock } from '@/components/shared/simple-code-block';
 
-export const configureLogger = `import { NaelFactory } from '@nl-framework/platform';
+export const configureLogger = `import { NL FrameworkFactory } from '@nl-framework/platform';
 import { Logger } from '@nl-framework/logger';
 
 const appLogger = new Logger({
@@ -15,7 +15,7 @@ const appLogger = new Logger({
   level: (process.env.LOG_LEVEL as any) ?? 'INFO',
 });
 
-const app = await NaelFactory.create(AppModule, { logger: appLogger });
+const app = await NL FrameworkFactory.create(AppModule, { logger: appLogger });
 await app.listen({ http: 3000 });`;
 
 export const requestLogging = `import { MiddlewareHandler } from '@nl-framework/http';
@@ -128,7 +128,7 @@ logger.info('Booting service');`;
         </Badge>
         <h1 className="text-4xl font-semibold tracking-tight">Logging</h1>
         <div className="text-lg text-muted-foreground">
-          Emit structured logs across HTTP handlers, schedulers, and microservices. Nael&apos;s logger ships with JSON output,
+          Emit structured logs across HTTP handlers, schedulers, and microservices. NL Framework&apos;s logger ships with JSON output,
           child contexts, and pluggable transports so you can route logs to stdout, files, or remote collectors.
         </div>
       </div>

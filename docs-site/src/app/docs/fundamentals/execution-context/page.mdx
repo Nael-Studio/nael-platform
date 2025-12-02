@@ -1,6 +1,6 @@
 ---
-title: 'Execution context · Nael Platform'
-description: 'Understand how Nael propagates context IDs across HTTP, GraphQL, and custom workloads for scoped providers.'
+title: 'Execution context · NL Framework'
+description: 'Understand how NL Framework propagates context IDs across HTTP, GraphQL, and custom workloads for scoped providers.'
 ---
 
 import { Badge } from '@/components/ui/badge';
@@ -78,7 +78,7 @@ class ReportRunner {
         <Badge className="bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-50">Fundamentals</Badge>
         <h1 className="text-4xl font-semibold tracking-tight">Execution context</h1>
         <div className="text-lg text-muted-foreground">
-          The Nael container tracks every unit of work using a <em>context ID</em>. Request-scoped providers, interceptors, and guards all look up that
+          The NL Framework container tracks every unit of work using a <em>context ID</em>. Request-scoped providers, interceptors, and guards all look up that
           ID so cross-cutting data (tenant IDs, trace info, auth state) stays isolated. This page explains how the context flows through HTTP and GraphQL
           platforms and how you can create custom scopes for background jobs or schedulers.
         </div>

@@ -5,13 +5,13 @@ export function SiteFooter() {
     <footer className="border-t border-border/70 bg-background">
       <div className="container flex flex-col gap-3 py-8 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between">
         <p>
-          © {new Date().getFullYear()} Nael Platform. MIT + Apache 2.0 where
+          © {new Date().getFullYear()} NL Framework. MIT + Apache 2.0 where
           applicable.
         </p>
         <div className="flex flex-wrap items-center gap-4">
           <Link
             className="hover:text-foreground"
-            href="https://github.com/Nael-Studio/nael-platform"
+            href="https://github.com/NL Framework-Studio/nael-platform"
             rel="noreferrer"
             target="_blank"
           >

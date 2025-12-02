@@ -23,3 +23,6 @@ export {
   createMicroservicesModule,
   type MicroservicesModuleOptions,
 } from './microservices.module';
+export { MessageDispatcher } from './dispatcher/message-dispatcher';
+export { UseGuards, type CanActivate, type GuardToken } from './decorators/guards';
+export { BetterAuthMicroGuard, type BetterAuthMicroGuardOptions } from './guards/better-auth-guard';

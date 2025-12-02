@@ -1,6 +1,6 @@
 ---
 title: 'BetterAuth with REST · Auth'
-description: 'Proxy hosted BetterAuth routes through Nael HTTP, share sessions, and support multi-tenant secrets.'
+description: 'Proxy hosted BetterAuth routes through NL Framework HTTP, share sessions, and support multi-tenant secrets.'
 ---
 
 import { CodeBlock } from '@/components/shared/simple-code-block';
@@ -161,7 +161,7 @@ export class UserProfileController {
       return merged shape. Avoid storing large profile data in the session store; fetch fresh or cache per tenant.
     </div>
     <div className="text-sm text-muted-foreground">
-      How it reacts in Nael: <code>BetterAuthGuard</code> reads from <code>BetterAuthSessionStore</code> on every request,
+      How it reacts in NL Framework: <code>BetterAuthGuard</code> reads from <code>BetterAuthSessionStore</code> on every request,
       so updates in the hosted BetterAuth project propagate automatically once the cookie is refreshed. Your enriched
       <code>AuthUserProfile</code> stays consistent because it&apos;s built at request-time from the latest session +
       your source of truth (profiles/roles service). Keep your profile service request-scoped if it depends on tenant

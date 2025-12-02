@@ -1,6 +1,6 @@
 ---
-title: 'Middleware · Nael Platform'
-description: 'Learn how to use middleware for request processing, logging, authentication, and error handling in Nael applications.'
+title: 'Middleware · NL Framework'
+description: 'Learn how to use middleware for request processing, logging, authentication, and error handling in NL Framework applications.'
 ---
 
 import Link from 'next/link';
@@ -44,9 +44,9 @@ const requestTimingMiddleware: MiddlewareHandler = async (ctx, next) => {
   }
 };`;
 
-export const applyMiddleware = `import { NaelFactory } from '@nl-framework/platform';
+export const applyMiddleware = `import { NL FrameworkFactory } from '@nl-framework/platform';
 
-const app = await NaelFactory.create(AppModule);
+const app = await NL FrameworkFactory.create(AppModule);
 const httpApp = app.getHttpApplication();
 
 if (httpApp) {
@@ -245,12 +245,12 @@ const apiOnlyMiddleware: MiddlewareHandler = async (ctx, next) => {
   });
 };`;
 
-export const multipleMiddleware = `import { NaelFactory } from '@nl-framework/platform';
+export const multipleMiddleware = `import { NL FrameworkFactory } from '@nl-framework/platform';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
 import type { MiddlewareHandler } from '@nl-framework/http';
 
 const bootstrap = async () => {
-  const app = await NaelFactory.create(AppModule);
+  const app = await NL FrameworkFactory.create(AppModule);
   const loggerFactory = await app.get<LoggerFactory>(LoggerFactory);
   const requestLogger = loggerFactory.create({ context: 'Request' });
 
@@ -327,7 +327,7 @@ const contextAwareMiddleware: MiddlewareHandler = async (ctx, next) => {
       <section className="space-y-4">
         <h2 className="text-2xl font-semibold">Middleware function</h2>
         <div className="text-muted-foreground">
-          Middleware functions in Nael are defined using the `MiddlewareHandler` type. Each middleware receives
+          Middleware functions in NL Framework are defined using the `MiddlewareHandler` type. Each middleware receives
           the request context and a `next()` function to call the next middleware in the chain or the final route handler.
         </div>
         <CodeBlock code={basicMiddleware} title="Basic middleware" />

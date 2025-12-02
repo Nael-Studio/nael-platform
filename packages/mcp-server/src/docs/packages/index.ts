@@ -91,7 +91,7 @@ export const packageList: Array<{
   {
     key: 'cli',
     name: '@nl-framework/cli',
-    description: 'Bun-native scaffolding CLI for Nael services, modules, and reusable libraries.',
+    description: 'Bun-native scaffolding CLI for NL Framework services, modules, and reusable libraries.',
     highlights: ['Scaffolding', 'Generators', 'Automation'],
   },
   {

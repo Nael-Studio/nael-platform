@@ -1,6 +1,6 @@
 ---
 title: 'File upload · Techniques'
-description: 'Handle multipart/form-data uploads in Nael HTTP handlers using native FormData APIs.'
+description: 'Handle multipart/form-data uploads in NL Framework HTTP handlers using native FormData APIs.'
 ---
 
 import Link from 'next/link';
@@ -90,7 +90,7 @@ export class MediaResolver {
   }
 }
 
-// When bootstrapping Apollo/Nael GraphQL, ensure graphql-upload middleware is applied to the HTTP server.
+// When bootstrapping Apollo/NL Framework GraphQL, ensure graphql-upload middleware is applied to the HTTP server.
 // In Bun, wrap the request handler with processRequest from graphql-upload when content-type is multipart/form-data.`;
 
 export const storageSample = `import { Inject, Injectable } from '@nl-framework/core';
@@ -156,7 +156,7 @@ export class UploadsService {
         </Badge>
         <h1 className="text-4xl font-semibold tracking-tight">File uploads</h1>
         <div className="text-lg text-muted-foreground">
-          Nael doesn&apos;t bundle Multer or busboy. Instead, use the platform-native `Request.formData()` to
+          NL Framework doesn&apos;t bundle Multer or busboy. Instead, use the platform-native `Request.formData()` to
           access uploaded `File` objects, then stream or buffer them to storage.
         </div>
       </div>
@@ -205,7 +205,7 @@ export class UploadsService {
       <section className="space-y-4" id="graphql">
         <h2 className="text-2xl font-semibold">GraphQL uploads</h2>
         <div className="text-muted-foreground">
-          Use `graphql-upload` with the Nael GraphQL stack. Register the middleware on the HTTP server for multipart
+          Use `graphql-upload` with the NL Framework GraphQL stack. Register the middleware on the HTTP server for multipart
           requests and use the `GraphQLUpload` scalar in your schema. Resolver receives a `FileUpload`
           with `createReadStream()` for streaming to storage.
         </div>

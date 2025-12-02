@@ -8,6 +8,18 @@ export { Inject } from './decorators/inject';
 export { Module, getModuleMetadata } from './decorators/module';
 export { Controller, getControllerPrefix } from './decorators/controller';
 export { SetMetadata, type CustomDecorator } from './decorators/set-metadata';
+export {
+  type ExceptionFilter,
+  Catch,
+  UseFilters,
+  getCatchTypes,
+  getUseFilters,
+} from './decorators/filters';
+export {
+  type PipeTransform,
+  UsePipes,
+  getUsePipes,
+} from './decorators/pipes';
 export type { ModuleMetadata } from './interfaces/module';
 export type {
   Provider,

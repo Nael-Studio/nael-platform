@@ -1,11 +1,11 @@
 import { type MiddlewareHandler } from '@nl-framework/http';
-import { NaelFactory } from '@nl-framework/platform';
+import { NL FrameworkFactory } from '@nl-framework/platform';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
 import { AppModule } from './app.module';
 import type { ExampleConfig } from './types';
 
 const bootstrap = async () => {
-  const app = await NaelFactory.create(AppModule);
+  const app = await NL FrameworkFactory.create(AppModule);
 
   const loggerFactory = await app.get<LoggerFactory>(LoggerFactory);
   const appLogger = loggerFactory.create({ context: 'BasicHttpExample' });
@@ -13,7 +13,7 @@ const bootstrap = async () => {
 
   const httpApp = app.getHttpApplication();
   if (!httpApp) {
-    appLogger.fatal('HTTP application was not created by NaelFactory');
+    appLogger.fatal('HTTP application was not created by NL FrameworkFactory');
     throw new Error('HTTP application is not available. HTTP is always enabled, so this indicates an internal error.');
   }
 

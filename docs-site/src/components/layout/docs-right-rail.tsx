@@ -49,10 +49,10 @@ export function DocsRightRail() {
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
             <p>
-              Nael Platform stays open-source thanks to sponsors. Back the roadmap if the Better Auth + Bun
+              NL Framework stays open-source thanks to sponsors. Back the roadmap if the Better Auth + Bun
               stack powers your product.
             </p>
-            <Link className="inline-flex items-center text-primary" href="https://github.com/sponsors/Nael-Studio" rel="noreferrer" target="_blank">
+            <Link className="inline-flex items-center text-primary" href="https://github.com/sponsors/NL Framework-Studio" rel="noreferrer" target="_blank">
               Become a sponsor
               <ArrowUpRight className="ml-1 h-3 w-3" />
             </Link>

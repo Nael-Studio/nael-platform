@@ -1,6 +1,6 @@
 ---
 title: 'Federation · GraphQL'
-description: 'Expose Nael GraphQL services as Apollo Federation subgraphs and gateways.'
+description: 'Expose NL Framework GraphQL services as Apollo Federation subgraphs and gateways.'
 ---
 
 import { Badge } from '@/components/ui/badge';
@@ -50,7 +50,7 @@ export class ProfileResolver {
   }
 }`;
 
-export const gatewayNote = `// Nael ships subgraph support. For a gateway, compose subgraphs using Apollo Router/Supergraph tooling.
+export const gatewayNote = `// NL Framework ships subgraph support. For a gateway, compose subgraphs using Apollo Router/Supergraph tooling.
 // Steps:
 // 1) Build each subgraph (GraphQLModule.forRoot({ federation: true }))
 // 2) Generate supergraph schema (rover/supergraph compose)
@@ -62,7 +62,7 @@ export const gatewayNote = `// Nael ships subgraph support. For a gateway, compo
     <Badge className="bg-sky-100 text-sky-900 dark:bg-sky-900/30 dark:text-sky-50">GraphQL</Badge>
     <h1 className="text-4xl font-semibold tracking-tight">Federation</h1>
     <div className="text-lg text-muted-foreground max-w-3xl">
-      Turn a Nael GraphQL service into a Federation subgraph by enabling <code>federation</code> in
+      Turn a NL Framework GraphQL service into a Federation subgraph by enabling <code>federation</code> in
       <code>GraphQLModule</code>, adding <code>@key</code> directives, and resolving references.
     </div>
   </div>
@@ -88,8 +88,8 @@ export const gatewayNote = `// Nael ships subgraph support. For a gateway, compo
   <section className="space-y-4" id="gateway">
     <h2 className="text-2xl font-semibold">Gateway composition</h2>
     <div className="text-muted-foreground">
-      Nael covers subgraphs. For the gateway, compose subgraphs with Apollo Router/Supergraph tools. Point the router at
-      your Nael subgraphs; they expose the federation SDL automatically when <code>federation</code> is enabled.
+      NL Framework covers subgraphs. For the gateway, compose subgraphs with Apollo Router/Supergraph tools. Point the router at
+      your NL Framework subgraphs; they expose the federation SDL automatically when <code>federation</code> is enabled.
     </div>
     <CodeBlock code={gatewayNote} title="Gateway notes" />
   </section>

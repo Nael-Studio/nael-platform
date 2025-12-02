@@ -5,6 +5,7 @@ import { MicroserviceClient } from './client/microservice-client';
 import type { Transport } from './interfaces/transport';
 import { DaprTransport } from './transport/dapr-transport';
 import { listMessageHandlers } from './decorators/patterns';
+import { MessageDispatcher } from './dispatcher/message-dispatcher';
 
 export interface MicroservicesModuleOptions {
   transport?: Transport;
@@ -17,6 +18,8 @@ const MICROSERVICE_CLIENT = Symbol.for('nl:microservices:client');
 export class MicroservicesModule {
   private client?: MicroserviceClient;
   private logger: Logger;
+  private dispatcher?: MessageDispatcher;
+  private controllerInstances: any[] = [];
 
   constructor(
     private readonly loggerFactory: LoggerFactory,
@@ -28,13 +31,15 @@ export class MicroservicesModule {
   async onModuleInit(): Promise<void> {
     const transport = this.options.transport ?? new DaprTransport({ logger: this.logger });
     this.client = new MicroserviceClient(transport);
+    this.dispatcher = new MessageDispatcher();
 
     await this.client.connect();
     this.logger.info('Microservices module initialized');
 
     // Register message handlers from controllers
     if (this.options.controllers) {
-      this.registerMessageHandlers(this.options.controllers);
+      this.instantiateControllers(this.options.controllers);
+      this.registerMessageHandlers();
     }
   }
 
@@ -52,19 +57,35 @@ export class MicroservicesModule {
     return this.client;
   }
 
-  private registerMessageHandlers(controllers: ClassType[]): void {
-    for (const controller of controllers) {
+  getDispatcher(): MessageDispatcher | undefined {
+    return this.dispatcher;
+  }
+
+  private instantiateControllers(controllers: ClassType[]): void {
+    for (const Controller of controllers) {
+      try {
+        const instance = new Controller();
+        this.controllerInstances.push(instance);
+      } catch (err) {
+        this.logger.error(`Failed to instantiate controller ${Controller.name}`, { err });
+      }
+    }
+  }
+
+  private registerMessageHandlers(): void {
+    for (const controller of this.controllerInstances) {
       const handlers = listMessageHandlers(controller);
-      
+
       if (handlers.length > 0) {
         this.logger.info('Registered message handlers', {
-          controller: controller.name,
-          handlers: handlers.map(h => ({
+          controller: controller.constructor?.name ?? 'unknown',
+          handlers: handlers.map((h) => ({
             method: h.propertyKey,
             pattern: h.metadata.pattern,
             isEvent: h.metadata.isEvent,
           })),
         });
+        this.dispatcher?.registerController(controller);
       }
     }
   }
@@ -93,9 +114,11 @@ export function createMicroservicesModule(options: MicroservicesModuleOptions = 
         useFactory: (client: MicroserviceClient) => client,
         inject: [MICROSERVICE_CLIENT],
       },
+      MessageDispatcher,
       DynamicMicroservicesModuleImpl,
+      ...(options.controllers ?? []),
     ],
-    exports: [MICROSERVICE_CLIENT, MicroserviceClient, DynamicMicroservicesModuleImpl],
+    exports: [MICROSERVICE_CLIENT, MicroserviceClient, MessageDispatcher, DynamicMicroservicesModuleImpl],
   })
   class DynamicMicroservicesModule {}
 

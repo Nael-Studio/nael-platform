@@ -1,6 +1,6 @@
 ---
-title: 'Overview · Nael Platform'
-description: 'Learn about Nael Platform philosophy, installation options, Better Auth integration, GraphQL, and microservices support.'
+title: 'Overview · NL Framework'
+description: 'Learn about NL Framework philosophy, installation options, Better Auth integration, GraphQL, and microservices support.'
 ---
 
 import Link from 'next/link';
@@ -16,12 +16,12 @@ nl new platform-demo
 cd platform-demo
 bun run dev`;
 
-export const repoInstall = `git clone https://github.com/Nael-Studio/nael-platform.git
+export const repoInstall = `git clone https://github.com/NL Framework-Studio/nael-platform.git
 cd nael-platform
 bun install
 bun run build`;
 
-export const gitHistory = `git clone https://github.com/Nael-Studio/nael-platform.git --depth=1 --single-branch
+export const gitHistory = `git clone https://github.com/NL Framework-Studio/nael-platform.git --depth=1 --single-branch
 cd nael-platform
 bun run --cwd examples/basic-http start`;
 
@@ -55,7 +55,7 @@ export const microservicesSnippet = `createMicroservicesModule({
     <Badge className="bg-primary/10 text-primary">Bun-native · Multi-tenant · OSS</Badge>
     <div className="space-y-3">
       <div className="text-sm uppercase tracking-wide text-muted-foreground">Introduction</div>
-      <h1 className="text-4xl font-semibold tracking-tight">Nael Platform Overview</h1>
+      <h1 className="text-4xl font-semibold tracking-tight">NL Framework Overview</h1>
       <div className="text-lg text-muted-foreground">
         A NestJS-inspired framework that runs entirely on Bun. Combine Better Auth, Apollo Federation, Dapr microservices,
         and schedulers without juggling multiple ecosystems. This page mirrors nestjs.com depth so you can ship
@@ -91,12 +91,12 @@ export const microservicesSnippet = `createMicroservicesModule({
     <Card className="border-border/70">
       <CardContent className="space-y-3 py-6 text-muted-foreground">
         <div>
-          Inspired by NestJS but optimized for Bun, Nael keeps the &ldquo;lego-brick&rdquo; approach to modules while shedding layered build steps.
+          Inspired by NestJS but optimized for Bun, NL Framework keeps the &ldquo;lego-brick&rdquo; approach to modules while shedding layered build steps.
           Everything is native ESM, meaning faster cold starts, effortless workers, and aligned tooling.
         </div>
         <ul className="list-disc space-y-2 pl-5">
           <li>Decorators + DI you already know from NestJS.</li>
-          <li>Unified HTTP, GraphQL, federation gateway, and microservices factories via `NaelFactory`.</li>
+          <li>Unified HTTP, GraphQL, federation gateway, and microservices factories via `NL FrameworkFactory`.</li>
           <li>Better Auth-first mindset: guards, middleware, tenant-aware resolvers, and HTTP proxies included.</li>
           <li>CLI automation with `nl new` and `nl g *` commands.</li>
         </ul>
@@ -161,7 +161,7 @@ export const microservicesSnippet = `createMicroservicesModule({
   <section className="space-y-6" id="graphql">
     <h2 className="text-3xl font-semibold">GraphQL & Federation</h2>
     <div className="text-muted-foreground">
-      Schema-first development with Apollo Server under the hood. Run a gateway and subgraphs from the same NaelFactory instance or deploy them independently.
+      Schema-first development with Apollo Server under the hood. Run a gateway and subgraphs from the same NL FrameworkFactory instance or deploy them independently.
     </div>
     <CodeBlock code={graphqlSnippet} title="GraphqlModule setup" />
     <div className="text-sm text-muted-foreground">
@@ -193,7 +193,7 @@ export const microservicesSnippet = `createMicroservicesModule({
         <h2 className="text-3xl font-semibold">Hands-on references</h2>
       </div>
       <Button asChild>
-        <Link href="https://github.com/Nael-Studio/nael-platform/tree/main/examples" rel="noreferrer" target="_blank">
+        <Link href="https://github.com/NL Framework-Studio/nael-platform/tree/main/examples" rel="noreferrer" target="_blank">
           Browse repo
           <ArrowRight className="ml-2 h-4 w-4" />
         </Link>
@@ -206,7 +206,7 @@ export const microservicesSnippet = `createMicroservicesModule({
     <div className="text-sm uppercase tracking-wide text-muted-foreground">Support</div>
     <h2 className="text-3xl font-semibold">Support us</h2>
     <div className="text-muted-foreground">
-      Nael is MIT + Apache 2.0 and depends on sponsors. If the framework powers your platform, consider funding maintenance and roadmap items.
+      NL Framework is MIT + Apache 2.0 and depends on sponsors. If the framework powers your platform, consider funding maintenance and roadmap items.
     </div>
     <div className="grid gap-4 md:grid-cols-2">
       <Card className="border-border/70">
@@ -214,7 +214,7 @@ export const microservicesSnippet = `createMicroservicesModule({
           <CardTitle>Principal sponsors</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">
-          Trilon, Mach10, and the Nael Studio collective keep CI running and ensure Better Auth parity. Your company can join them.
+          Trilon, Mach10, and the NL Framework Studio collective keep CI running and ensure Better Auth parity. Your company can join them.
         </CardContent>
       </Card>
       <Card className="border-border/70">
@@ -222,8 +222,8 @@ export const microservicesSnippet = `createMicroservicesModule({
           <CardTitle>Partners</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-muted-foreground">
-          <div>We highlight ecosystem partners building on Nael (hosting, observability, dashboards).</div>
-          <Link className="text-primary" href="https://github.com/sponsors/Nael-Studio" rel="noreferrer" target="_blank">
+          <div>We highlight ecosystem partners building on NL Framework (hosting, observability, dashboards).</div>
+          <Link className="text-primary" href="https://github.com/sponsors/NL Framework-Studio" rel="noreferrer" target="_blank">
             Become a sponsor
           </Link>
         </CardContent>

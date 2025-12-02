@@ -22,7 +22,7 @@ const frameworkVersion = pkg.config?.frameworkVersion ?? '^0.0.0';
 const bunVersion = pkg.config?.bunVersion ?? '1.0.0';
 
 const printBanner = () => {
-  console.log('Nael Framework CLI');
+  console.log('NL Framework Framework CLI');
 };
 
 const printHelp = () => {
@@ -45,7 +45,7 @@ Usage:
   nl g lib <lib-name> [options]
 
 Commands:
-  new                           Scaffold a new Bun-native Nael Framework service
+  new                           Scaffold a new Bun-native NL Framework Framework service
   new app                       Scaffold a backend service plus an optional Next.js frontend
   generate module, g module     Scaffold a feature module under ./src/modules
   generate service, g service   Add a provider inside an existing module

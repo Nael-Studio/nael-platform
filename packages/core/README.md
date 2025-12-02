@@ -1,6 +1,6 @@
 # @nl-framework/core
 
-Foundational runtime for the Nael Framework, providing dependency injection, module lifecycle management, configuration hooks, and bootstrap primitives.
+Foundational runtime for the NL Framework Framework, providing dependency injection, module lifecycle management, configuration hooks, and bootstrap primitives.
 
 ## Installation
 
@@ -42,7 +42,7 @@ const app = await Application.create(AppModule);
 await app.init();
 
 const service = app.getApplicationContext().get(HelloService);
-console.log(service.getGreeting('Nael Developer'));
+console.log(service.getGreeting('NL Framework Developer'));
 
 await app.close();
 ```

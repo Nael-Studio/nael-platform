@@ -1,6 +1,6 @@
 ---
 title: 'Session · Techniques'
-description: 'Implement cookie-backed sessions in Nael HTTP apps with signed IDs and pluggable stores.'
+description: 'Implement cookie-backed sessions in NL Framework HTTP apps with signed IDs and pluggable stores.'
 ---
 
 import Link from 'next/link';
@@ -67,12 +67,12 @@ export function readSessionCookie(req: Request) {
   return match ? decodeURIComponent(match[1]) : null;
 }`;
 
-export const sessionMiddleware = `import { NaelFactory } from '@nl-framework/platform';
+export const sessionMiddleware = `import { NL FrameworkFactory } from '@nl-framework/platform';
 import { AppModule } from './app.module';
 import { SessionStore } from './session.store';
 import { buildCookieHeader, issueSessionId, signSessionId, verifySessionId, readSessionCookie } from './session.signer';
 
-const app = await NaelFactory.create(AppModule);
+const app = await NL FrameworkFactory.create(AppModule);
 const http = app.getHttpApplication();
 const sessions = app.get(SessionStore);
 
@@ -135,7 +135,7 @@ export class AuthController {
     <Badge className="bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-50">Techniques</Badge>
     <h1 className="text-4xl font-semibold tracking-tight">Session</h1>
     <div className="text-lg text-muted-foreground">
-      Nael doesn&apos;t ship a session manager by default. Use signed, cookie-based session IDs and a pluggable store
+      NL Framework doesn&apos;t ship a session manager by default. Use signed, cookie-based session IDs and a pluggable store
       (in-memory, Redis, SQL) to keep users logged in across requests.
     </div>
   </div>

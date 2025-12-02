@@ -23,11 +23,11 @@ interface PromptArgsSchemaResult {
   hasArguments: boolean;
 }
 
-export function createNaelMcpServer(): McpServer {
+export function createNL FrameworkMcpServer(): McpServer {
   const serverInfo = {
     name: '@nl-framework/mcp-server',
     version: '0.1.0',
-    description: 'Model Context Protocol server for the Nael Framework.',
+    description: 'Model Context Protocol server for the NL Framework Framework.',
   } as const;
 
   const server = new McpServer(serverInfo);
@@ -205,7 +205,7 @@ function registerExampleResources(server: McpServer, providers: ResourceProvider
     'nael://examples/all',
     {
       title: 'All Examples',
-      description: 'Every example bundled with the Nael Framework.',
+      description: 'Every example bundled with the NL Framework Framework.',
     },
     async () => readResourceOrThrow(providers, 'nael://examples/all'),
   );
@@ -274,7 +274,7 @@ function registerApiResources(server: McpServer, providers: ResourceProvider[]):
       uri,
       {
         title,
-        description: `Nael Framework ${section} details and signatures.`,
+        description: `NL Framework Framework ${section} details and signatures.`,
       },
       async () => readResourceOrThrow(providers, uri),
     );

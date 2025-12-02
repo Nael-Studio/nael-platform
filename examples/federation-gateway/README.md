@@ -1,6 +1,6 @@
 # Federation Gateway Example
 
-This example composes the `products` subgraph from `examples/federated-graphql` into a single supergraph using Apollo Gateway. It also enables an HTTP greeting endpoint via `NaelFactory` so you can see the framework running GraphQL federation and HTTP side-by-side on the same server instance.
+This example composes the `products` subgraph from `examples/federated-graphql` into a single supergraph using Apollo Gateway. It also enables an HTTP greeting endpoint via `NL FrameworkFactory` so you can see the framework running GraphQL federation and HTTP side-by-side on the same server instance.
 
 ## Prerequisites
 

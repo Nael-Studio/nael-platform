@@ -2,8 +2,8 @@ import type { GuideEntry } from '../../types';
 
 export const bestPracticesGuide: GuideEntry = {
   id: 'best-practices',
-  title: 'Best Practices for Nael Applications',
-  summary: 'Patterns and recommendations for building scalable Nael services.',
+  title: 'Best Practices for NL Framework Applications',
+  summary: 'Patterns and recommendations for building scalable NL Framework services.',
   steps: [
     'Organize modules by domain and keep controllers thin.',
     'Leverage dependency injection for cross-cutting concerns like logging and configuration.',

@@ -2,7 +2,7 @@ import type { PromptTemplate } from './types';
 
 export const setupDatabasePrompt: PromptTemplate = {
   name: 'setup-database',
-  description: 'Generate database module scaffolding for MongoDB or PostgreSQL using Nael ORM and config.',
+  description: 'Generate database module scaffolding for MongoDB or PostgreSQL using NL Framework ORM and config.',
   arguments: [
     { name: 'database', description: "Database type ('mongodb' | 'postgresql')", required: true },
     { name: 'moduleName', description: 'Module name (e.g., DatabaseModule)', required: false },

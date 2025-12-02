@@ -1,6 +1,6 @@
 ---
 title: 'HTTP module · Techniques'
-description: 'Configure the Nael HTTP module, global middleware, and request pipeline behaviors.'
+description: 'Configure the NL Framework HTTP module, global middleware, and request pipeline behaviors.'
 ---
 
 import Link from 'next/link';
@@ -21,11 +21,11 @@ import { HttpModule } from '@nl-framework/http';
 })
 export class AppModule {}`;
 
-export const bootstrap = `import { NaelFactory } from '@nl-framework/platform';
+export const bootstrap = `import { NL FrameworkFactory } from '@nl-framework/platform';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NaelFactory.create(AppModule);
+  const app = await NL FrameworkFactory.create(AppModule);
   const http = app.getHttpApplication();
 
   http?.use((ctx, next) => {
@@ -81,7 +81,7 @@ export class TimingInterceptor implements NestInterceptor {
     <Badge className="bg-blue-100 text-blue-900 dark:bg-blue-900/30 dark:text-blue-50">Techniques</Badge>
     <h1 className="text-4xl font-semibold tracking-tight">HTTP module</h1>
     <div className="text-lg text-muted-foreground">
-      Configure the Nael HTTP module to serve controllers, middleware, and global pipeline hooks. Apply CORS/helmet,
+      Configure the NL Framework HTTP module to serve controllers, middleware, and global pipeline hooks. Apply CORS/helmet,
       set a global prefix, and attach filters/interceptors to standardize responses.
     </div>
   </div>

@@ -19,7 +19,7 @@ const inputSchema = z.object({
 
 export const getQuickStartTool: McpTool<typeof inputSchema> = {
   name: 'get-quick-start',
-  description: 'Get quick start guide with installation and setup steps for the Nael Framework or a specific package.',
+  description: 'Get quick start guide with installation and setup steps for the NL Framework Framework or a specific package.',
   inputSchema,
   async handler(args) {
     const target = args.package ?? 'framework';
@@ -35,7 +35,7 @@ export const getQuickStartTool: McpTool<typeof inputSchema> = {
       return {
         content: [
           asTextContent(
-            `Nael Framework Quick Start\n\n${gettingStarted.summary}\n\n${renderSteps(gettingStarted.steps)}\n\nCommands:\n${gettingStarted.codeSamples?.[0]?.code ?? ''}`,
+            `NL Framework Framework Quick Start\n\n${gettingStarted.summary}\n\n${renderSteps(gettingStarted.steps)}\n\nCommands:\n${gettingStarted.codeSamples?.[0]?.code ?? ''}`,
           ),
         ],
         structuredContent: gettingStarted,

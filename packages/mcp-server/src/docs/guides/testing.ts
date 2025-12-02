@@ -2,7 +2,7 @@ import type { GuideEntry } from '../../types';
 
 export const testingGuide: GuideEntry = {
   id: 'testing',
-  title: 'Testing Nael Applications',
+  title: 'Testing NL Framework Applications',
   summary: 'Set up unit and integration testing for controllers, resolvers, and services.',
   steps: [
     'Use Bun Test (`bun test`) for fast unit tests.',

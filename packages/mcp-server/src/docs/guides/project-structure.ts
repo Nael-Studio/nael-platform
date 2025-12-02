@@ -4,7 +4,7 @@ export const projectStructureGuide: GuideEntry = {
   id: 'project-structure',
   title: 'Recommended Project Structure',
   summary:
-    'Organize Nael Framework projects by feature modules with colocated controllers, services, resolvers, models, and persistence artifacts.',
+    'Organize NL Framework Framework projects by feature modules with colocated controllers, services, resolvers, models, and persistence artifacts.',
   steps: [
     'Group code by feature (for example, `users/`, `billing/`, `orders/`) instead of technical layers.',
     'Each feature folder exposes a `*.module.ts` file that wires controllers, resolvers, models, documents, and providers.',

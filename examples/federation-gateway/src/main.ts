@@ -1,5 +1,5 @@
 import { Logger, LoggerFactory } from '@nl-framework/logger';
-import { NaelFactory } from '@nl-framework/platform';
+import { NL FrameworkFactory } from '@nl-framework/platform';
 import type { FederationSubgraphDefinition } from '@nl-framework/graphql';
 import { AppModule } from './app.module';
 
@@ -45,7 +45,7 @@ const bootstrap = async (): Promise<void> => {
   const subgraphs = resolveSubgraphs();
 
   try {
-    const app = await NaelFactory.create(AppModule, {
+    const app = await NL FrameworkFactory.create(AppModule, {
       http: {
         host,
         port,

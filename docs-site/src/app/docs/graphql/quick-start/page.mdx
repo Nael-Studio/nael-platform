@@ -1,6 +1,6 @@
 ---
 title: 'GraphQL quick start · GraphQL'
-description: 'Bootstrap a Nael GraphQL server, wire schemas/resolvers, and secure it with BetterAuth.'
+description: 'Bootstrap a NL Framework GraphQL server, wire schemas/resolvers, and secure it with BetterAuth.'
 ---
 
 import Link from 'next/link';
@@ -30,11 +30,11 @@ import { ProfileModule } from './modules/profile/profile.module';
 })
 export class AppModule {}`;
 
-export const bootstrap = `import { NaelFactory } from '@nl-framework/platform';
+export const bootstrap = `import { NL FrameworkFactory } from '@nl-framework/platform';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NaelFactory.create(AppModule);
+  const app = await NL FrameworkFactory.create(AppModule);
   await app.listen({ http: 3000 });
 }
 
@@ -75,7 +75,7 @@ export class Profile {
     <Badge className="bg-sky-100 text-sky-900 dark:bg-sky-900/30 dark:text-sky-50">GraphQL</Badge>
     <h1 className="text-4xl font-semibold tracking-tight">GraphQL quick start</h1>
     <div className="text-lg text-muted-foreground max-w-3xl">
-      Create a Nael GraphQL server with schema-first tooling, BetterAuth integration, and a sample resolver. This guide
+      Create a NL Framework GraphQL server with schema-first tooling, BetterAuth integration, and a sample resolver. This guide
       uses auto-generated schemas; swap to code-first or SDL files as needed.
     </div>
   </div>

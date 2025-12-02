@@ -32,7 +32,7 @@ export function SiteHeader() {
       <div className="mx-auto flex h-16 w-full items-center justify-between px-4 sm:px-6 lg:px-10 xl:px-16">
         <div className="flex items-center gap-6">
           <Link className="font-semibold tracking-tight" href="/">
-            Nael Platform Docs
+            NL Framework
           </Link>
           <nav className="hidden items-center gap-4 text-sm font-medium md:flex">
             {navItems.map((item) => (
@@ -62,7 +62,7 @@ export function SiteHeader() {
             />
           )}
           <Button asChild className="hidden sm:inline-flex" variant="outline">
-            <Link href="https://github.com/Nael-Studio/nael-platform" rel="noreferrer" target="_blank">
+            <Link href="https://github.com/NL Framework-Studio/nael-platform" rel="noreferrer" target="_blank">
               Star on GitHub
             </Link>
           </Button>

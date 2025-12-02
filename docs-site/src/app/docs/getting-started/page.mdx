@@ -1,6 +1,6 @@
 ---
-title: 'Getting Started · Nael Platform'
-description: 'Scaffold and run Nael Platform services with the CLI or the monorepo examples.'
+title: 'Getting Started · NL Framework'
+description: 'Scaffold and run NL Framework services with the CLI or the monorepo examples.'
 ---
 
 import Link from 'next/link';
@@ -48,7 +48,7 @@ bun run --cwd examples/auth-multi-tenant-http start`;
           <CardContent className="space-y-3">
             <div className="text-sm text-muted-foreground">
               Choose HTTP, GraphQL, Better Auth, or microservice blueprints. The CLI always boots a
-              NaelFactory instance wired with logging and configuration.
+              NL FrameworkFactory instance wired with logging and configuration.
             </div>
             <CodeBlock code={bootstrapService} title="Create fleet-service" />
           </CardContent>
@@ -92,7 +92,7 @@ bun run --cwd examples/auth-multi-tenant-http start`;
         <h2 className="text-2xl font-semibold">What the CLI creates</h2>
         <ul className="grid gap-3 md:grid-cols-2">
           <li className="rounded-2xl border border-border/70 bg-card p-4">
-            <div className="font-medium"><code>NaelFactory</code> bootstrap</div>
+            <div className="font-medium"><code>NL FrameworkFactory</code> bootstrap</div>
             <div className="text-sm text-muted-foreground">
               Unified HTTP + GraphQL + Gateway wiring with shared dependency injection context.
             </div>

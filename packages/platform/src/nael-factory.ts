@@ -64,61 +64,61 @@ const normalizeGraphqlPath = (path: string): string => {
   return path;
 };
 
-export interface NaelFactoryHttpOptions extends HttpServerOptions {
+export interface NL FrameworkFactoryHttpOptions extends HttpServerOptions {
   /** @deprecated HTTP is always enabled; remove this flag. */
   enabled?: boolean;
 }
 
-export interface NaelFactoryGraphqlOptions extends GraphqlServerOptions {
+export interface NL FrameworkFactoryGraphqlOptions extends GraphqlServerOptions {
   /** @deprecated GraphQL availability is determined by resolver discovery; remove this flag. */
   enabled?: boolean;
 }
 
-export interface NaelFactoryGatewayOptions extends FederationGatewayServerOptions {
+export interface NL FrameworkFactoryGatewayOptions extends FederationGatewayServerOptions {
   enabled?: boolean;
 }
 
-export interface NaelFactoryOptions extends ApplicationOptions {
+export interface NL FrameworkFactoryOptions extends ApplicationOptions {
   /** @deprecated Boolean toggles are deprecated; HTTP is always enabled. Pass an options object instead. */
-  http?: boolean | NaelFactoryHttpOptions;
+  http?: boolean | NL FrameworkFactoryHttpOptions;
   /** @deprecated Boolean toggles and the `enabled` flag are deprecated; GraphQL starts automatically when resolvers exist. */
-  graphql?: boolean | NaelFactoryGraphqlOptions;
-  gateway?: boolean | NaelFactoryGatewayOptions;
+  graphql?: boolean | NL FrameworkFactoryGraphqlOptions;
+  gateway?: boolean | NL FrameworkFactoryGatewayOptions;
 }
 
 /**
  * Options for listening to application servers.
  *
- * @deprecated The `graphql` option has been removed from `NaelListenOptions`.
+ * @deprecated The `graphql` option has been removed from `NL FrameworkListenOptions`.
  * GraphQL is now integrated through HTTP. To expose GraphQL, configure the HTTP server
- * and set the appropriate GraphQL options in `NaelFactoryOptions`.
+ * and set the appropriate GraphQL options in `NL FrameworkFactoryOptions`.
  * If you previously used `graphql?: number`, please migrate to using the HTTP server
  * and set the GraphQL path as needed.
  * See the migration guide for more details.
  */
-export interface NaelListenOptions {
+export interface NL FrameworkListenOptions {
   http?: number;
   gateway?: number | FederationGatewayListenOptions;
 }
 
-export interface NaelListenResults {
+export interface NL FrameworkListenResults {
   http?: ReturnType<typeof Bun.serve>;
   graphql?: GraphqlListenResult;
   gateway?: FederationGatewayListenResult;
 }
 
-export interface NaelApplication {
+export interface NL FrameworkApplication {
   getHttpApplication(): HttpApplication | undefined;
   getGraphqlApplication(): GraphqlApplication | undefined;
   getGatewayApplication(): FederationGatewayApplication | undefined;
-  listen(options?: NaelListenOptions): Promise<NaelListenResults>;
+  listen(options?: NL FrameworkListenOptions): Promise<NL FrameworkListenResults>;
   close(): Promise<void>;
   get<T>(token: Token<T>): Promise<T>;
   getConfig<TConfig extends Record<string, unknown>>(): ConfigService<TConfig>;
   getLogger(): Logger;
 }
 
-class NaelPlatformApplication implements NaelApplication {
+class NL FrameworkPlatformApplication implements NL FrameworkApplication {
   private logger: Logger;
   private closed = false;
 
@@ -129,12 +129,12 @@ class NaelPlatformApplication implements NaelApplication {
     private readonly gatewayApp?: FederationGatewayApplication,
     private readonly graphqlIntegrationPath?: string,
   ) {
-    const baseLogger = this.context.getLogger().child('NaelPlatform');
+    const baseLogger = this.context.getLogger().child('NL FrameworkPlatform');
     this.logger = baseLogger;
     void this.context
       .get<LoggerFactory>(LoggerFactory)
       .then((factory: LoggerFactory) => {
-        this.logger = factory.create({ context: 'NaelPlatform' });
+        this.logger = factory.create({ context: 'NL FrameworkPlatform' });
       })
       .catch(() => {
         this.logger = baseLogger;
@@ -153,8 +153,8 @@ class NaelPlatformApplication implements NaelApplication {
     return this.gatewayApp;
   }
 
-  async listen(options: NaelListenOptions = {}): Promise<NaelListenResults> {
-    const results: NaelListenResults = {};
+  async listen(options: NL FrameworkListenOptions = {}): Promise<NL FrameworkListenResults> {
+    const results: NL FrameworkListenResults = {};
 
     if (!this.httpApp && !this.graphqlApp && !this.gatewayApp) {
       this.logger.warn('listen() invoked but HTTP, GraphQL, and Gateway are all disabled.');
@@ -197,7 +197,7 @@ class NaelPlatformApplication implements NaelApplication {
       }
     }
 
-    this.logger.info('NaelPlatform application started');
+    this.logger.info('NL FrameworkPlatform application started');
     Boolean(results.http) && this.logger.info('HTTP server is running');
     Boolean(results.graphql) && this.logger.info('GraphQL server is running');
     Boolean(results.gateway) && this.logger.info('Federation gateway is running');
@@ -243,7 +243,7 @@ class NaelPlatformApplication implements NaelApplication {
     }
 
     this.closed = true;
-    this.logger.info('Nael application shutdown complete');
+    this.logger.info('NL Framework application shutdown complete');
 
     if (errors.length) {
       const aggregate = new AggregateError(errors, 'One or more components failed to shut down');
@@ -265,7 +265,7 @@ class NaelPlatformApplication implements NaelApplication {
   }
 }
 
-const normalizeHttpOptions = (value?: boolean | NaelFactoryHttpOptions): NormalizedHttpOptions => {
+const normalizeHttpOptions = (value?: boolean | NL FrameworkFactoryHttpOptions): NormalizedHttpOptions => {
   if (typeof value === 'boolean') {
     return {
       options: {},
@@ -289,7 +289,7 @@ const normalizeHttpOptions = (value?: boolean | NaelFactoryHttpOptions): Normali
 };
 
 const normalizeGraphqlOptions = (
-  value?: boolean | NaelFactoryGraphqlOptions,
+  value?: boolean | NL FrameworkFactoryGraphqlOptions,
 ): NormalizedGraphqlOptions => {
   if (typeof value === 'boolean') {
     const path = normalizeGraphqlPath('/graphql');
@@ -328,7 +328,7 @@ const normalizeGraphqlOptions = (
 };
 
 const normalizeGatewayOptions = (
-  value?: boolean | NaelFactoryGatewayOptions,
+  value?: boolean | NL FrameworkFactoryGatewayOptions,
 ): NormalizedGatewayOptions => {
   if (typeof value === 'boolean') {
     return { enabled: value, options: { path: '/graphql' }, explicit: true };
@@ -356,11 +356,11 @@ const normalizeGatewayOptions = (
   };
 };
 
-export class NaelFactory {
+export class NL FrameworkFactory {
   static async create(
     rootModule: ClassType,
-    options: NaelFactoryOptions = {},
-  ): Promise<NaelApplication> {
+    options: NL FrameworkFactoryOptions = {},
+  ): Promise<NL FrameworkApplication> {
     const { http, graphql, gateway, ...appOptions } = options;
     const app = new Application();
     const context = await app.bootstrap(rootModule, appOptions);
@@ -464,9 +464,9 @@ export class NaelFactory {
       logger.info('Mounted federation gateway within HTTP server /graphql');
     }
 
-    logger.info('NaelFactory created shared application context');
+    logger.info('NL FrameworkFactory created shared application context');
 
-    return new NaelPlatformApplication(
+    return new NL FrameworkPlatformApplication(
       context,
       httpApp,
       graphqlApp,

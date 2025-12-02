@@ -1,6 +1,6 @@
 import http from 'node:http';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { createNaelMcpServer } from './server.js';
+import { createNL FrameworkMcpServer } from './server.js';
 import { randomUUID } from 'node:crypto';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3001;
@@ -24,7 +24,7 @@ async function createStreamableHttpServer() {
     console.log('[mcp-server] Streamable HTTP transport closed');
   };
 
-  const mcpServer = createNaelMcpServer();
+  const mcpServer = createNL FrameworkMcpServer();
   await mcpServer.connect(transport);
 
   const server = http.createServer(async (req, res) => {
@@ -68,7 +68,7 @@ async function createStreamableHttpServer() {
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Nael MCP Server - Streamable HTTP</title>
+    <title>NL Framework MCP Server - Streamable HTTP</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 40px; }
         code { background: #f4f4f4; padding: 2px 4px; border-radius: 3px; }
@@ -76,7 +76,7 @@ async function createStreamableHttpServer() {
     </style>
 </head>
 <body>
-    <h1>Nael Framework MCP Server</h1>
+    <h1>NL Framework Framework MCP Server</h1>
     <h2>Streamable HTTP Transport (Remote Deployable)</h2>
     <p>Server is running and ready to accept streamable HTTP connections.</p>
     

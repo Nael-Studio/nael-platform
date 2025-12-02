@@ -25,7 +25,7 @@ function buildRoutesInput(raw?: string): string {
 
 export const createControllerPrompt: PromptTemplate = {
   name: 'create-http-controller',
-  description: 'Generate a new HTTP controller with routes following Nael Framework best practices.',
+  description: 'Generate a new HTTP controller with routes following NL Framework Framework best practices.',
   arguments: [
     { name: 'controllerName', description: 'Controller class name (e.g., UsersController)', required: true },
     { name: 'basePath', description: 'Base path for the controller (e.g., /users)', required: true },

@@ -1,0 +1,86 @@
+---
+title: 'Exception filters · Microservices'
+description: 'Handle and shape errors in NL Framework microservice consumers using exception filters.'
+---
+
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const filterExample = `import { Catch, ExceptionFilter } from '@nl-framework/core';
+
+@Catch(Error)
+export class MicroExceptionFilter implements ExceptionFilter {
+  catch(exception: Error) {
+    // Shape the error payload returned to the caller
+    return {
+      error: exception.name,
+      message: exception.message,
+    };
+  }
+}`;
+
+export const consumer = `import { Injectable, UseFilters } from '@nl-framework/core';
+import { MessagePattern } from '@nl-framework/microservices';
+import { MicroExceptionFilter } from './micro-exception.filter';
+
+@Injectable()
+@UseFilters(new MicroExceptionFilter())
+export class PaymentsConsumer {
+  @MessagePattern('payments.charge')
+  async charge(payload: { amount: number }) {
+    if (payload.amount <= 0) {
+      throw new Error('Amount must be positive');
+    }
+    return { ok: true };
+  }
+}`;
+
+export const globalFilters = `// Register filters globally (e.g., in module setup)
+http?.useGlobalFilters(new MicroExceptionFilter());
+// For microservices, attach @UseFilters on controllers/consumers or wrap client calls with try/catch.`;
+
+export const dispatcher = `// Wire your transport to dispatcher.dispatch()
+import { MessageDispatcher } from '@nl-framework/microservices';
+
+const dispatcher = await app.get(MessageDispatcher);
+// When a message arrives from Dapr/pubsub, call:
+await dispatcher?.dispatch('payments.charge', { amount: -1 }); // filter shapes the error`;
+
+<article className="space-y-8">
+  <div className="space-y-3">
+    <Badge className="bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-50">Microservices</Badge>
+    <h1 className="text-4xl font-semibold tracking-tight">Exception filters</h1>
+    <div className="text-lg text-muted-foreground max-w-3xl">
+      Shape errors thrown inside message/event handlers. Filters let you return structured payloads to callers instead
+      of generic error strings.
+    </div>
+  </div>
+
+  <section className="space-y-4" id="define">
+    <h2 className="text-2xl font-semibold">Define a filter</h2>
+    <div className="text-muted-foreground">
+      Implement <code>ExceptionFilter</code> and decorate which errors it catches. Return the payload you want callers to
+      receive.
+    </div>
+    <CodeBlock code={filterExample} title="micro-exception.filter.ts" />
+  </section>
+
+  <section className="space-y-4" id="apply">
+    <h2 className="text-2xl font-semibold">Apply to consumers</h2>
+    <div className="text-muted-foreground">
+      Use <code>@UseFilters</code> on consumers or individual handlers. This shapes responses for <code>send()</code> (invocation)
+      calls. Events are fire-and-forget; handle logging inside the handler for event flows.
+    </div>
+    <CodeBlock code={consumer} title="payments.consumer.ts" />
+  </section>
+
+  <section className="space-y-4" id="global">
+    <h2 className="text-2xl font-semibold">Global registration</h2>
+    <div className="text-muted-foreground">
+      If you expose microservices alongside HTTP, you can reuse the same filters globally. Otherwise, scope them to
+      consumers for microservices-only workloads.
+    </div>
+    <CodeBlock code={globalFilters} title="Global filters" />
+    <CodeBlock code={dispatcher} title="Dispatcher wiring" />
+  </section>
+</article>

@@ -1,6 +1,6 @@
 ---
 title: 'Streaming files · Techniques'
-description: 'Stream files and large responses in Nael using Bun-native ReadableStreams, range requests, and headers.'
+description: 'Stream files and large responses in NL Framework using Bun-native ReadableStreams, range requests, and headers.'
 ---
 
 import Link from 'next/link';
@@ -169,7 +169,7 @@ export class ObjectController {
   <section className="space-y-4" id="storage">
     <h2 className="text-2xl font-semibold">Stream from StorageModule</h2>
     <div className="text-muted-foreground">
-      If you use the Nael StorageModule, ask the adapter for a streaming body (S3/Azure drivers expose readable
+      If you use the NL Framework StorageModule, ask the adapter for a streaming body (S3/Azure drivers expose readable
       streams). Pass through length/type headers when available so clients can show progress.
     </div>
     <CodeBlock code={storageStream} title="stream-from-storage.controller.ts" />

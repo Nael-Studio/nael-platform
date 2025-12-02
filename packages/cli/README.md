@@ -1,6 +1,6 @@
 # @nl-framework/cli
 
-A Bun-native command-line interface for scaffolding Nael Framework services, feature modules, controllers, services, resolvers, models, and shareable libraries.
+A Bun-native command-line interface for scaffolding NL Framework Framework services, feature modules, controllers, services, resolvers, models, and shareable libraries.
 
 ## Usage
 

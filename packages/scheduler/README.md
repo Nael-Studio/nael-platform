@@ -1,6 +1,6 @@
 # @nl-framework/scheduler
 
-Task scheduling utilities for the Nael Framework. Inspired by NestJS Schedule, this package lets you decorate injectable services with cron, interval, and timeout jobs, backed by Bun Workers for accurate timing that won't block your main event loop.
+Task scheduling utilities for the NL Framework Framework. Inspired by NestJS Schedule, this package lets you decorate injectable services with cron, interval, and timeout jobs, backed by Bun Workers for accurate timing that won't block your main event loop.
 
 ## Features
 

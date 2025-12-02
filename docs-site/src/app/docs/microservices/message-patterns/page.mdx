@@ -1,6 +1,6 @@
 ---
 title: 'Message patterns · Microservices'
-description: 'Define message and event patterns for Nael microservices using Dapr transport.'
+description: 'Define message and event patterns for NL Framework microservices using Dapr transport.'
 ---
 
 import { Badge } from '@/components/ui/badge';
@@ -42,7 +42,7 @@ async charge(payload: { id: string; amount: number }) {
   <section className="space-y-4" id="declare">
     <h2 className="text-2xl font-semibold">Declare patterns</h2>
     <div className="text-muted-foreground">
-      Decorate consumer methods with patterns. Nael discovers handlers and logs them on startup.
+      Decorate consumer methods with patterns. NL Framework discovers handlers and logs them on startup.
     </div>
     <CodeBlock code={patterns} title="notifications.consumer.ts" />
   </section>

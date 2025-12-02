@@ -1,5 +1,5 @@
 ---
-title: 'Circular dependencies · Nael Platform'
+title: 'Circular dependencies · NL Framework'
 description: 'Break circular references between providers and modules using forwardRef, ModuleRef, and lazy resolution patterns.'
 ---
 
@@ -79,7 +79,7 @@ export class EmailService {
         <Badge className="bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-50">Fundamentals</Badge>
         <h1 className="text-4xl font-semibold tracking-tight">Circular dependencies</h1>
         <div className="text-lg text-muted-foreground">
-          Sometimes two services need each other. Nael can resolve those cycles when you explicitly signal them with helpers like `forwardRef`
+          Sometimes two services need each other. NL Framework can resolve those cycles when you explicitly signal them with helpers like `forwardRef`
           or by lazily fetching a provider from `ModuleRef`. This page covers the common escape hatches and when to reach for them.
         </div>
       </div>
@@ -100,7 +100,7 @@ export class EmailService {
         <h2 className="text-2xl font-semibold">Module imports with forwardRef</h2>
         <div className="text-muted-foreground">
           Modules can also depend on each other. When both need to import the other&rsquo;s exports, wrap the module reference in `forwardRef`
-          inside the `imports` array. Nael will inline a thunk that resolves to the actual module once it is defined.
+          inside the `imports` array. NL Framework will inline a thunk that resolves to the actual module once it is defined.
         </div>
         <CodeBlock code={moduleForwardRef} title="Cross-importing modules" />
       </section>

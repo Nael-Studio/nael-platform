@@ -1,10 +1,10 @@
-import { NaelFactory } from '@nl-framework/platform';
+import { NL FrameworkFactory } from '@nl-framework/platform';
 import { AppModule } from './app.module';
 
 const PORT = Number(process.env.APP_PORT) || 3000;
 
 async function bootstrap() {
-  const factory = await NaelFactory.create(AppModule, {
+  const factory = await NL FrameworkFactory.create(AppModule, {
     http: { port: PORT },
   });
 

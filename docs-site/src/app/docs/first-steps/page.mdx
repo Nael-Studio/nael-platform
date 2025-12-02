@@ -1,6 +1,6 @@
 ---
-title: 'First Steps · Nael Platform'
-description: 'Learn how to create your first Nael Platform application with Bun runtime.'
+title: 'First Steps · NL Framework'
+description: 'Learn how to create your first NL Framework application with Bun runtime.'
 ---
 
 import Link from 'next/link';
@@ -10,10 +10,10 @@ export const installCli = `bun install --global @nl-framework/cli`;
 
 export const createProject = `nl new my-app`;
 
-export const mainFile = `import { NaelFactory } from '@nl-framework/core';
+export const mainFile = `import { NL FrameworkFactory } from '@nl-framework/core';
 
 async function bootstrap() {
-  const app = await NaelFactory.create(AppModule);
+  const app = await NL FrameworkFactory.create(AppModule);
   await app.listen(3000);
   console.log(\`Application is running on: http://localhost:3000\`);
 }
@@ -46,7 +46,7 @@ export const appService = `import { Injectable } from '@nl-framework/core';
 @Injectable()
 export class AppService {
   getHello(): string {
-    return 'Hello Nael Platform!';
+    return 'Hello NL Framework!';
   }
 }`;
 
@@ -57,7 +57,7 @@ export const runDev = `bun run dev`;
         <div className="text-sm uppercase tracking-wide text-muted-foreground">Overview</div>
         <h1 className="text-4xl font-semibold">First steps</h1>
         <div className="max-w-2xl text-muted-foreground">
-          In this guide, you&apos;ll learn the core fundamentals of Nael Platform. To get familiar with the essential building blocks
+          In this guide, you&apos;ll learn the core fundamentals of NL Framework. To get familiar with the essential building blocks
           of the framework, we&apos;ll build a basic HTTP application with features that cover a lot of ground at an introductory level.
         </div>
       </div>
@@ -65,7 +65,7 @@ export const runDev = `bun run dev`;
       <section className="space-y-4">
         <h2 className="text-2xl font-semibold">Language</h2>
         <div className="text-muted-foreground">
-          Nael Platform is built entirely for <Link className="text-primary" href="https://bun.sh" rel="noreferrer" target="_blank">Bun</Link>,
+          NL Framework is built entirely for <Link className="text-primary" href="https://bun.sh" rel="noreferrer" target="_blank">Bun</Link>,
           a fast all-in-one JavaScript runtime. We use TypeScript and leverage modern ES modules. While the framework is compatible with vanilla JavaScript,
           we strongly recommend using TypeScript for the best development experience.
         </div>
@@ -81,7 +81,7 @@ export const runDev = `bun run dev`;
       <section className="space-y-4">
         <h2 className="text-2xl font-semibold">Setup</h2>
         <div className="text-muted-foreground">
-          Setting up a new project is quite simple with the Nael CLI. With Bun installed, you can create a new project with the following commands:
+          Setting up a new project is quite simple with the NL Framework CLI. With Bun installed, you can create a new project with the following commands:
         </div>
         <CodeBlock code={installCli} title="Install CLI globally" />
         <CodeBlock code={createProject} title="Create new project" />
@@ -90,7 +90,7 @@ export const runDev = `bun run dev`;
           Here&apos;s a brief overview of the core files:
         </div>
         <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
-          <li><code>src/main.ts</code> - The entry file of the application which uses the core function <code>NaelFactory</code> to create an application instance.</li>
+          <li><code>src/main.ts</code> - The entry file of the application which uses the core function <code>NL FrameworkFactory</code> to create an application instance.</li>
           <li><code>src/app.module.ts</code> - The root module of the application.</li>
           <li><code>src/app.controller.ts</code> - A basic controller with a single route.</li>
           <li><code>src/app.service.ts</code> - A basic service with a single method.</li>
@@ -105,15 +105,15 @@ export const runDev = `bun run dev`;
         </div>
         <CodeBlock code={mainFile} title="src/main.ts" />
         <div className="text-sm text-muted-foreground">
-          To create a Nael application instance, we use the core `NaelFactory` class. `NaelFactory` exposes a few static methods
-          that allow creating an application instance. The `create()` method returns an application object, which implements the `INaelApplication` interface.
+          To create a NL Framework application instance, we use the core `NL FrameworkFactory` class. `NL FrameworkFactory` exposes a few static methods
+          that allow creating an application instance. The `create()` method returns an application object, which implements the `INL FrameworkApplication` interface.
         </div>
       </section>
 
       <section className="space-y-4">
         <h2 className="text-2xl font-semibold">Application module</h2>
         <div className="text-muted-foreground">
-          The application module (`AppModule`) is the root module of your application. Nael uses a module structure to organize components.
+          The application module (`AppModule`) is the root module of your application. NL Framework uses a module structure to organize components.
         </div>
         <CodeBlock code={appModule} title="src/app.module.ts" />
       </section>
@@ -126,18 +126,18 @@ export const runDev = `bun run dev`;
         <CodeBlock code={appController} title="src/app.controller.ts" />
         <div className="text-sm text-muted-foreground">
           The `@Controller()` decorator is required to define a basic controller. The `@Get()` HTTP request method decorator
-          tells Nael to create a handler for a specific endpoint for HTTP requests.
+          tells NL Framework to create a handler for a specific endpoint for HTTP requests.
         </div>
       </section>
 
       <section className="space-y-4">
         <h2 className="text-2xl font-semibold">Provider</h2>
         <div className="text-muted-foreground">
-          Providers are a fundamental concept in Nael. Many of the basic classes may be treated as providers – services, repositories, factories, helpers, and so on.
+          Providers are a fundamental concept in NL Framework. Many of the basic classes may be treated as providers – services, repositories, factories, helpers, and so on.
         </div>
         <CodeBlock code={appService} title="src/app.service.ts" />
         <div className="text-sm text-muted-foreground">
-          The `@Injectable()` decorator attaches metadata, which declares that `AppService` is a class that can be managed by the Nael IoC container.
+          The `@Injectable()` decorator attaches metadata, which declares that `AppService` is a class that can be managed by the NL Framework IoC container.
         </div>
       </section>
 
@@ -149,14 +149,14 @@ export const runDev = `bun run dev`;
         <CodeBlock code={runDev} title="Start development server" />
         <div className="text-sm text-muted-foreground">
           This command starts the app with the HTTP server listening on the port defined in `config/default.yaml`. Once the application is running,
-          open your browser and navigate to `http://localhost:3000/`. You should see the `Hello Nael Platform!` message.
+          open your browser and navigate to `http://localhost:3000/`. You should see the `Hello NL Framework!` message.
         </div>
       </section>
 
       <section className="space-y-3">
         <h2 className="text-2xl font-semibold">What&apos;s next?</h2>
         <div className="text-muted-foreground">
-          Now that you have a basic understanding of how to create a Nael application, it&apos;s time to dive deeper into the framework&apos;s features.
+          Now that you have a basic understanding of how to create a NL Framework application, it&apos;s time to dive deeper into the framework&apos;s features.
           The next sections will cover <Link className="text-primary" href="/docs/controllers">Controllers</Link>, <Link className="text-primary" href="/docs/providers">Providers</Link>,
           and <Link className="text-primary" href="/docs/modules">Modules</Link> in more detail.
         </div>

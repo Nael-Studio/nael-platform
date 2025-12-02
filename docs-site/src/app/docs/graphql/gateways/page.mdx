@@ -1,15 +1,15 @@
 ---
 title: 'Gateways · GraphQL'
-description: 'Run an Apollo Federation gateway inside Nael using the built-in FederationGatewayApplication.'
+description: 'Run an Apollo Federation gateway inside NL Framework using the built-in FederationGatewayApplication.'
 ---
 
 import { Badge } from '@/components/ui/badge';
 import { CodeBlock } from '@/components/shared/simple-code-block';
 import Link from 'next/link';
 
-export const gatewayOptions = `import { NaelFactory } from '@nl-framework/platform';
+export const gatewayOptions = `import { NL FrameworkFactory } from '@nl-framework/platform';
 
-const app = await NaelFactory.create(AppModule, {
+const app = await NL FrameworkFactory.create(AppModule, {
   gateway: {
     enabled: true,
     path: '/graphql', // optional; defaults to /graphql
@@ -27,7 +27,7 @@ const { gateway } = await app.listen({
 
 console.log('Gateway running at', gateway?.url);`;
 
-export const integratedGateway = `// If you also start HTTP, Nael mounts the gateway handler into the HTTP server:
+export const integratedGateway = `// If you also start HTTP, NL Framework mounts the gateway handler into the HTTP server:
 const { http, gateway } = await app.listen({
   http: 3000,
   gateway: { path: '/federation', subgraphs: [...] },
@@ -39,7 +39,7 @@ const { http, gateway } = await app.listen({
     <Badge className="bg-sky-100 text-sky-900 dark:bg-sky-900/30 dark:text-sky-50">GraphQL</Badge>
     <h1 className="text-4xl font-semibold tracking-tight">Gateways</h1>
     <div className="text-lg text-muted-foreground max-w-3xl">
-      Nael ships a built-in Apollo Federation gateway. Pass subgraph URLs to <code>NaelFactory</code>, and it boots an
+      NL Framework ships a built-in Apollo Federation gateway. Pass subgraph URLs to <code>NL FrameworkFactory</code>, and it boots an
       <code>ApolloGateway</code>-backed server (standalone or mounted in your HTTP server).
     </div>
   </div>
@@ -47,7 +47,7 @@ const { http, gateway } = await app.listen({
   <section className="space-y-4" id="requirements">
     <h2 className="text-2xl font-semibold">Requirements</h2>
     <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
-      <li>Each Nael service must enable <code>federation: true</code> in <code>GraphQLModule</code>.</li>
+      <li>Each NL Framework service must enable <code>federation: true</code> in <code>GraphQLModule</code>.</li>
       <li>Entities need <code>@key</code> + <code>@ResolveReference</code> implemented (see <Link className="text-primary underline" href="/docs/graphql/federation">Federation</Link>).</li>
       <li>Subgraphs must expose their SDL (default when federation is on); the gateway uses <code>IntrospectAndCompose</code>.</li>
     </ul>

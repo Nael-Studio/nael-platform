@@ -1,6 +1,6 @@
 ---
-title: 'Injection scopes · Nael Platform'
-description: 'Understand singleton, request, and transient lifecycles in the Nael IoC container.'
+title: 'Injection scopes · NL Framework'
+description: 'Understand singleton, request, and transient lifecycles in the NL Framework IoC container.'
 ---
 
 import { Badge } from '@/components/ui/badge';
@@ -105,7 +105,7 @@ try {
         <CodeBlock code={requestScopeSnippet} title="Request-scoped logger" />
         <div className="text-sm text-muted-foreground">
           Request-scoped services can inject other request-scoped or singleton providers. Avoid injecting them into singletons unless you also mark the
-          consuming provider as request-scoped, otherwise Nael will throw a circular scope error.
+          consuming provider as request-scoped, otherwise NL Framework will throw a circular scope error.
         </div>
       </section>
 

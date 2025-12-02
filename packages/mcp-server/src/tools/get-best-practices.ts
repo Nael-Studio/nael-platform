@@ -9,7 +9,7 @@ const inputSchema = z.object({
 
 export const getBestPracticesTool: McpTool<typeof inputSchema> = {
   name: 'get-best-practices',
-  description: 'Get best practices, common patterns, and anti-patterns for the Nael Framework.',
+  description: 'Get best practices, common patterns, and anti-patterns for the NL Framework Framework.',
   inputSchema,
   async handler(args) {
     const topic = args.topic?.toLowerCase();

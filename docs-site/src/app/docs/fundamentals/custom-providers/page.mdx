@@ -1,5 +1,5 @@
 ---
-title: "Custom providers · Nael Platform"
+title: "Custom providers · NL Framework"
 description: "Understand provider tokens, alternative implementations, and factory patterns so you can adapt the IoC container to any integration."
 ---
 
@@ -117,7 +117,7 @@ export class BillingModule {}`;
         <Badge className="bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-50">Fundamentals</Badge>
         <h1 className="text-4xl font-semibold tracking-tight">Custom providers</h1>
         <div className="text-lg text-muted-foreground">
-          Everything in Nael is just a provider resolved by a token. By shaping those tokens yourself—value objects, alternate classes, or factories—you
+          Everything in NL Framework is just a provider resolved by a token. By shaping those tokens yourself—value objects, alternate classes, or factories—you
           can plug in third-party SDKs, swap implementations per environment, or stub dependencies in tests without rewriting consumers.
         </div>
       </div>
@@ -127,7 +127,7 @@ export class BillingModule {}`;
         <div className="text-muted-foreground">
           A provider is either a class marked with `@Injectable()` or an object literal following the `Provider` union
           (`ClassProvider`, `ValueProvider`, or `FactoryProvider`). Value providers shine when you already have
-          an instance—like a database client or preconfigured SDK—and want Nael&rsquo;s container to share it everywhere.
+          an instance—like a database client or preconfigured SDK—and want NL Framework&rsquo;s container to share it everywhere.
         </div>
         <CodeBlock code={tokenBasics} title="Token with a value provider" />
         <div className="text-sm text-muted-foreground">
@@ -154,7 +154,7 @@ export class BillingModule {}`;
         <h2 className="text-2xl font-semibold">Factory providers & dependencies</h2>
         <div className="text-muted-foreground">
           Factories run after the container resolves anything listed in `inject`. They may return values synchronously or asynchronously,
-          which makes them ideal for bootstrapping SDKs that need configuration, logging, or other providers. Nael will await the Promise before exposing
+          which makes them ideal for bootstrapping SDKs that need configuration, logging, or other providers. NL Framework will await the Promise before exposing
           the resulting instance to the rest of the application.
         </div>
         <CodeBlock code={factoryProviderSnippet} title="Async factory provider" />

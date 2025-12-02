@@ -32,7 +32,7 @@ const supportAreas = [
   },
   {
     title: "GraphQL & Federation",
-    description: "Spin up subgraphs, gateways, and persisted queries from the same NaelFactory instance.",
+    description: "Spin up subgraphs, gateways, and persisted queries from the same NL FrameworkFactory instance.",
     points: ["Apollo subgraph", "Federation gateway", "Persisted queries"],
     icon: Layers,
   },
@@ -127,7 +127,7 @@ export default function Home() {
               variant="outline"
               className="border-border/80 text-foreground hover:text-foreground"
             >
-              <Link href="https://github.com/Nael-Studio/nael-platform" rel="noreferrer" target="_blank">
+              <Link href="https://github.com/NL Framework-Studio/nael-platform" rel="noreferrer" target="_blank">
                 Star the repo
               </Link>
             </Button>
@@ -189,7 +189,7 @@ export default function Home() {
             <h2 className="text-3xl font-semibold">Choose your next stop</h2>
           </div>
           <Button asChild variant="outline">
-            <Link href="https://github.com/Nael-Studio/nael-platform" rel="noreferrer" target="_blank">
+            <Link href="https://github.com/NL Framework-Studio/nael-platform" rel="noreferrer" target="_blank">
               Star the repo
             </Link>
           </Button>

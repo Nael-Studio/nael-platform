@@ -1,5 +1,5 @@
 ---
-title: 'Module reference · Nael Platform'
+title: 'Module reference · NL Framework'
 description: 'Use ModuleRef to resolve providers dynamically, create scoped instances, and interact with module-scoped injectors.'
 ---
 
@@ -44,7 +44,7 @@ const billingService = billingModule.get(BillingService);`;
       <section className="space-y-4" id="resolve">
         <h2 className="text-2xl font-semibold">Resolving providers at runtime</h2>
         <div className="text-muted-foreground">
-          Call `moduleRef.resolve(Token)` to retrieve a provider using the same injection graph Nael builds at bootstrap. The promise resolves
+          Call `moduleRef.resolve(Token)` to retrieve a provider using the same injection graph NL Framework builds at bootstrap. The promise resolves
           once the provider is ready; if it was request-scoped, it will honor the current context.
         </div>
         <CodeBlock code={injectModuleRef} title="Inject ModuleRef" />
@@ -62,7 +62,7 @@ const billingService = billingModule.get(BillingService);`;
       <section className="space-y-4" id="transient">
         <h2 className="text-2xl font-semibold">Creating new instances</h2>
         <div className="text-muted-foreground">
-          Use `moduleRef.create()` when you need a throwaway instance that should not be cached by the container. Nael will construct the
+          Use `moduleRef.create()` when you need a throwaway instance that should not be cached by the container. NL Framework will construct the
           provider and resolve its dependencies, but ownership stays with the caller.
         </div>
         <CodeBlock code={transientLookup} title="Per-call instances" />

@@ -1,0 +1,86 @@
+---
+title: 'Pipes · Microservices'
+description: 'Transform and validate incoming microservice messages with pipes and @UsePipes.'
+---
+
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const pipeDef = `import { PipeTransform } from '@nl-framework/core';
+
+export class PositiveNumberPipe implements PipeTransform<any, number> {
+  transform(value: any) {
+    const num = Number(value);
+    if (Number.isNaN(num) || num <= 0) {
+      throw new Error('Value must be a positive number');
+    }
+    return num;
+  }
+}`;
+
+export const consumer = `import { Injectable, UsePipes } from '@nl-framework/core';
+import { MessagePattern } from '@nl-framework/microservices';
+import { PositiveNumberPipe } from './positive-number.pipe';
+
+@Injectable()
+@UsePipes(new PositiveNumberPipe())
+export class PaymentsConsumer {
+  @MessagePattern('payments.charge')
+  async charge(amount: number) {
+    // amount is validated/transformed by the pipe
+    return { ok: true, charged: amount };
+  }
+}`;
+
+export const dispatch = `import { NL FrameworkFactory } from '@nl-framework/platform';
+import { AppModule } from './app.module';
+import { MessageDispatcher } from '@nl-framework/microservices';
+
+const app = await NL FrameworkFactory.create(AppModule);
+const dispatcher = await app.get(MessageDispatcher);
+
+// In a real setup, call dispatcher.dispatch(pattern, data) when your transport delivers a message.
+await dispatcher?.dispatch('payments.charge', '42'); // => passes through PositiveNumberPipe`;
+
+<article className="space-y-8">
+  <div className="space-y-3">
+    <Badge className="bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-50">Microservices</Badge>
+    <h1 className="text-4xl font-semibold tracking-tight">Pipes</h1>
+    <div className="text-lg text-muted-foreground max-w-3xl">
+      Apply transformations/validation to microservice payloads with <code>@UsePipes</code>. Pipes run before your
+      handler executes.
+    </div>
+  </div>
+
+  <section className="space-y-4" id="define">
+    <h2 className="text-2xl font-semibold">Define a pipe</h2>
+    <CodeBlock code={pipeDef} title="positive-number.pipe.ts" />
+  </section>
+
+  <section className="space-y-4" id="apply">
+    <h2 className="text-2xl font-semibold">Apply to consumers</h2>
+    <div className="text-muted-foreground">
+      Decorate a consumer class or method with <code>@UsePipes</code>. Pipes run in order and can throw to short-circuit
+      handler execution.
+    </div>
+    <CodeBlock code={consumer} title="payments.consumer.ts" />
+  </section>
+
+  <section className="space-y-4" id="dispatch">
+    <h2 className="text-2xl font-semibold">Dispatch messages</h2>
+    <div className="text-muted-foreground">
+      The <code>MessageDispatcher</code> applies pipes when you dispatch messages. Wire your transport (e.g., Dapr
+      invocation/pubsub) to call <code>dispatcher.dispatch(pattern, data)</code>.
+    </div>
+    <CodeBlock code={dispatch} title="dispatcher usage" />
+  </section>
+
+  <section className="space-y-4" id="tips">
+    <h2 className="text-2xl font-semibold">Tips</h2>
+    <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+      <li>Order matters: pipes run left-to-right.</li>
+      <li>Throw inside pipes to stop execution; pair with exception filters to shape errors.</li>
+      <li>Keep pipes pure; avoid side effects—call services in the handler instead.</li>
+    </ul>
+  </section>
+</article>

@@ -1,6 +1,6 @@
 ---
-title: 'Modules · Nael Platform'
-description: 'Learn how to organize your Nael application using modules for better code structure and reusability.'
+title: 'Modules · NL Framework'
+description: 'Learn how to organize your NL Framework application using modules for better code structure and reusability.'
 ---
 
 import Link from 'next/link';
@@ -151,7 +151,7 @@ export const moduleStructure = `src/
         <div className="text-sm uppercase tracking-wide text-muted-foreground">Overview</div>
         <h1 className="text-4xl font-semibold">Modules</h1>
         <div className="max-w-2xl text-muted-foreground">
-          A module is a class annotated with a <code>@Module()</code> decorator. The <code>@Module()</code> decorator provides metadata that Nael makes use of to organize the application structure. Each application has at least one module, a root module. The root module is the starting point Nael uses to build the application graph.
+          A module is a class annotated with a <code>@Module()</code> decorator. The <code>@Module()</code> decorator provides metadata that NL Framework makes use of to organize the application structure. Each application has at least one module, a root module. The root module is the starting point NL Framework uses to build the application graph.
         </div>
       </div>
 
@@ -169,7 +169,7 @@ export const moduleStructure = `src/
       <section className="space-y-4">
         <h2 className="text-2xl font-semibold">Shared modules</h2>
         <div className="text-muted-foreground">
-          In Nael, modules are singletons by default, and thus you can share the same instance of any provider between multiple modules effortlessly. Every module is automatically a shared module. Once created it can be reused by any module. Let&apos;s imagine that we want to share an instance of the <code>ConfigService</code> between several other modules.
+          In NL Framework, modules are singletons by default, and thus you can share the same instance of any provider between multiple modules effortlessly. Every module is automatically a shared module. Once created it can be reused by any module. Let&apos;s imagine that we want to share an instance of the <code>ConfigService</code> between several other modules.
         </div>
         <CodeBlock code={sharedModule} title="shared.module.ts" />
         <div className="text-sm text-muted-foreground">
@@ -199,7 +199,7 @@ export const moduleStructure = `src/
       <section className="space-y-4">
         <h2 className="text-2xl font-semibold">Dynamic modules</h2>
         <div className="text-muted-foreground">
-          The Nael module system includes a powerful feature called dynamic modules. This feature enables you to easily create customizable modules that can register and configure providers dynamically. Dynamic modules are covered extensively in the <Link className="text-primary" href="/docs/fundamentals/dynamic-modules">Fundamentals chapter</Link>.
+          The NL Framework module system includes a powerful feature called dynamic modules. This feature enables you to easily create customizable modules that can register and configure providers dynamically. Dynamic modules are covered extensively in the <Link className="text-primary" href="/docs/fundamentals/dynamic-modules">Fundamentals chapter</Link>.
         </div>
         <div className="text-muted-foreground">
           Following is an example of a dynamic module definition for a <code>ConfigModule</code>:
@@ -244,7 +244,7 @@ export const moduleStructure = `src/
         </div>
         <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
           <li>
-            <code>providers</code> - the providers that will be instantiated by the Nael injector and that may be shared at least across this module
+            <code>providers</code> - the providers that will be instantiated by the NL Framework injector and that may be shared at least across this module
           </li>
           <li>
             <code>controllers</code> - the set of controllers defined in this module which have to be instantiated

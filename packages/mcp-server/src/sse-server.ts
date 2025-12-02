@@ -1,6 +1,6 @@
 import http from 'node:http';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
-import { createNaelMcpServer } from './server.js';
+import { createNL FrameworkMcpServer } from './server.js';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS?.split(',') || ['*'];
@@ -41,7 +41,7 @@ async function createSSEServer() {
           enableDnsRebindingProtection: false, // Disabled for development
         });
 
-        const mcpServer = createNaelMcpServer();
+        const mcpServer = createNL FrameworkMcpServer();
 
         transport.onerror = (error: Error) => {
           console.error('[mcp-server] SSE transport error:', error);
@@ -109,7 +109,7 @@ async function createSSEServer() {
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Nael MCP Server - SSE Transport</title>
+    <title>NL Framework MCP Server - SSE Transport</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 40px; }
         code { background: #f4f4f4; padding: 2px 4px; border-radius: 3px; }
@@ -117,7 +117,7 @@ async function createSSEServer() {
     </style>
 </head>
 <body>
-    <h1>Nael Framework MCP Server</h1>
+    <h1>NL Framework Framework MCP Server</h1>
     <h2>SSE Transport (Remote Deployable)</h2>
     <p>Server is running and ready to accept SSE connections.</p>
     

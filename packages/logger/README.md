@@ -1,6 +1,6 @@
 # @nl-framework/logger
 
-Structured logging system for the Nael Framework with JSON output, contextual metadata, and transport adapters optimized for Bun.
+Structured logging system for the NL Framework Framework with JSON output, contextual metadata, and transport adapters optimized for Bun.
 
 ## Installation
 

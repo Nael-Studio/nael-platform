@@ -1,6 +1,6 @@
 # @nl-framework/http
 
-HTTP routing primitives for the Nael Framework featuring controllers, route decorators, middleware, and guard integration.
+HTTP routing primitives for the NL Framework Framework featuring controllers, route decorators, middleware, and guard integration.
 
 ## Installation
 

@@ -4,7 +4,7 @@ export const configDocumentation: PackageDocumentation = {
   name: '@nl-framework/config',
   version: '0.1.0',
   description:
-    'Configuration layer with YAML parsing, environment merging, and strong typing designed for Bun and Nael applications.',
+    'Configuration layer with YAML parsing, environment merging, and strong typing designed for Bun and NL Framework applications.',
   installation: 'bun add @nl-framework/config yaml',
   features: [
     {

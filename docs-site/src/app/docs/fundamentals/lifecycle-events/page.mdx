@@ -1,6 +1,6 @@
 ---
-title: 'Lifecycle events · Nael Platform'
-description: 'Use OnModuleInit, OnModuleDestroy, and bootstrap hooks to manage resources cleanly in Nael modules.'
+title: 'Lifecycle events · NL Framework'
+description: 'Use OnModuleInit, OnModuleDestroy, and bootstrap hooks to manage resources cleanly in NL Framework modules.'
 ---
 
 import { Badge } from '@/components/ui/badge';
@@ -63,7 +63,7 @@ export class MetricsModule {}
         <Badge className="bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-50">Fundamentals</Badge>
         <h1 className="text-4xl font-semibold tracking-tight">Lifecycle events</h1>
         <div className="text-lg text-muted-foreground">
-          Providers in Nael can perform setup and teardown logic through lifecycle interfaces. Knowing when these callbacks fire keeps long-lived
+          Providers in NL Framework can perform setup and teardown logic through lifecycle interfaces. Knowing when these callbacks fire keeps long-lived
           connections healthy, prevents resource leaks, and allows modules to prepare caches before the first request hits.
         </div>
       </div>
@@ -117,7 +117,7 @@ export class MetricsModule {}
       <section className="space-y-4" id="tips">
         <h2 className="text-2xl font-semibold">Best practices</h2>
         <ul className="list-disc pl-6 text-muted-foreground">
-          <li>Keep lifecycle methods idempotent; Nael might instantiate providers more than once in transient or manual contexts.</li>
+          <li>Keep lifecycle methods idempotent; NL Framework might instantiate providers more than once in transient or manual contexts.</li>
           <li>Log lifecycle failures with enough context to troubleshoot (module name, target service, external host).</li>
           <li>Pair every resource acquired in <code>onModuleInit</code> with a corresponding release in <code>onModuleDestroy</code>.</li>
         </ul>

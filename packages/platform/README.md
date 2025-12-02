@@ -1,6 +1,6 @@
 # @nl-framework/platform
 
-Platform adapters and bootstrap utilities that host Nael Framework modules for HTTP, GraphQL, and microservice workloads.
+Platform adapters and bootstrap utilities that host NL Framework Framework modules for HTTP, GraphQL, and microservice workloads.
 
 ## Installation
 
@@ -17,10 +17,10 @@ bun add @nl-framework/platform
 ## Quick start
 
 ```ts
-import { NaelFactory } from '@nl-framework/platform';
+import { NL FrameworkFactory } from '@nl-framework/platform';
 import { AppModule } from './app.module';
 
-const application = await NaelFactory.create(AppModule, {
+const application = await NL FrameworkFactory.create(AppModule, {
   http: {
     port: 3000,
   },
@@ -43,11 +43,11 @@ await application.close();
 
 ## API surface
 
-- `NaelFactory.create(Module, options)` – boots the dependency graph and returns a `NaelApplication` facade.
-- `NaelApplication.listen(options)` – starts HTTP, GraphQL, and federation gateway servers and returns active handles.
-- `NaelApplication.getHttpApplication()` / `getGraphqlApplication()` / `getGatewayApplication()` – access the underlying adapters when you need lower-level control.
-- `NaelApplication.get(token)` / `getConfig()` / `getLogger()` – resolve services from the shared application context.
-- Types such as `NaelFactoryOptions`, `NaelListenOptions`, and `NaelListenResults` document the available configuration hooks.
+- `NL FrameworkFactory.create(Module, options)` – boots the dependency graph and returns a `NL FrameworkApplication` facade.
+- `NL FrameworkApplication.listen(options)` – starts HTTP, GraphQL, and federation gateway servers and returns active handles.
+- `NL FrameworkApplication.getHttpApplication()` / `getGraphqlApplication()` / `getGatewayApplication()` – access the underlying adapters when you need lower-level control.
+- `NL FrameworkApplication.get(token)` / `getConfig()` / `getLogger()` – resolve services from the shared application context.
+- Types such as `NL FrameworkFactoryOptions`, `NL FrameworkListenOptions`, and `NL FrameworkListenResults` document the available configuration hooks.
 
 ## Compatibility
 

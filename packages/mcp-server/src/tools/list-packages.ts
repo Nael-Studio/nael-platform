@@ -4,7 +4,7 @@ import { asTextContent, formatList } from './types';
 
 export const listPackagesTool: McpTool = {
   name: 'list-packages',
-  description: 'List every Nael Framework package with descriptions and highlights.',
+  description: 'List every NL Framework Framework package with descriptions and highlights.',
   async handler() {
     const summaryLines = packageList.map(
       (pkg, index) => `${index + 1}. ${pkg.name}: ${pkg.description}`,

@@ -9,7 +9,7 @@ const main = async () => {
 };
 
 main().catch((error) => {
-  console.error('Fatal error executing Nael CLI');
+  console.error('Fatal error executing NL Framework CLI');
   console.error(error);
   process.exit(1);
 });

@@ -4,7 +4,7 @@ export const coreDocumentation: PackageDocumentation = {
   name: '@nl-framework/core',
   version: '0.1.0',
   description:
-    'Foundational runtime for the Nael Framework. Provides dependency injection, module lifecycle, configuration loading, and application bootstrap primitives.',
+    'Foundational runtime for the NL Framework Framework. Provides dependency injection, module lifecycle, configuration loading, and application bootstrap primitives.',
   installation: 'bun add @nl-framework/core reflect-metadata',
   features: [
     {
@@ -27,7 +27,7 @@ export const coreDocumentation: PackageDocumentation = {
     },
   ],
   quickStart: {
-    description: 'Set up a minimal Nael application with a service and module.',
+    description: 'Set up a minimal NL Framework application with a service and module.',
     steps: [
       'Install `@nl-framework/core` and enable the Reflect metadata polyfill once.',
       'Create injectable services and modules with the provided decorators.',
@@ -52,7 +52,7 @@ const app = await Application.create(AppModule);
 const context = app.getApplicationContext();
 const service = context.get(HelloService);
 
-console.log(service.getGreeting('Nael Developer'));
+console.log(service.getGreeting('NL Framework Developer'));
 await app.init();
 await app.close();
 `,

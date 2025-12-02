@@ -17,14 +17,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Nael Platform Documentation",
+  title: "NL Framework Documentation",
   description:
-    "Official documentation for the Nael Platform Bun framework with Better Auth, GraphQL, and Dapr microservices.",
+    "Official documentation for the NL Framework Bun framework with Better Auth, GraphQL, and Dapr microservices.",
   metadataBase: new URL("https://nael.dev/docs"),
   openGraph: {
-    title: "Nael Platform Documentation",
+    title: "NL Framework Documentation",
     description:
-      "Scaffold Bun-native services with Better Auth, Apollo Federation, and Dapr microservices using the Nael Platform.",
+      "Scaffold Bun-native services with Better Auth, Apollo Federation, and Dapr microservices using the NL Framework.",
     type: "website",
   },
 };

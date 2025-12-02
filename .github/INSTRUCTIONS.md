@@ -92,7 +92,7 @@ Include the following in every PR:
 ## MCP Server Package (`@nl-framework/mcp-server`)
 
 ### Overview
-The MCP (Model Context Protocol) server package exposes Nael Framework documentation, examples, and guidance to AI coding assistants. This makes the framework more discoverable and provides developers with inline help through tools like Claude Desktop, Cursor, and other MCP-compatible clients.
+The MCP (Model Context Protocol) server package exposes NL Framework Framework documentation, examples, and guidance to AI coding assistants. This makes the framework more discoverable and provides developers with inline help through tools like Claude Desktop, Cursor, and other MCP-compatible clients.
 
 ### Package Structure
 ```
@@ -159,7 +159,7 @@ Each tool must be registered with the MCP SDK and include:
 ```typescript
 {
   name: "get-package-docs",
-  description: "Get comprehensive documentation for a specific Nael Framework package including features, installation, API reference, and examples",
+  description: "Get comprehensive documentation for a specific NL Framework Framework package including features, installation, API reference, and examples",
   inputSchema: {
     type: "object",
     properties: {
@@ -178,7 +178,7 @@ Each tool must be registered with the MCP SDK and include:
 ```typescript
 {
   name: "search-api",
-  description: "Search for decorators, classes, methods, or interfaces in Nael Framework with usage examples",
+  description: "Search for decorators, classes, methods, or interfaces in NL Framework Framework with usage examples",
   inputSchema: {
     type: "object",
     properties: {
@@ -224,7 +224,7 @@ Each tool must be registered with the MCP SDK and include:
 ```typescript
 {
   name: "list-packages",
-  description: "List all available Nael Framework packages with descriptions and key features",
+  description: "List all available NL Framework Framework packages with descriptions and key features",
   inputSchema: {
     type: "object",
     properties: {}
@@ -272,7 +272,7 @@ Each tool must be registered with the MCP SDK and include:
 ```typescript
 {
   name: "get-best-practices",
-  description: "Get best practices, common patterns, and anti-patterns for Nael Framework",
+  description: "Get best practices, common patterns, and anti-patterns for NL Framework Framework",
   inputSchema: {
     type: "object",
     properties: {
@@ -323,7 +323,7 @@ Pre-built prompts for code generation:
 ```typescript
 {
   name: "create-http-controller",
-  description: "Generate a new HTTP controller with routes following Nael Framework best practices",
+  description: "Generate a new HTTP controller with routes following NL Framework Framework best practices",
   arguments: [
     { name: "controllerName", description: "Controller class name (e.g., 'UsersController')", required: true },
     { name: "basePath", description: "Base route path (e.g., '/users')", required: true },
@@ -548,7 +548,7 @@ AI: [Internally calls MCP tools]
 - get-example(useCase: "REST API with authentication")
 
 AI Response with accurate framework guidance:
-"Here's how to create an authenticated REST API in Nael Framework:
+"Here's how to create an authenticated REST API in NL Framework Framework:
 
 1. Install packages:
    bun add @nl-framework/http @nl-framework/auth

@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export const installGraphql = `bun add @nl-framework/graphql @apollo/subgraph @as-integrations/bun-http`;
 
-export const gatewayConfig = `NaelFactory.create(FederationGatewayModule.forRoot({
+export const gatewayConfig = `NL FrameworkFactory.create(FederationGatewayModule.forRoot({
   supergraphSdl: readFileSync("./supergraph.graphql", "utf8"),
   pollingInterval: 2000,
   buildService: () => new RemoteGraphQLDataSource({
@@ -28,7 +28,7 @@ export class FleetResolver {
   }
 }`;
 
-export const graphqlServer = `const app = await NaelFactory.create(GraphQLModule.forRoot({
+export const graphqlServer = `const app = await NL FrameworkFactory.create(GraphQLModule.forRoot({
   autoSchemaFile: join(process.cwd(), "schema.gql"),
   playground: process.env.NODE_ENV !== "production",
   context: ({ req, res }) => ({ req, res, requestId: randomUUID() }),
@@ -41,7 +41,7 @@ await app.listen();`;
         <div className="text-sm uppercase tracking-wide text-muted-foreground">Techniques</div>
         <h1 className="text-4xl font-semibold">GraphQL & Federation</h1>
         <div className="max-w-2xl text-muted-foreground">
-          Build monolith schemas or stitch multiple subgraphs without leaving Bun. Nael offers batteries-included
+          Build monolith schemas or stitch multiple subgraphs without leaving Bun. NL Framework offers batteries-included
           modules for Apollo Federation v2, data loaders, persisted queries, and Better Auth-aware contexts.
         </div>
       </div>

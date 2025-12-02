@@ -1,6 +1,6 @@
 ---
 title: 'Validation · Techniques'
-description: 'Validate and transform incoming data with class-validator and class-transformer across HTTP and GraphQL in Nael applications.'
+description: 'Validate and transform incoming data with class-validator and class-transformer across HTTP and GraphQL in NL Framework applications.'
 ---
 
 import Link from 'next/link';
@@ -115,7 +115,7 @@ export async function validateBatch(rows: unknown[]) {
         </Badge>
         <h1 className="text-4xl font-semibold tracking-tight">Validation</h1>
         <div className="text-lg text-muted-foreground">
-          Nael leans on `class-validator` and `class-transformer` to keep payloads predictable.
+          NL Framework leans on `class-validator` and `class-transformer` to keep payloads predictable.
           Define DTOs once and reuse them across HTTP controllers and GraphQL resolvers while the framework handles
           conversion, whitelisting, and user-friendly error responses.
         </div>
@@ -124,7 +124,7 @@ export async function validateBatch(rows: unknown[]) {
       <section className="space-y-4" id="dtos">
         <h2 className="text-2xl font-semibold">Annotate DTOs</h2>
         <div className="text-muted-foreground">
-          Decorate classes with validation rules and optional transformation hints. Nael calls `class-transformer`{' '}
+          Decorate classes with validation rules and optional transformation hints. NL Framework calls `class-transformer`{' '}
           with `enableImplicitConversion` and `exposeDefaultValues` enabled, so strings like
           `&quot;5&quot;` can hydrate numeric fields and defaults populate when values are missing.
         </div>

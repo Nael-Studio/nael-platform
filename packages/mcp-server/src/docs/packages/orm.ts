@@ -4,7 +4,7 @@ export const ormDocumentation: PackageDocumentation = {
   name: '@nl-framework/orm',
   version: '0.2.7',
   description:
-    'MongoDB Object Data Mapper with decorators, repositories, and transaction helpers built for the Nael Framework.',
+    'MongoDB Object Data Mapper with decorators, repositories, and transaction helpers built for the NL Framework Framework.',
   installation: 'bun add @nl-framework/orm mongodb',
   features: [
     {

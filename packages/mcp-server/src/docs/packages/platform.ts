@@ -4,7 +4,7 @@ export const platformDocumentation: PackageDocumentation = {
   name: '@nl-framework/platform',
   version: '0.1.0',
   description:
-    'Platform adapters and bootstrap utilities that host Nael Framework modules for HTTP, GraphQL, and microservice workloads.',
+    'Platform adapters and bootstrap utilities that host NL Framework Framework modules for HTTP, GraphQL, and microservice workloads.',
   installation: 'bun add @nl-framework/platform',
   features: [
     {
@@ -73,14 +73,14 @@ await Promise.all([httpApp.start(), microApp.start()]);
 `,
     },
     {
-      title: 'HTTP + GraphQL via NaelFactory',
+      title: 'HTTP + GraphQL via NL FrameworkFactory',
       description: 'Start the platform wrapper with GraphQL auto-discovery and log the server URL.',
-      code: `import { NaelFactory } from '@nl-framework/platform';
+      code: `import { NL FrameworkFactory } from '@nl-framework/platform';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
 import { AppModule } from './modules/app.module';
 
 const bootstrap = async () => {
-  const app = await NaelFactory.create(AppModule, {
+  const app = await NL FrameworkFactory.create(AppModule, {
     graphql: {
       path: '/api/graphql',
     },

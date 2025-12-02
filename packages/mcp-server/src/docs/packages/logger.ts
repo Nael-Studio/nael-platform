@@ -4,7 +4,7 @@ export const loggerDocumentation: PackageDocumentation = {
   name: '@nl-framework/logger',
   version: '0.1.0',
   description:
-    'Structured logging system with JSON output, contextual metadata, and Bun/Node transport adapters tailored for the Nael Framework.',
+    'Structured logging system with JSON output, contextual metadata, and Bun/Node transport adapters tailored for the NL Framework Framework.',
   installation: 'bun add @nl-framework/logger',
   features: [
     {
