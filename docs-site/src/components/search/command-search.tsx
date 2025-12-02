@@ -14,6 +14,9 @@ import {
 import { searchDocs as fallbackDocs, type SearchDoc } from "@/lib/search-data";
 import Fuse from "fuse.js";
 
+const MAX_SEARCH_RESULTS = 10;
+const MAX_HIGHLIGHT_MATCHES = 10;
+
 export function CommandSearch() {
   const [open, setOpen] = React.useState(false);
   const [docs, setDocs] = React.useState<SearchDoc[]>(fallbackDocs);
@@ -139,8 +142,8 @@ export function CommandSearch() {
       idx = lowerText.indexOf(lowerQuery, idx + 1);
     }
     
-    // Limit to first 5 matches
-    const limitedMatches = matches.slice(0, 5);
+    // Limit to first MAX_HIGHLIGHT_MATCHES matches
+    const limitedMatches = matches.slice(0, MAX_HIGHLIGHT_MATCHES);
     
     limitedMatches.forEach((matchIndex, i) => {
       // Add text before match
@@ -183,7 +186,7 @@ export function CommandSearch() {
     }
 
     // Debounce search for performance
-    const searchResults = fuse.search(debouncedQuery).slice(0, 10).map((r) => r.item);
+    const searchResults = fuse.search(debouncedQuery).slice(0, MAX_SEARCH_RESULTS).map((r) => r.item);
     console.log("Search results for", debouncedQuery, ":", searchResults.length);
     return searchResults;
   }, [debouncedQuery, fuse, docs]);
