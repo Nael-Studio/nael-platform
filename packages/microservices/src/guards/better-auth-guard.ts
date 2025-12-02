@@ -18,7 +18,7 @@ export class BetterAuthMicroGuard implements CanActivate {
   private readonly validateSession?: BetterAuthMicroGuardOptions['validateSession'];
 
   constructor(options: BetterAuthMicroGuardOptions) {
-    this.upstreamUrl = options.upstreamUrl.replace(/\/+$/, '');
+    this.upstreamUrl = BetterAuthMicroGuard.normalizeUpstreamUrl(options.upstreamUrl);
     this.tokenField = options.tokenField ?? 'token';
     this.headerName = options.headerName ?? 'authorization';
     this.validateSession = options.validateSession;
@@ -48,5 +48,14 @@ export class BetterAuthMicroGuard implements CanActivate {
     const obj = data as Record<string, unknown>;
     const value = obj[this.tokenField];
     return typeof value === 'string' && value.length > 0 ? value : null;
+  }
+
+  private static normalizeUpstreamUrl(url: string): string {
+    let sanitized = url.trim();
+    // Manually remove trailing slashes to avoid RegExp backtracking issues
+    while (sanitized.length > 1 && sanitized.endsWith('/')) {
+      sanitized = sanitized.slice(0, -1);
+    }
+    return sanitized;
   }
 }
