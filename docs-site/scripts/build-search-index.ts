@@ -44,6 +44,20 @@ const extractHeadings = (content: string) => {
   return headings;
 };
 
+const sanitizeInlineText = (value: string): string => {
+  const htmlTagPattern = /<[^<>]*>/g;
+  const bracePattern = /\{[^{}]*\}/g;
+  let previous: string;
+  let current = value;
+
+  do {
+    previous = current;
+    current = current.replace(htmlTagPattern, " ").replace(bracePattern, " ");
+  } while (current !== previous);
+
+  return current.replace(/[<>]/g, " ").trim();
+};
+
 const extractParagraph = (content: string) => {
   // crude paragraph extraction: first non-empty line that isn't metadata or code fence
   const lines = content.split("\n");
@@ -53,7 +67,10 @@ const extractParagraph = (content: string) => {
     if (trimmed.startsWith("import") || trimmed.startsWith("export")) continue;
     if (trimmed.startsWith("#")) continue;
     if (trimmed.startsWith("```")) continue;
-    return trimmed.replace(/<[^>]+>/g, "").replace(/\{.+?\}/g, "").trim();
+    const sanitized = sanitizeInlineText(trimmed);
+    if (sanitized) {
+      return sanitized.replace(/\s+/g, " ").trim();
+    }
   }
   return "";
 };
@@ -137,9 +154,7 @@ const extractContent = (content: string) => {
     if (!trimmed) continue;
 
     // Clean and add text content
-    const cleaned = trimmed
-      .replace(/<[^>]+>/g, " ") // Remove JSX tags
-      .replace(/\{[^}]+\}/g, " ") // Remove JSX expressions
+    const cleaned = sanitizeInlineText(trimmed)
       .replace(/`([^`]+)`/g, "$1") // Remove backticks but keep content
       .replace(/[#*_]/g, "") // Remove markdown formatting
       .replace(/\s+/g, " ") // Normalize whitespace
