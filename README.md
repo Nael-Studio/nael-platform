@@ -44,7 +44,7 @@ Explore the `examples/` folder for runnable samples that demonstrate the current
 - `examples/auth-multi-tenant-graphql` – Better Auth multi-tenant GraphQL example using the multi-tenant guard and shared HTTP auth routes
 - `examples/basic-graphql` – standalone GraphQL server with resolver discovery
 - `examples/federated-graphql` – subgraph service suitable for Apollo Federation
-- `examples/federation-gateway` – single-port HTTP + GraphQL gateway using NL FrameworkFactory
+- `examples/federation-gateway` – single-port HTTP + GraphQL gateway using NLFactory
 - `examples/mongo-orm` – REST API backed by the Mongo ORM with seeding and soft deletes
 - `examples/scheduler` – background job scheduler demo showcasing cron, interval, timeout, and dynamic jobs powered by Bun workers
 - **`examples/microservices` – event-driven microservice with Dapr pub/sub, message pattern handlers, and deployment guides**
@@ -58,7 +58,7 @@ The roadmap tracks both the pieces that already landed and the ones we still pla
 - [x] Modular application core with dependency injection and scoped contexts
 - [x] HTTP module with decorator-driven routing, middleware, and Bun-native server
 - [x] GraphQL module with schema-first resolver discovery and federation hooks
-- [x] NL FrameworkFactory-powered Apollo Federation gateway running alongside HTTP routes
+- [x] NLFactory-powered Apollo Federation gateway running alongside HTTP routes
 - [x] Structured logger with pluggable transports (console provided)
 - [x] Config module with file-based loaders, async options, and feature slicing helpers
 - [x] MongoDB ORM module with repositories, timestamps, soft delete, and seeding support
@@ -274,7 +274,7 @@ Unified factory for running HTTP and GraphQL servers together on a single port, 
 
 **Key Features:**
 
-- **NL FrameworkFactory**: Single entry point for creating integrated applications
+- **NLFactory**: Single entry point for creating integrated applications
 - **Shared Context**: HTTP and GraphQL share the same DI container
 - **Federation Gateway**: Built-in Apollo Gateway for subgraph aggregation
 - **Flexible Deployment**: Run as monolith or separate services
@@ -283,7 +283,7 @@ Unified factory for running HTTP and GraphQL servers together on a single port, 
 **Example:**
 
 ```typescript
-import { NL FrameworkFactory } from '@nl-framework/platform';
+import { NLFactory } from '@nl-framework/platform';
 
 @Module({
   imports: [HttpModule.forRoot(), GraphqlModule.forRoot({ schemaPath: './schema.graphql' })],
@@ -293,7 +293,7 @@ import { NL FrameworkFactory } from '@nl-framework/platform';
 export class AppModule {}
 
 // Create unified application
-const factory = await NL FrameworkFactory.create(AppModule);
+const factory = await NLFactory.create(AppModule);
 
 // Access both HTTP and GraphQL applications
 const httpApp = factory.getHttpApplication();
@@ -306,9 +306,9 @@ await httpApp.start({ port: 3000 });
 **Federation Gateway:**
 
 ```typescript
-import { NL FrameworkFactory } from '@nl-framework/platform';
+import { NLFactory } from '@nl-framework/platform';
 
-const factory = await NL FrameworkFactory.createGateway(AppModule, {
+const factory = await NLFactory.createGateway(AppModule, {
   gateway: {
     supergraphSdl: './supergraph.graphql',
     // or serviceList for dynamic composition
@@ -824,7 +824,7 @@ bun install
 bun run src/main.ts
 ```
 
-This generates a Bun-native project with `NL FrameworkFactory`, logging, configuration, and starter HTTP endpoints already wired up.
+This generates a Bun-native project with `NLFactory`, logging, configuration, and starter HTTP endpoints already wired up.
 
 While the API is still in flux, you can also experiment locally by cloning the repository and running the examples:
 

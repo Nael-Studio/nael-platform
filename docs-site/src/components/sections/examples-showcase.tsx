@@ -6,7 +6,7 @@ const examples = [
   },
   {
     name: "federated-graphql",
-    summary: "Schema-first Apollo Federation subgraph with resolver discovery and NL FrameworkFactory wiring.",
+    summary: "Schema-first Apollo Federation subgraph with resolver discovery and NLFactory wiring.",
     command: "bun run --cwd examples/federated-graphql start",
   },
   {

@@ -47,8 +47,8 @@ export const graphqlDocumentation: PackageDocumentation = {
       'Decorate input DTO classes with `@InputType()` (and fields with `@Field()`) so schema metadata is generated.',
       'Register enums and scalars with `registerEnumType` / `registerScalarType` so schema builder can emit them.',
       'Register each resolver under the module\'s `resolvers` array so discovery picks them up.',
-      'Let NL FrameworkFactory auto-mount GraphQL—no enable flag is required once resolvers are registered.',
-      'Create an application with `NL FrameworkFactory.create()` and start listening on your desired port.',
+      'Let NLFactory auto-mount GraphQL—no enable flag is required once resolvers are registered.',
+      'Create an application with `NLFactory.create()` and start listening on your desired port.',
     ],
     code: `import { Module } from '@nl-framework/core';
 import {
@@ -62,7 +62,7 @@ import {
   registerScalarType,
   GraphQLJSON,
 } from '@nl-framework/graphql';
-import { NL FrameworkFactory } from '@nl-framework/platform';
+import { NLFactory } from '@nl-framework/platform';
 import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
 
 enum Role {
@@ -118,7 +118,7 @@ class UsersResolver {
 })
 class GraphqlModule {}
 
-const app = await NL FrameworkFactory.create(GraphqlModule);
+const app = await NLFactory.create(GraphqlModule);
 const { graphql } = await app.listen({ http: 4000 });
 console.log('GraphQL ready at', graphql?.url ?? 'http://localhost:4000/graphql');
 `,

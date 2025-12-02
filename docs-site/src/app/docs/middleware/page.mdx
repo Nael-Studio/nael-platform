@@ -44,9 +44,9 @@ const requestTimingMiddleware: MiddlewareHandler = async (ctx, next) => {
   }
 };`;
 
-export const applyMiddleware = `import { NL FrameworkFactory } from '@nl-framework/platform';
+export const applyMiddleware = `import { NLFactory } from '@nl-framework/platform';
 
-const app = await NL FrameworkFactory.create(AppModule);
+const app = await NLFactory.create(AppModule);
 const httpApp = app.getHttpApplication();
 
 if (httpApp) {
@@ -245,12 +245,12 @@ const apiOnlyMiddleware: MiddlewareHandler = async (ctx, next) => {
   });
 };`;
 
-export const multipleMiddleware = `import { NL FrameworkFactory } from '@nl-framework/platform';
+export const multipleMiddleware = `import { NLFactory } from '@nl-framework/platform';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
 import type { MiddlewareHandler } from '@nl-framework/http';
 
 const bootstrap = async () => {
-  const app = await NL FrameworkFactory.create(AppModule);
+  const app = await NLFactory.create(AppModule);
   const loggerFactory = await app.get<LoggerFactory>(LoggerFactory);
   const requestLogger = loggerFactory.create({ context: 'Request' });
 

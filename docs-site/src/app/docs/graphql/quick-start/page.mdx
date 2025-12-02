@@ -30,11 +30,11 @@ import { ProfileModule } from './modules/profile/profile.module';
 })
 export class AppModule {}`;
 
-export const bootstrap = `import { NL FrameworkFactory } from '@nl-framework/platform';
+export const bootstrap = `import { NLFactory } from '@nl-framework/platform';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NL FrameworkFactory.create(AppModule);
+  const app = await NLFactory.create(AppModule);
   await app.listen({ http: 3000 });
 }
 

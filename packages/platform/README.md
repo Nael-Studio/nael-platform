@@ -17,10 +17,10 @@ bun add @nl-framework/platform
 ## Quick start
 
 ```ts
-import { NL FrameworkFactory } from '@nl-framework/platform';
+import { NLFactory } from '@nl-framework/platform';
 import { AppModule } from './app.module';
 
-const application = await NL FrameworkFactory.create(AppModule, {
+const application = await NLFactory.create(AppModule, {
   http: {
     port: 3000,
   },
@@ -43,11 +43,11 @@ await application.close();
 
 ## API surface
 
-- `NL FrameworkFactory.create(Module, options)` – boots the dependency graph and returns a `NL FrameworkApplication` facade.
+- `NLFactory.create(Module, options)` – boots the dependency graph and returns a `NL FrameworkApplication` facade.
 - `NL FrameworkApplication.listen(options)` – starts HTTP, GraphQL, and federation gateway servers and returns active handles.
 - `NL FrameworkApplication.getHttpApplication()` / `getGraphqlApplication()` / `getGatewayApplication()` – access the underlying adapters when you need lower-level control.
 - `NL FrameworkApplication.get(token)` / `getConfig()` / `getLogger()` – resolve services from the shared application context.
-- Types such as `NL FrameworkFactoryOptions`, `NL FrameworkListenOptions`, and `NL FrameworkListenResults` document the available configuration hooks.
+- Types such as `NLFactoryOptions`, `NL FrameworkListenOptions`, and `NL FrameworkListenResults` document the available configuration hooks.
 
 ## Compatibility
 

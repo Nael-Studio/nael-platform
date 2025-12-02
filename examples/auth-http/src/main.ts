@@ -1,4 +1,4 @@
-import { NL FrameworkFactory } from '@nl-framework/platform';
+import { NLFactory } from '@nl-framework/platform';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
 import { registerHttpGuards, type MiddlewareHandler } from '@nl-framework/http';
 import { createBetterAuthMiddleware, BetterAuthService, AuthGuard } from '@nl-framework/auth';
@@ -6,7 +6,7 @@ import { AppModule } from './app.module';
 import type { ExampleConfig } from './types';
 
 const bootstrap = async () => {
-  const app = await NL FrameworkFactory.create(AppModule);
+  const app = await NLFactory.create(AppModule);
 
   const loggerFactory = await app.get<LoggerFactory>(LoggerFactory);
   const appLogger = loggerFactory.create({ context: 'AuthHttpExample' });

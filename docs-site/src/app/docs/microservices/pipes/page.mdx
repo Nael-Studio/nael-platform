@@ -32,11 +32,11 @@ export class PaymentsConsumer {
   }
 }`;
 
-export const dispatch = `import { NL FrameworkFactory } from '@nl-framework/platform';
+export const dispatch = `import { NLFactory } from '@nl-framework/platform';
 import { AppModule } from './app.module';
 import { MessageDispatcher } from '@nl-framework/microservices';
 
-const app = await NL FrameworkFactory.create(AppModule);
+const app = await NLFactory.create(AppModule);
 const dispatcher = await app.get(MessageDispatcher);
 
 // In a real setup, call dispatcher.dispatch(pattern, data) when your transport delivers a message.

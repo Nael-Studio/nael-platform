@@ -96,7 +96,7 @@ export const microservicesSnippet = `createMicroservicesModule({
         </div>
         <ul className="list-disc space-y-2 pl-5">
           <li>Decorators + DI you already know from NestJS.</li>
-          <li>Unified HTTP, GraphQL, federation gateway, and microservices factories via `NL FrameworkFactory`.</li>
+          <li>Unified HTTP, GraphQL, federation gateway, and microservices factories via `NLFactory`.</li>
           <li>Better Auth-first mindset: guards, middleware, tenant-aware resolvers, and HTTP proxies included.</li>
           <li>CLI automation with `nl new` and `nl g *` commands.</li>
         </ul>
@@ -161,7 +161,7 @@ export const microservicesSnippet = `createMicroservicesModule({
   <section className="space-y-6" id="graphql">
     <h2 className="text-3xl font-semibold">GraphQL & Federation</h2>
     <div className="text-muted-foreground">
-      Schema-first development with Apollo Server under the hood. Run a gateway and subgraphs from the same NL FrameworkFactory instance or deploy them independently.
+      Schema-first development with Apollo Server under the hood. Run a gateway and subgraphs from the same NLFactory instance or deploy them independently.
     </div>
     <CodeBlock code={graphqlSnippet} title="GraphqlModule setup" />
     <div className="text-sm text-muted-foreground">

@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { CodeBlock } from '@/components/shared/simple-code-block';
 
-export const configureLogger = `import { NL FrameworkFactory } from '@nl-framework/platform';
+export const configureLogger = `import { NLFactory } from '@nl-framework/platform';
 import { Logger } from '@nl-framework/logger';
 
 const appLogger = new Logger({
@@ -15,7 +15,7 @@ const appLogger = new Logger({
   level: (process.env.LOG_LEVEL as any) ?? 'INFO',
 });
 
-const app = await NL FrameworkFactory.create(AppModule, { logger: appLogger });
+const app = await NLFactory.create(AppModule, { logger: appLogger });
 await app.listen({ http: 3000 });`;
 
 export const requestLogging = `import { MiddlewareHandler } from '@nl-framework/http';

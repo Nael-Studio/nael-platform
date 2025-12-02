@@ -64,26 +64,26 @@ const normalizeGraphqlPath = (path: string): string => {
   return path;
 };
 
-export interface NL FrameworkFactoryHttpOptions extends HttpServerOptions {
+export interface NLFactoryHttpOptions extends HttpServerOptions {
   /** @deprecated HTTP is always enabled; remove this flag. */
   enabled?: boolean;
 }
 
-export interface NL FrameworkFactoryGraphqlOptions extends GraphqlServerOptions {
+export interface NLFactoryGraphqlOptions extends GraphqlServerOptions {
   /** @deprecated GraphQL availability is determined by resolver discovery; remove this flag. */
   enabled?: boolean;
 }
 
-export interface NL FrameworkFactoryGatewayOptions extends FederationGatewayServerOptions {
+export interface NLFactoryGatewayOptions extends FederationGatewayServerOptions {
   enabled?: boolean;
 }
 
-export interface NL FrameworkFactoryOptions extends ApplicationOptions {
+export interface NLFactoryOptions extends ApplicationOptions {
   /** @deprecated Boolean toggles are deprecated; HTTP is always enabled. Pass an options object instead. */
-  http?: boolean | NL FrameworkFactoryHttpOptions;
+  http?: boolean | NLFactoryHttpOptions;
   /** @deprecated Boolean toggles and the `enabled` flag are deprecated; GraphQL starts automatically when resolvers exist. */
-  graphql?: boolean | NL FrameworkFactoryGraphqlOptions;
-  gateway?: boolean | NL FrameworkFactoryGatewayOptions;
+  graphql?: boolean | NLFactoryGraphqlOptions;
+  gateway?: boolean | NLFactoryGatewayOptions;
 }
 
 /**
@@ -91,7 +91,7 @@ export interface NL FrameworkFactoryOptions extends ApplicationOptions {
  *
  * @deprecated The `graphql` option has been removed from `NL FrameworkListenOptions`.
  * GraphQL is now integrated through HTTP. To expose GraphQL, configure the HTTP server
- * and set the appropriate GraphQL options in `NL FrameworkFactoryOptions`.
+ * and set the appropriate GraphQL options in `NLFactoryOptions`.
  * If you previously used `graphql?: number`, please migrate to using the HTTP server
  * and set the GraphQL path as needed.
  * See the migration guide for more details.
@@ -265,7 +265,7 @@ class NL FrameworkPlatformApplication implements NL FrameworkApplication {
   }
 }
 
-const normalizeHttpOptions = (value?: boolean | NL FrameworkFactoryHttpOptions): NormalizedHttpOptions => {
+const normalizeHttpOptions = (value?: boolean | NLFactoryHttpOptions): NormalizedHttpOptions => {
   if (typeof value === 'boolean') {
     return {
       options: {},
@@ -289,7 +289,7 @@ const normalizeHttpOptions = (value?: boolean | NL FrameworkFactoryHttpOptions):
 };
 
 const normalizeGraphqlOptions = (
-  value?: boolean | NL FrameworkFactoryGraphqlOptions,
+  value?: boolean | NLFactoryGraphqlOptions,
 ): NormalizedGraphqlOptions => {
   if (typeof value === 'boolean') {
     const path = normalizeGraphqlPath('/graphql');
@@ -328,7 +328,7 @@ const normalizeGraphqlOptions = (
 };
 
 const normalizeGatewayOptions = (
-  value?: boolean | NL FrameworkFactoryGatewayOptions,
+  value?: boolean | NLFactoryGatewayOptions,
 ): NormalizedGatewayOptions => {
   if (typeof value === 'boolean') {
     return { enabled: value, options: { path: '/graphql' }, explicit: true };
@@ -356,10 +356,10 @@ const normalizeGatewayOptions = (
   };
 };
 
-export class NL FrameworkFactory {
+export class NLFactory {
   static async create(
     rootModule: ClassType,
-    options: NL FrameworkFactoryOptions = {},
+    options: NLFactoryOptions = {},
   ): Promise<NL FrameworkApplication> {
     const { http, graphql, gateway, ...appOptions } = options;
     const app = new Application();
@@ -464,7 +464,7 @@ export class NL FrameworkFactory {
       logger.info('Mounted federation gateway within HTTP server /graphql');
     }
 
-    logger.info('NL FrameworkFactory created shared application context');
+    logger.info('NLFactory created shared application context');
 
     return new NL FrameworkPlatformApplication(
       context,

@@ -21,11 +21,11 @@ import { HttpModule } from '@nl-framework/http';
 })
 export class AppModule {}`;
 
-export const bootstrap = `import { NL FrameworkFactory } from '@nl-framework/platform';
+export const bootstrap = `import { NLFactory } from '@nl-framework/platform';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NL FrameworkFactory.create(AppModule);
+  const app = await NLFactory.create(AppModule);
   const http = app.getHttpApplication();
 
   http?.use((ctx, next) => {

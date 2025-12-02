@@ -20,7 +20,7 @@ bun add @nl-framework/graphql graphql
 ```ts
 import { Module } from '@nl-framework/core';
 import { Resolver, Query, Mutation, Args, InputType, Field } from '@nl-framework/graphql';
-import { NL FrameworkFactory } from '@nl-framework/platform';
+import { NLFactory } from '@nl-framework/platform';
 import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
 
 @InputType()
@@ -59,7 +59,7 @@ class UsersResolver {
 })
 class GraphqlModule {}
 
-const app = await NL FrameworkFactory.create(GraphqlModule);
+const app = await NLFactory.create(GraphqlModule);
 const { graphql } = await app.listen({ http: 4000 });
 console.log('GraphQL ready at', graphql?.url ?? 'http://localhost:4000/graphql');
 ```

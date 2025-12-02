@@ -24,15 +24,15 @@ nl g model user --module users
 bun run src/main.ts`,
     },
     {
-      heading: 'Manual Bun bootstrap with NL FrameworkFactory',
+      heading: 'Manual Bun bootstrap with NLFactory',
       code: `import 'reflect-metadata';
 import { Module } from '@nl-framework/core';
-import { NL FrameworkFactory } from '@nl-framework/platform';
+import { NLFactory } from '@nl-framework/platform';
 
 @Module({})
 class AppModule {}
 
-const app = await NL FrameworkFactory.create(AppModule);
+const app = await NLFactory.create(AppModule);
 const { http } = await app.listen({ http: 3000 });
 const port = http?.port ?? 3000;
 

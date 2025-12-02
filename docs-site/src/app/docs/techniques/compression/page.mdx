@@ -36,9 +36,9 @@ export const compressionMiddleware: MiddlewareHandler = async (ctx, next) => {
   });
 };`;
 
-export const applyMiddleware = `import { NL FrameworkFactory } from '@nl-framework/platform';
+export const applyMiddleware = `import { NLFactory } from '@nl-framework/platform';
 
-const app = await NL FrameworkFactory.create(AppModule);
+const app = await NLFactory.create(AppModule);
 const http = app.getHttpApplication();
 
 if (http) {

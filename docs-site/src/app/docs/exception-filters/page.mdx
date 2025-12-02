@@ -235,11 +235,11 @@ export class LoggingExceptionFilter implements ExceptionFilter {
 }`;
 
 export const multipleFilters = `import { registerExceptionFilters } from '@nl-framework/http';
-import { NL FrameworkFactory } from '@nl-framework/platform';
+import { NLFactory } from '@nl-framework/platform';
 import { LoggerFactory } from '@nl-framework/logger';
 
 const bootstrap = async () => {
-  const app = await NL FrameworkFactory.create(AppModule);
+  const app = await NLFactory.create(AppModule);
   const loggerFactory = await app.get(LoggerFactory);
 
   // Register filters in order

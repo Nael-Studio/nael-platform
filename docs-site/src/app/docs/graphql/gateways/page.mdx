@@ -7,9 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { CodeBlock } from '@/components/shared/simple-code-block';
 import Link from 'next/link';
 
-export const gatewayOptions = `import { NL FrameworkFactory } from '@nl-framework/platform';
+export const gatewayOptions = `import { NLFactory } from '@nl-framework/platform';
 
-const app = await NL FrameworkFactory.create(AppModule, {
+const app = await NLFactory.create(AppModule, {
   gateway: {
     enabled: true,
     path: '/graphql', // optional; defaults to /graphql
@@ -39,7 +39,7 @@ const { http, gateway } = await app.listen({
     <Badge className="bg-sky-100 text-sky-900 dark:bg-sky-900/30 dark:text-sky-50">GraphQL</Badge>
     <h1 className="text-4xl font-semibold tracking-tight">Gateways</h1>
     <div className="text-lg text-muted-foreground max-w-3xl">
-      NL Framework ships a built-in Apollo Federation gateway. Pass subgraph URLs to <code>NL FrameworkFactory</code>, and it boots an
+      NL Framework ships a built-in Apollo Federation gateway. Pass subgraph URLs to <code>NLFactory</code>, and it boots an
       <code>ApolloGateway</code>-backed server (standalone or mounted in your HTTP server).
     </div>
   </div>

@@ -32,7 +32,7 @@ const supportAreas = [
   },
   {
     title: "GraphQL & Federation",
-    description: "Spin up subgraphs, gateways, and persisted queries from the same NL FrameworkFactory instance.",
+    description: "Spin up subgraphs, gateways, and persisted queries from the same NLFactory instance.",
     points: ["Apollo subgraph", "Federation gateway", "Persisted queries"],
     icon: Layers,
   },

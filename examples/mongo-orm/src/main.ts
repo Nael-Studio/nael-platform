@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
-import { NL FrameworkFactory } from '@nl-framework/platform';
+import { NLFactory } from '@nl-framework/platform';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
 import { getSeedRunnerToken, type SeedRunner } from '@nl-framework/orm';
 import type { MiddlewareHandler } from '@nl-framework/http';
@@ -11,7 +11,7 @@ const bootstrap = async () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
   const configDir = resolve(currentDir, '../config');
 
-  const app = await NL FrameworkFactory.create(AppModule, {
+  const app = await NLFactory.create(AppModule, {
     config: {
       dir: configDir,
     },

@@ -1,9 +1,9 @@
-import { NL FrameworkFactory } from '@nl-framework/platform';
+import { NLFactory } from '@nl-framework/platform';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
 import { AppModule } from './app.module';
 
 const bootstrap = async () => {
-  const app = await NL FrameworkFactory.create(AppModule);
+  const app = await NLFactory.create(AppModule);
 
   const loggerFactory = await app.get<LoggerFactory>(LoggerFactory);
   const appLogger = loggerFactory.create({ context: 'BasicGraphqlExample' });

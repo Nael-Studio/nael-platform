@@ -10,10 +10,10 @@ export const installCli = `bun install --global @nl-framework/cli`;
 
 export const createProject = `nl new my-app`;
 
-export const mainFile = `import { NL FrameworkFactory } from '@nl-framework/core';
+export const mainFile = `import { NLFactory } from '@nl-framework/core';
 
 async function bootstrap() {
-  const app = await NL FrameworkFactory.create(AppModule);
+  const app = await NLFactory.create(AppModule);
   await app.listen(3000);
   console.log(\`Application is running on: http://localhost:3000\`);
 }
@@ -90,7 +90,7 @@ export const runDev = `bun run dev`;
           Here&apos;s a brief overview of the core files:
         </div>
         <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
-          <li><code>src/main.ts</code> - The entry file of the application which uses the core function <code>NL FrameworkFactory</code> to create an application instance.</li>
+          <li><code>src/main.ts</code> - The entry file of the application which uses the core function <code>NLFactory</code> to create an application instance.</li>
           <li><code>src/app.module.ts</code> - The root module of the application.</li>
           <li><code>src/app.controller.ts</code> - A basic controller with a single route.</li>
           <li><code>src/app.service.ts</code> - A basic service with a single method.</li>
@@ -105,7 +105,7 @@ export const runDev = `bun run dev`;
         </div>
         <CodeBlock code={mainFile} title="src/main.ts" />
         <div className="text-sm text-muted-foreground">
-          To create a NL Framework application instance, we use the core `NL FrameworkFactory` class. `NL FrameworkFactory` exposes a few static methods
+          To create a NL Framework application instance, we use the core `NLFactory` class. `NLFactory` exposes a few static methods
           that allow creating an application instance. The `create()` method returns an application object, which implements the `INL FrameworkApplication` interface.
         </div>
       </section>

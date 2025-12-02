@@ -33,7 +33,7 @@ export function GettingStartedPreview() {
           <CodeSnippet code={cliCommand} label="Scaffold a service" />
           <p className="text-sm text-muted-foreground">
             The CLI wires up Better Auth modules, HTTP controllers, GraphQL resolvers, and
-            a ready-to-run NL FrameworkFactory bootstrap. See the detailed walkthrough on the{" "}
+            a ready-to-run NLFactory bootstrap. See the detailed walkthrough on the{" "}
             <Link className="text-primary" href="/getting-started">
               Getting Started page
             </Link>

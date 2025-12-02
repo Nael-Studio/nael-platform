@@ -1,9 +1,9 @@
 import { Logger, LoggerFactory } from '@nl-framework/logger';
-import { NL FrameworkFactory } from '@nl-framework/platform';
+import { NLFactory } from '@nl-framework/platform';
 import { AppModule } from './app.module';
 
 const bootstrap = async () => {
-  const app = await NL FrameworkFactory.create(AppModule, {
+  const app = await NLFactory.create(AppModule, {
     graphql: {
       federation: { enabled: true },
     },

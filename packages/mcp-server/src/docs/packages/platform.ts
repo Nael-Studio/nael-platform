@@ -73,14 +73,14 @@ await Promise.all([httpApp.start(), microApp.start()]);
 `,
     },
     {
-      title: 'HTTP + GraphQL via NL FrameworkFactory',
+      title: 'HTTP + GraphQL via NLFactory',
       description: 'Start the platform wrapper with GraphQL auto-discovery and log the server URL.',
-      code: `import { NL FrameworkFactory } from '@nl-framework/platform';
+      code: `import { NLFactory } from '@nl-framework/platform';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
 import { AppModule } from './modules/app.module';
 
 const bootstrap = async () => {
-  const app = await NL FrameworkFactory.create(AppModule, {
+  const app = await NLFactory.create(AppModule, {
     graphql: {
       path: '/api/graphql',
     },

@@ -28,11 +28,11 @@ export const contextNote = `// When bootstrapping NL Framework GraphQL:
 // so BetterAuthGuard can read cookies and write headers when needed.
 `;
 
-export const graphqlBootstrap = `import { NL FrameworkFactory } from '@nl-framework/platform';
+export const graphqlBootstrap = `import { NLFactory } from '@nl-framework/platform';
 import { AppModule } from './app.module';
 import { BetterAuthSessionStore } from '@nl-framework/auth';
 
-const app = await NL FrameworkFactory.create(AppModule);
+const app = await NLFactory.create(AppModule);
 const gql = app.getGraphQLApplication();
 
 // Share the same session store instance
