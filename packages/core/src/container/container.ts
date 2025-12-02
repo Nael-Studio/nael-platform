@@ -485,8 +485,8 @@ export class Container {
     if (contextId === DEFAULT_CONTEXT_ID) {
       const tokenLabel = this.formatToken(token);
       throw new Error(
-        `Request-scoped provider "${tokenLabel}" cannot be resolved outside of an active context. ` +
-        'Use a ModuleRef or platform context to supply a contextId.',
+        `Request-scoped provider "${tokenLabel}" cannot be resolved outside of an active request context. ` +
+        'Call createContextId() to obtain a contextId, or use ModuleRef.create() within a request handler.',
       );
     }
   }

@@ -21,7 +21,7 @@ export function HeroSection() {
             BUILT FOR PLATFORM TEAMS
           </p>
           <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-            Documentation for the Nael Framework framework
+            Documentation for the Nael Framework
           </h1>
           <p className="max-w-2xl text-lg text-muted-foreground">
             A NestJS-inspired developer experience that runs entirely on Bun. Build
