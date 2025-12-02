@@ -30,7 +30,7 @@ const printHelp = () => {
   console.log(`
 Usage:
   nl new <project-name> [options]
-  nl new app <project-name> [options]
+  nl new app <project-name> [next-app-name] [options]
   nl generate module <module-name> [options]
   nl generate service <service-name> --module <module-name> [options]
   nl generate controller <controller-name> --module <module-name> [options]
