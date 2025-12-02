@@ -4,6 +4,21 @@ import { mergePluginCollections } from './plugins';
 import type { BetterAuthModuleOptions } from '../interfaces/module-options';
 import type { BetterAuthAdapter, BetterAuthAdapterFactory } from '../types';
 
+const resolveLegacyAdapter = (
+  adapter: BetterAuthAdapter | BetterAuthAdapterFactory | undefined,
+  options: BetterAuthOptions,
+): BetterAuthOptions['database'] | undefined => {
+  if (!adapter) {
+    return undefined;
+  }
+
+  if (typeof adapter === 'function') {
+    return (adapter as BetterAuthAdapterFactory)(options);
+  }
+
+  return adapter as BetterAuthOptions['database'];
+};
+
 export interface NormalizedBetterAuthModuleOptions {
   betterAuth: BetterAuthOptions;
   basePlugins: BetterAuthPlugin[];
@@ -46,12 +61,7 @@ export const normalizeModuleOptions = (
   const betterAuth = ensureSecret(copied);
 
   const legacyAdapter = options.adapter;
-  const providedDatabase = options.database ??
-    (legacyAdapter
-      ? (typeof legacyAdapter === 'function'
-        ? (legacyAdapter as BetterAuthAdapterFactory)
-        : ((() => legacyAdapter) as BetterAuthAdapterFactory))
-      : undefined);
+  const providedDatabase = options.database ?? resolveLegacyAdapter(legacyAdapter, betterAuth);
 
   if (!providedDatabase) {
     throw new Error(
