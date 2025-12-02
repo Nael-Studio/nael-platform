@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import type { BaseInterceptorToken } from './types';
+import { getInterceptors as getCoreInterceptors } from '@nl-framework/core';
 import { markInterceptorToken } from './utils';
 
 const INTERCEPTORS_METADATA_KEY = Symbol.for('nl:http:interceptors:metadata');
@@ -37,11 +38,16 @@ const defineInterceptorMetadata = (
 };
 
 const readInterceptorMetadata = (target: object, propertyKey?: string | symbol): AnyInterceptorToken[] => {
-  const existing =
+  const local =
     (propertyKey !== undefined
       ? (Reflect.getMetadata(INTERCEPTORS_METADATA_KEY, target, propertyKey) as BaseInterceptorToken[] | undefined)
       : (Reflect.getMetadata(INTERCEPTORS_METADATA_KEY, target) as BaseInterceptorToken[] | undefined)) ?? [];
-  return existing.length ? [...existing] : [];
+  const core =
+    (propertyKey !== undefined
+      ? getCoreInterceptors(target, propertyKey)
+      : getCoreInterceptors(target)) ?? [];
+  const merged = [...local, ...core];
+  return merged.length ? merged : [];
 };
 
 const appendInterceptorMetadata = (

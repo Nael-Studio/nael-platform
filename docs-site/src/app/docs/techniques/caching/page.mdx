@@ -15,10 +15,9 @@ cache:
   maxEntries: 500`;
 
 export const diHttp = `import Redis from 'ioredis';
-import { Module, ConfigService, Inject } from '@nl-framework/core';
-import { buildCacheKey, InMemoryCacheStore, RedisCacheStore, type CacheStore } from '@nl-framework/core';
+import { Module, ConfigService, Inject, UseInterceptors, buildCacheKey, InMemoryCacheStore, RedisCacheStore, type CacheStore } from '@nl-framework/core';
 import { ConfigModule } from '@nl-framework/config';
-import { Controller, Get, UseInterceptors, HttpCacheInterceptor } from '@nl-framework/http';
+import { Controller, Get, HttpCacheInterceptor } from '@nl-framework/http';
 
 export const CACHE_STORE = Symbol('cache:store');
 export const CACHE_INTERCEPTOR = Symbol('cache:interceptor');
@@ -70,11 +69,9 @@ export class PostsController {
 })
 export class PostsModule {}`;
 
-export const graphqlCaching = `import { Module, ConfigService } from '@nl-framework/core';
-import { buildCacheKey, InMemoryCacheStore } from '@nl-framework/core';
+export const graphqlCaching = `import { Module, ConfigService, UseInterceptors, buildCacheKey, InMemoryCacheStore } from '@nl-framework/core';
 import { ConfigModule } from '@nl-framework/config';
 import { Resolver, Query } from '@nl-framework/graphql';
-import { UseInterceptors } from '@nl-framework/http';
 import { GraphqlCacheInterceptor } from '@nl-framework/graphql';
 
 export const GRAPHQL_CACHE = Symbol('cache:graphql');
@@ -109,10 +106,9 @@ export class ReportsResolver {
 export class ReportsModule {}`;
 
 export const redisSnippet = `import Redis from 'ioredis';
-import { Module, ConfigService } from '@nl-framework/core';
-import { RedisCacheStore } from '@nl-framework/core';
+import { Module, ConfigService, UseInterceptors, RedisCacheStore } from '@nl-framework/core';
 import { ConfigModule } from '@nl-framework/config';
-import { Controller, Get, UseInterceptors, HttpCacheInterceptor } from '@nl-framework/http';
+import { Controller, Get, HttpCacheInterceptor } from '@nl-framework/http';
 
 export const CACHE_STORE = Symbol('cache:store');
 export const CACHE_INTERCEPTOR = Symbol('cache:interceptor');

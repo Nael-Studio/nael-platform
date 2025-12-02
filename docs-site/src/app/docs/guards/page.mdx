@@ -7,7 +7,8 @@ import { CodeBlock } from '@/components/shared/simple-code-block';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
-export const authGuard = `import { CanActivate, HttpGuardExecutionContext } from '@nl-framework/http';
+export const authGuard = `import { CanActivate } from '@nl-framework/core';
+import { HttpGuardExecutionContext } from '@nl-framework/http';
 
 export class AuthGuard implements CanActivate {
   async canActivate(context: HttpGuardExecutionContext): Promise<boolean> {
@@ -32,7 +33,8 @@ export class AuthGuard implements CanActivate {
   }
 }`;
 
-export const useGuardsMethod = `import { Controller, Get, UseGuards } from '@nl-framework/http';
+export const useGuardsMethod = `import { UseGuards } from '@nl-framework/core';
+import { Controller, Get } from '@nl-framework/http';
 
 @Controller('/api/users')
 export class UserController {
@@ -62,7 +64,8 @@ export class AdminController {
   }
 }`;
 
-export const functionalGuards = `import { GuardFunction } from '@nl-framework/http';
+export const functionalGuards = `import { UseGuards } from '@nl-framework/core';
+import { GuardFunction } from '@nl-framework/http';
 
 const isAuthenticated: GuardFunction = async (context) => {
   const request = context.getRequest();
@@ -95,7 +98,8 @@ async function bootstrap() {
   await app.start();
 }`;
 
-export const rbacPattern = `import { SetMetadata } from '@nl-framework/core';
+export const rbacPattern = `import { Injectable, SetMetadata, UseGuards, type CanActivate } from '@nl-framework/core';
+import { HttpGuardExecutionContext } from '@nl-framework/http';
 
 export const Roles = (...roles: string[]) => SetMetadata('roles', roles);
 
@@ -138,6 +142,10 @@ export class AdminController {
             <strong>💡 Key Concept:</strong> Guards execute <strong>after all middleware</strong> but{" "}
             <strong>before pipes and route handlers</strong>. They have access to the full execution context
             and can make complex authorization decisions.
+          </div>
+          <div className="mt-3 text-sm text-blue-900/90 dark:text-blue-100/90">
+            Import <code>UseGuards</code> from <code>@nl-framework/core</code> so the same decorator works across HTTP, GraphQL,
+            and microservices without transport-specific shims.
           </div>
         </CardContent>
       </Card>

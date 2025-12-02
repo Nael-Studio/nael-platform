@@ -43,7 +43,8 @@ import { BetterAuthProxyModule } from '@nl-framework/auth';
 export class HttpAuthModule {}`;
 
 export const gqlUsage = `import { Resolver, Query } from '@nl-framework/graphql';
-import { UseGuards, CurrentSession, BetterAuthGuard, type BetterAuthSession } from '@nl-framework/auth';
+import { CurrentSession, BetterAuthGuard, type BetterAuthSession } from '@nl-framework/auth';
+import { UseGuards } from '@nl-framework/core';
 
 @Resolver()
 export class TenantResolver {

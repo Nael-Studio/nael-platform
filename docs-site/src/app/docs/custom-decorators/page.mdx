@@ -7,8 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { CodeBlock } from '@/components/shared/simple-code-block';
 
-export const metadataDecoratorSnippet = `import { SetMetadata } from '@nl-framework/core';
-import { Controller, Get, UseGuards } from '@nl-framework/http';
+export const metadataDecoratorSnippet = `import { SetMetadata, UseGuards } from '@nl-framework/core';
+import { Controller, Get } from '@nl-framework/http';
 
 export const Roles = (...roles: string[]) => SetMetadata('roles', roles);
 

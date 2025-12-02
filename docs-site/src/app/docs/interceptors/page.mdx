@@ -23,7 +23,8 @@ export class LoggingInterceptor implements HttpInterceptor {
   }
 }`;
 
-export const controllerUsage = `import { Controller, Get, UseInterceptors } from '@nl-framework/http';
+export const controllerUsage = `import { UseInterceptors } from '@nl-framework/core';
+import { Controller, Get } from '@nl-framework/http';
 
 @Controller('/reports')
 @UseInterceptors(LoggingInterceptor)
@@ -40,7 +41,8 @@ export class ReportsController {
   }
 }`;
 
-export const functionalInterceptor = `import { InterceptorFunction } from '@nl-framework/http';
+export const functionalInterceptor = `import { UseInterceptors } from '@nl-framework/core';
+import { InterceptorFunction } from '@nl-framework/http';
 
 export const CacheInterceptor: InterceptorFunction = async (context, next) => {
   const cacheKey = context.getRoute().controller?.name + ':' + context.getRequest().url;
@@ -74,7 +76,7 @@ await app.listen();`;
 
 export const graphqlResolverInterceptors = `import { ObjectType, Field } from '@nl-framework/graphql';
 import { Resolver, Query } from '@nl-framework/graphql';
-import { UseInterceptors } from '@nl-framework/http';
+import { UseInterceptors } from '@nl-framework/core';
 import {
   GraphqlCallHandler,
   GraphqlInterceptor,
@@ -179,6 +181,10 @@ export class TimeoutInterceptor implements HttpInterceptor {
             <strong>Key pipeline order:</strong> middleware ➜ guards ➜ <strong>interceptors</strong> ➜ pipes ➜ handler ➜ filters.
             Interceptors share the same `HttpExecutionContext` as guards and can short-circuit requests by returning
             their own `Response` objects.
+          </div>
+          <div className="mt-3">
+            Import <code>UseInterceptors</code> from <code>@nl-framework/core</code> so the same decorator applies to HTTP, GraphQL,
+            and microservice handlers without extra adapter shims.
           </div>
         </CardContent>
       </Card>

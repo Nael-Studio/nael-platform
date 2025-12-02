@@ -19,11 +19,11 @@ export class LoggingInterceptor implements MicroserviceInterceptor {
 }`;
 
 export const consumer = `import { Injectable, UseInterceptors } from '@nl-framework/core';
-import { MessagePattern, UseInterceptors as MicroUseInterceptors } from '@nl-framework/microservices';
+import { MessagePattern } from '@nl-framework/microservices';
 import { LoggingInterceptor } from './logging.interceptor';
 
 @Injectable()
-@MicroUseInterceptors(new LoggingInterceptor())
+@UseInterceptors(new LoggingInterceptor())
 export class ReportsConsumer {
   @MessagePattern('reports.generate')
   async generate(payload: { id: string }) {

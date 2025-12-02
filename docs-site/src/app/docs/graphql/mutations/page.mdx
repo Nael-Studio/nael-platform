@@ -44,7 +44,8 @@ export class ProfileMutationResolver {
 }`;
 
 export const authMutation = `import { Resolver, Mutation, Args } from '@nl-framework/graphql';
-import { UseGuards, BetterAuthGuard, CurrentSession, type BetterAuthSession } from '@nl-framework/auth';
+import { BetterAuthGuard, CurrentSession, type BetterAuthSession } from '@nl-framework/auth';
+import { UseGuards } from '@nl-framework/core';
 import { Profile } from './profile.model';
 import { ProfileService } from './profile.service';
 

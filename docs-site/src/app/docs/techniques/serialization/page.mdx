@@ -15,11 +15,9 @@ serialization:
   groups: ['public']
 `;
 
-export const httpSerialization = `import { Module, ConfigService } from '@nl-framework/core';
+export const httpSerialization = `import { Module, ConfigService, SerializeOptions, UseInterceptors } from '@nl-framework/core';
 import { ConfigModule } from '@nl-framework/config';
-import { Controller, Get, UseInterceptors } from '@nl-framework/http';
-import { HttpSerializationInterceptor } from '@nl-framework/http';
-import { SerializeOptions } from '@nl-framework/core';
+import { Controller, Get, HttpSerializationInterceptor } from '@nl-framework/http';
 
 export const HTTP_SERIALIZER = Symbol('serializer:http');
 
@@ -58,12 +56,10 @@ export class UsersController {
 })
 export class UsersModule {}`;
 
-export const graphqlSerialization = `import { Module, ConfigService } from '@nl-framework/core';
+export const graphqlSerialization = `import { Module, ConfigService, SerializeOptions, UseInterceptors } from '@nl-framework/core';
 import { ConfigModule } from '@nl-framework/config';
 import { Resolver, Query } from '@nl-framework/graphql';
-import { UseInterceptors } from '@nl-framework/http';
 import { GraphqlSerializationInterceptor } from '@nl-framework/graphql';
-import { SerializeOptions } from '@nl-framework/core';
 
 export const GQL_SERIALIZER = Symbol('serializer:graphql');
 

@@ -3,6 +3,7 @@ import type { ClassType } from '@nl-framework/core';
 import type { MessagePattern } from '../interfaces/transport';
 import { getMessagePatternMetadata } from '../decorators/patterns';
 import { getGuards, type GuardToken, type CanActivate } from '../decorators/guards';
+import { getGuards as getCoreGuards, getInterceptors as getCoreInterceptors } from '@nl-framework/core';
 import {
   getInterceptors,
   type InterceptorToken,
@@ -113,14 +114,17 @@ export class MessageDispatcher {
   }
 
   private collectGuards(proto: any, property: string): GuardToken[] {
-    const methodGuards = getGuards(proto, property) ?? [];
-    const classGuards = getGuards(proto) ?? [];
+    const methodGuards = [...(getGuards(proto, property) ?? []), ...(getCoreGuards(proto, property) ?? [])];
+    const classGuards = [...(getGuards(proto) ?? []), ...(getCoreGuards(proto) ?? [])];
     return [...classGuards, ...methodGuards];
   }
 
   private collectInterceptors(proto: any, property: string): InterceptorToken[] {
-    const methodInterceptors = getInterceptors(proto, property) ?? [];
-    const classInterceptors = getInterceptors(proto) ?? [];
+    const methodInterceptors = [
+      ...(getInterceptors(proto, property) ?? []),
+      ...(getCoreInterceptors(proto, property) ?? []),
+    ];
+    const classInterceptors = [...(getInterceptors(proto) ?? []), ...(getCoreInterceptors(proto) ?? [])];
     return [...classInterceptors, ...methodInterceptors];
   }
 

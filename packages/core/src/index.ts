@@ -20,6 +20,21 @@ export {
   UsePipes,
   getUsePipes,
 } from './decorators/pipes';
+export {
+  type CanActivate,
+  type GuardToken,
+  UseGuards,
+  getGuards,
+  type GuardContext,
+} from './decorators/guards';
+export {
+  type Interceptor,
+  type InterceptorToken,
+  UseInterceptors,
+  getInterceptors,
+  type InterceptorContext,
+  type CallHandler,
+} from './decorators/interceptors';
 export type { ModuleMetadata } from './interfaces/module';
 export type {
   Provider,

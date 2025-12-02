@@ -6,7 +6,7 @@ description: 'Protect microservice handlers with guards and @UseGuards.'
 import { Badge } from '@/components/ui/badge';
 import { CodeBlock } from '@/components/shared/simple-code-block';
 
-export const guardDef = `import { CanActivate } from '@nl-framework/microservices';
+export const guardDef = `import { CanActivate, UseGuards } from '@nl-framework/core';
 
 export class AuthGuard implements CanActivate {
   async canActivate(context: { pattern: string | Record<string, unknown>; data: unknown }) {
@@ -16,8 +16,8 @@ export class AuthGuard implements CanActivate {
   }
 }`;
 
-export const consumer = `import { Injectable } from '@nl-framework/core';
-import { MessagePattern, UseGuards } from '@nl-framework/microservices';
+export const consumer = `import { Injectable, UseGuards } from '@nl-framework/core';
+import { MessagePattern } from '@nl-framework/microservices';
 import { AuthGuard } from './auth.guard';
 
 @Injectable()
@@ -36,8 +36,8 @@ const dispatcher = await app.get(MessageDispatcher);
 await dispatcher?.dispatch('secure.echo', { token: 'abc', message: 'hi' }); // allowed
 await dispatcher?.dispatch('secure.echo', { message: 'hi' }); // blocked (throws)`;
 
-export const betterAuthGuard = `import { BetterAuthMicroGuard, UseGuards } from '@nl-framework/microservices';
-import { Injectable } from '@nl-framework/core';
+export const betterAuthGuard = `import { BetterAuthMicroGuard } from '@nl-framework/microservices';
+import { Injectable, UseGuards } from '@nl-framework/core';
 import { MessagePattern } from '@nl-framework/microservices';
 
 const betterAuth = new BetterAuthMicroGuard({

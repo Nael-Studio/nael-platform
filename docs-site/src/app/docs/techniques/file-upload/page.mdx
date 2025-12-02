@@ -75,7 +75,6 @@ async multi(@Req() req: Request) {
 
 export const graphqlUpload = `import { GraphQLUpload, FileUpload } from 'graphql-upload';
 import { Resolver, Mutation, Arg } from '@nl-framework/graphql';
-import { UseInterceptors } from '@nl-framework/http';
 
 @Resolver()
 export class MediaResolver {

@@ -41,7 +41,8 @@ async function bootstrap() {
 bootstrap();`;
 
 export const profileResolver = `import { Resolver, Query } from '@nl-framework/graphql';
-import { UseGuards, CurrentSession, BetterAuthGuard, BetterAuthSession } from '@nl-framework/auth';
+import { CurrentSession, BetterAuthGuard, BetterAuthSession } from '@nl-framework/auth';
+import { UseGuards } from '@nl-framework/core';
 import { ProfileService } from './profile.service';
 import { Profile } from './profile.model';
 

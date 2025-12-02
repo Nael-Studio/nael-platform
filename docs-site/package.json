@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "bun run build:search && next dev --webpack",
+    "dev": "bun run build:search && PORT=1010 next dev --webpack",
     "build": "bun run build:search && next build --webpack",
     "start": "next start",
     "lint": "eslint",

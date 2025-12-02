@@ -26,7 +26,8 @@ export class ProfileResolver {
   }
 }`;
 
-export const guardExample = `import { UseGuards, CurrentSession, BetterAuthGuard, type BetterAuthSession } from '@nl-framework/auth';
+export const guardExample = `import { CurrentSession, BetterAuthGuard, type BetterAuthSession } from '@nl-framework/auth';
+import { UseGuards } from '@nl-framework/core';
 import { Resolver, Query } from '@nl-framework/graphql';
 
 @Resolver()

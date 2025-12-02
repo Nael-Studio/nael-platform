@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import type { GuardToken } from './types';
+import { getGuards as getCoreGuards } from '@nl-framework/core';
 import { markGuardToken } from './utils';
 
 const GUARDS_METADATA_KEY = Symbol.for('nl:http:guards:metadata');
@@ -35,11 +36,18 @@ const defineGuardMetadata = (
 };
 
 const readGuardMetadata = (target: object, propertyKey?: string | symbol): GuardToken[] => {
-  const existing =
+  const local =
     (propertyKey !== undefined
       ? (Reflect.getMetadata(GUARDS_METADATA_KEY, target, propertyKey) as GuardToken[] | undefined)
       : (Reflect.getMetadata(GUARDS_METADATA_KEY, target) as GuardToken[] | undefined)) ?? [];
-  return existing.length ? [...existing] : [];
+
+  const core =
+    (propertyKey !== undefined
+      ? getCoreGuards(target, propertyKey)
+      : getCoreGuards(target)) ?? [];
+
+  const merged = [...local, ...core];
+  return merged.length ? merged : [];
 };
 
 const appendGuardMetadata = (
