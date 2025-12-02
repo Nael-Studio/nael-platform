@@ -1,4 +1,4 @@
-import type { Adapter, BetterAuthOptions } from 'better-auth';
+import type { BetterAuthOptions } from 'better-auth';
 
 export interface BetterAuthSessionInput {
   headers: Headers;
@@ -32,5 +32,5 @@ export interface BetterAuthInstance {
   };
 }
 
-export type BetterAuthAdapter = Adapter;
+export type BetterAuthAdapter = BetterAuthOptions['database'];
 export type BetterAuthAdapterFactory = (options: BetterAuthOptions) => BetterAuthAdapter;
