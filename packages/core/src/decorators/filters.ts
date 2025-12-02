@@ -104,21 +104,21 @@ export const listAppliedFilters = <T = FilterToken>(
   };
 
   if (typeof controller === 'function') {
+    appendFromTarget(controller);
+    if ('prototype' in controller) {
+      appendFromTarget(controller.prototype);
+    }
     if (handlerName !== undefined) {
       appendFromTarget(controller, handlerName);
       if ('prototype' in controller) {
         appendFromTarget(controller.prototype, handlerName);
       }
     }
-    appendFromTarget(controller);
-    if ('prototype' in controller) {
-      appendFromTarget(controller.prototype);
-    }
   } else if (controller && typeof controller === 'object') {
+    appendFromTarget(controller);
     if (handlerName !== undefined) {
       appendFromTarget(controller, handlerName);
     }
-    appendFromTarget(controller);
   }
 
   return dedupe(filters) as T[];
