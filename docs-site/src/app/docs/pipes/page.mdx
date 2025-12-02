@@ -18,21 +18,21 @@ export const usePipe = `import { Controller, Get, Query, UsePipes } from '@nl-fr
 
 @Controller('/search')
 export class SearchController {
-@Get('/')
-search(@Query('q', TrimPipe) query: string) {
-return { query };
-}
+  @Get('/')
+  search(@Query('q', TrimPipe) query: string) {
+    return { query };
+  }
 }`;
 
 export const parseIntPipe = `import { Controller, Get, Param, ParseIntPipe } from '@nl-framework/http';
 
 @Controller('/users')
 export class UsersController {
-@Get('/:id')
-findOne(@Param('id', ParseIntPipe) id: number) {
-// id is automatically converted to a number
-return { id, type: typeof id }; // { id: 123, type: 'number' }
-}
+  @Get('/:id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    // id is automatically converted to a number
+    return { id, type: typeof id }; // { id: 123, type: 'number' }
+  }
 }`;
 
 export const builtInPipes = `import {
@@ -45,37 +45,37 @@ export const builtInPipes = `import {
 
 @Controller('/products')
 export class ProductsController {
-@Get('/')
-list(
-@Query('page', ParseIntPipe) page: number,
-@Query('limit', ParseIntPipe) limit: number,
-@Query('active', ParseBoolPipe) active: boolean,
-@Query('tags', new ParseArrayPipe({ separator: ',' })) tags: string[],
-@Query('sort', new DefaultValuePipe('name')) sort: string,
-) {
-return { page, limit, active, tags, sort };
-}
+  @Get('/')
+  list(
+    @Query('page', ParseIntPipe) page: number,
+    @Query('limit', ParseIntPipe) limit: number,
+    @Query('active', ParseBoolPipe) active: boolean,
+    @Query('tags', new ParseArrayPipe({ separator: ',' })) tags: string[],
+    @Query('sort', new DefaultValuePipe('name')) sort: string,
+  ) {
+    return { page, limit, active, tags, sort };
+  }
 }`;
 
 export const validationPipe = `import { Controller, Post, Body, ValidationPipe } from '@nl-framework/http';
 import { IsEmail, IsString, MinLength } from 'class-validator';
 
 class CreateUserDto {
-@IsEmail()
-email!: string;
+  @IsEmail()
+  email!: string;
 
-@IsString()
-@MinLength(3)
-name!: string;
+  @IsString()
+  @MinLength(3)
+  name!: string;
 }
 
 @Controller('/users')
 export class UsersController {
-@Post('/')
-create(@Body(ValidationPipe) data: CreateUserDto) {
-// data is validated and transformed
-return { message: 'User created', data };
-}
+  @Post('/')
+  create(@Body(ValidationPipe) data: CreateUserDto) {
+    // data is validated and transformed
+    return { message: 'User created', data };
+  }
 }`;
 
 export const globalValidation = `import { Controller, Post, Body, UsePipes, ValidationPipe } from '@nl-framework/http';
@@ -83,34 +83,34 @@ export const globalValidation = `import { Controller, Post, Body, UsePipes, Vali
 @Controller('/users')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class UsersController {
-@Post('/')
-create(@Body() data: CreateUserDto) {
-// ValidationPipe is applied to all parameters
-return { message: 'User created', data };
-}
+  @Post('/')
+  create(@Body() data: CreateUserDto) {
+    // ValidationPipe is applied to all parameters
+    return { message: 'User created', data };
+  }
 
-@Post('/bulk')
-createMany(@Body() data: CreateUserDto[]) {
-// ValidationPipe is applied here too
-return { message: 'Users created', count: data.length };
-}
+  @Post('/bulk')
+  createMany(@Body() data: CreateUserDto[]) {
+    // ValidationPipe is applied here too
+    return { message: 'Users created', count: data.length };
+  }
 }`;
 
 export const methodLevelPipes = `import { Controller, Post, UsePipes, ValidationPipe } from '@nl-framework/http';
 
 @Controller('/products')
 export class ProductsController {
-@Post('/')
-@UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
-create(@Body() data: CreateProductDto) {
-return { message: 'Product created', data };
-}
+  @Post('/')
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+  create(@Body() data: CreateProductDto) {
+    return { message: 'Product created', data };
+  }
 
-@Post('/import')
-@UsePipes(new ValidationPipe({ skipMissingProperties: true }))
-import(@Body() data: ImportProductDto[]) {
-return { message: 'Products imported', count: data.length };
-}
+  @Post('/import')
+  @UsePipes(new ValidationPipe({ skipMissingProperties: true }))
+  import(@Body() data: ImportProductDto[]) {
+    return { message: 'Products imported', count: data.length };
+  }
 }`;
 
 export const customValidationPipe = `import { PipeTransform, ArgumentMetadata, HttpException } from '@nl-framework/http';
@@ -118,22 +118,22 @@ export const customValidationPipe = `import { PipeTransform, ArgumentMetadata, H
 export class FileSizeValidationPipe implements PipeTransform {
   constructor(private readonly maxSize: number) {}
 
-transform(value: any, metadata: ArgumentMetadata): any {
-if (value?.size && value.size > this.maxSize) {
-throw HttpException.badRequest(
-\`File size exceeds maximum of \${this.maxSize} bytes\`
-);
-}
-return value;
-}
+  transform(value: any, metadata: ArgumentMetadata): any {
+    if (value?.size && value.size > this.maxSize) {
+      throw HttpException.badRequest(
+        \`File size exceeds maximum of \${this.maxSize} bytes\`
+      );
+    }
+    return value;
+  }
 }
 
 @Controller('/upload')
 export class UploadController {
-@Post('/')
-upload(@Body(new FileSizeValidationPipe(1024 \* 1024)) file: any) {
-return { message: 'File uploaded', size: file.size };
-}
+  @Post('/')
+  upload(@Body(new FileSizeValidationPipe(1024 \* 1024)) file: any) {
+    return { message: 'File uploaded', size: file.size };
+  }
 }`;
 
 export const transformPipe = `import { PipeTransform, ArgumentMetadata } from '@nl-framework/http';
@@ -157,13 +157,13 @@ export class SlugifyPipe implements PipeTransform<string, string> {
 
 @Controller('/posts')
 export class PostsController {
-@Post('/')
-create(
-@Body('title', SlugifyPipe) slug: string,
-@Body('name', UpperCasePipe) name: string,
-) {
-return { slug, name };
-}
+  @Post('/')
+  create(
+    @Body('title', SlugifyPipe) slug: string,
+    @Body('name', UpperCasePipe) name: string,
+  ) {
+    return { slug, name };
+  }
 }`;
 
 export const asyncPipe = `import { PipeTransform, ArgumentMetadata, HttpException } from '@nl-framework/http';
@@ -179,31 +179,31 @@ export class UserExistsPipe implements PipeTransform {
     return userId;
   }
 
-private async findUser(id: string) {
-// Query database
-return null;
-}
+  private async findUser(id: string) {
+    // Query database
+    return null;
+  }
 }
 
 @Controller('/posts')
 export class PostsController {
-@Post('/')
-create(
-@Body('userId', UserExistsPipe) userId: string,
-@Body('title') title: string,
-) {
-return { userId, title };
-}
+  @Post('/')
+  create(
+    @Body('userId', UserExistsPipe) userId: string,
+    @Body('title') title: string,
+  ) {
+    return { userId, title };
+  }
 }`;
 
 export const parseArrayPipe = `import { Controller, Get, Query, ParseArrayPipe, ParseIntPipe } from '@nl-framework/http';
 
 @Controller('/products')
 export class ProductsController {
-@Get('/filter')
-filter(
-// Parse comma-separated string into array
-@Query('tags', new ParseArrayPipe({ separator: ',' })) tags: string[],
+  @Get('/filter')
+  filter(
+    // Parse comma-separated string into array
+    @Query('tags', new ParseArrayPipe({ separator: ',' })) tags: string[],
 
     // Parse comma-separated numbers
     @Query(
@@ -211,22 +211,22 @@ filter(
       new ParseArrayPipe({ separator: ',', items: new ParseIntPipe() })
     ) ids: number[],
 
-) {
-return { tags, ids };
-}
+  ) {
+    return { tags, ids };
+  }
 }`;
 
 export const pipeChaining = `import { Controller, Get, Query, DefaultValuePipe, ParseIntPipe } from '@nl-framework/http';
 
 @Controller('/products')
 export class ProductsController {
-@Get('/')
-list(
-// First DefaultValuePipe, then ParseIntPipe
-@Query('page', new DefaultValuePipe('1'), ParseIntPipe) page: number,
-) {
-return { page };
-}
+  @Get('/')
+  list(
+    // First DefaultValuePipe, then ParseIntPipe
+    @Query('page', new DefaultValuePipe('1'), ParseIntPipe) page: number,
+  ) {
+    return { page };
+  }
 }`;
 
 export const validationOptions = `import { ValidationPipe } from '@nl-framework/http';
@@ -263,24 +263,23 @@ import { PipeTransform, ArgumentMetadata, HttpException } from '@nl-framework/ht
 
 @Injectable()
 export class EntityExistsPipe implements PipeTransform {
-constructor(private readonly db: DatabaseService) {}
+  constructor(private readonly db: DatabaseService) {}
 
-async transform(id: string, metadata: ArgumentMetadata): Promise<string> {
-const exists = await this.db.exists(id);
+  async transform(id: string, metadata: ArgumentMetadata): Promise<string> {
+    const exists = await this.db.exists(id);
 
     if (!exists) {
       throw HttpException.notFound(\`Entity \${id} not found\`);
     }
 
     return id;
-
-}
+  }
 }
 
 // Register as a provider
 @Module({
-providers: [EntityExistsPipe, DatabaseService],
-controllers: [EntityController],
+  providers: [EntityExistsPipe, DatabaseService],
+  controllers: [EntityController],
 })
 export class EntityModule {}`;
 
