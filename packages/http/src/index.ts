@@ -128,6 +128,13 @@ export {
   clearExceptionFilters,
 } from './filters/registry';
 export {
+  UseFilters,
+  getFilterMetadata,
+  listAppliedFilters,
+  HTTP_FILTERS_METADATA_KEY,
+} from './filters/metadata';
+export { type ExceptionFilterToken } from './filters/types';
+export {
   type PipeTransform,
   type ArgumentMetadata,
   type PipeToken,

@@ -12,6 +12,7 @@ import {
   registerHttpRouteRegistrar,
   UseGuards,
   UseInterceptors,
+  UseFilters,
   Body,
   Param,
   Query,
@@ -26,6 +27,9 @@ import {
   type HttpInterceptor,
   type InterceptorFunction,
   type MiddlewareHandler,
+  type ExceptionFilter,
+  registerExceptionFilter,
+  clearExceptionFilters,
 } from '../src/index';
 import { IsInt, IsOptional, IsString, Min } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -250,6 +254,84 @@ class InterceptorController {
 })
 class InterceptorModule { }
 
+class MethodError extends Error {}
+class ControllerError extends Error {}
+
+const controllerLevelFilter: ExceptionFilter = {
+  catch(exception: Error) {
+    if (exception instanceof ControllerError) {
+      return new Response(
+        JSON.stringify({ message: 'controller-filter' }),
+        {
+          status: 409,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
+    }
+    throw exception;
+  },
+};
+
+class MethodFilter implements ExceptionFilter {
+  catch(exception: Error, context: RequestContext) {
+    if (exception instanceof MethodError) {
+      return new Response(
+        JSON.stringify({ scope: 'method', path: context.route.definition.path }),
+        {
+          status: 422,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
+    }
+    throw exception;
+  }
+}
+
+@Injectable()
+class InjectableFilter implements ExceptionFilter {
+  constructor(private readonly service: MessageService) { }
+
+  catch(exception: Error) {
+    if (exception instanceof MethodError) {
+      return new Response(
+        JSON.stringify({ message: this.service.getMessage('filtered') }),
+        {
+          status: 498,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
+    }
+    throw exception;
+  }
+}
+
+@UseFilters(controllerLevelFilter)
+@Controller('/filters')
+class FilterController {
+  @UseFilters(MethodFilter)
+  @Get('/method')
+  method() {
+    throw new MethodError('handler');
+  }
+
+  @Get('/controller')
+  controller() {
+    throw new ControllerError('controller');
+  }
+
+  @UseFilters(InjectableFilter)
+  @Get('/injectable')
+  injectable() {
+    throw new MethodError('di');
+  }
+}
+
+@Module({
+  providers: [MessageService, InjectableFilter],
+  controllers: [FilterController],
+})
+class FilterModule { }
+
 describe('HTTP Application', () => {
   let appUnderTest: Awaited<ReturnType<typeof createHttpApplication>>;
 
@@ -257,6 +339,7 @@ describe('HTTP Application', () => {
     clearHttpRouteRegistrars();
     clearHttpGuards();
     clearHttpInterceptors();
+    clearExceptionFilters();
     interceptorOrder.length = 0;
     cachedHandlerInvocations = 0;
   });
@@ -269,6 +352,7 @@ describe('HTTP Application', () => {
     }
     clearHttpGuards();
     clearHttpInterceptors();
+    clearExceptionFilters();
   });
 
   it('handles requests through registered controllers', async () => {
@@ -519,5 +603,47 @@ describe('HTTP Application', () => {
       'controller-after',
       'global-after',
     ]);
+  });
+
+  it('applies controller and handler exception filters', async () => {
+    appUnderTest = await createHttpApplication(FilterModule, { port: 0 });
+    const server = await appUnderTest.listen();
+
+    const methodResponse = await fetch(`http://127.0.0.1:${server.port}/filters/method`);
+    expect(methodResponse.status).toBe(422);
+    expect(await methodResponse.json()).toEqual({ scope: 'method', path: '/method' });
+
+    const controllerResponse = await fetch(`http://127.0.0.1:${server.port}/filters/controller`);
+    expect(controllerResponse.status).toBe(409);
+    expect(await controllerResponse.json()).toEqual({ message: 'controller-filter' });
+  });
+
+  it('resolves exception filters through dependency injection', async () => {
+    appUnderTest = await createHttpApplication(FilterModule, { port: 0 });
+    const server = await appUnderTest.listen();
+
+    const response = await fetch(`http://127.0.0.1:${server.port}/filters/injectable`);
+    expect(response.status).toBe(498);
+    expect(await response.json()).toEqual({ message: 'Hello filtered' });
+  });
+
+  it('runs registered global filters before scoped filters', async () => {
+    registerExceptionFilter({
+      catch: () =>
+        new Response(
+          JSON.stringify({ scope: 'global' }),
+          {
+            status: 599,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        ),
+    });
+
+    appUnderTest = await createHttpApplication(FilterModule, { port: 0 });
+    const server = await appUnderTest.listen();
+
+    const response = await fetch(`http://127.0.0.1:${server.port}/filters/method`);
+    expect(response.status).toBe(599);
+    expect(await response.json()).toEqual({ scope: 'global' });
   });
 });

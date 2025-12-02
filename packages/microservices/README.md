@@ -9,6 +9,7 @@ Microservices module for nl-framework providing NestJS-style message patterns, e
 - **Dapr Integration**: Built-in transport for Dapr sidecar with pub/sub support
 - **Pluggable Transports**: Abstract transport interface allows custom implementations
 - **Logger Integration**: Uses `@nl-framework/logger` for structured logging
+- **Shared Decorators**: Message handlers can reuse `@UseGuards()`, `@UseInterceptors()`, `@UsePipes()`, and `@UseFilters()` from `@nl-framework/core`, just like HTTP and GraphQL controllers
 
 ## Installation
 
@@ -36,12 +37,12 @@ microservices:
 
 ```typescript
 import { Controller, Injectable } from '@nl-framework/core';
-import { MessagePatternDecorator, EventPattern } from '@nl-framework/microservices';
+import { MessagePattern, EventPattern } from '@nl-framework/microservices';
 
 @Controller()
 @Injectable()
 export class OrdersController {
-  @MessagePatternDecorator('order.created')
+  @MessagePattern('order.created')
   handleOrderCreated(context: MessageContext) {
     console.log('Order created:', context.data);
     return { status: 'processed' };
@@ -53,6 +54,8 @@ export class OrdersController {
   }
 }
 ```
+
+> **Decorator Tip:** Import `@UseGuards()`, `@UseInterceptors()`, `@UsePipes()`, and `@UseFilters()` from `@nl-framework/core` to apply the same guard/interceptor/pipe/filter semantics to message handlers that you already use in HTTP or GraphQL controllers.
 
 ### 3. Register the Module
 
@@ -134,6 +137,54 @@ Sends a request and awaits a response (coming soon).
 ```typescript
 const result = await client.send('process.payment', { amount: 100 });
 ```
+
+## Exception Filters
+
+Microservice handlers use the shared `@UseFilters()` decorator and the `MicroserviceExceptionFilter` interface to handle
+errors consistently with HTTP and GraphQL.
+
+### Scoped filters
+
+```typescript
+import { Controller, Injectable, UseFilters } from '@nl-framework/core';
+import {
+  MessagePattern,
+  MicroserviceExceptionFilter,
+  MicroserviceExceptionContext,
+} from '@nl-framework/microservices';
+
+@Injectable()
+class LoggingFilter implements MicroserviceExceptionFilter {
+  catch(exception: Error, context: MicroserviceExceptionContext) {
+    context.logger?.error({ pattern: context.pattern, exception });
+    return { ok: false };
+  }
+}
+
+@Controller()
+@UseFilters(LoggingFilter)
+export class OrdersConsumer {
+  @MessagePattern('orders.create')
+  async create(order: OrderDto) {
+    throw new Error('Not implemented');
+  }
+}
+```
+
+Method-level filters run before class-level filters. Return a value from `catch()` to override the handler response; return
+`undefined` to continue to the next filter.
+
+### Global filters
+
+```typescript
+import { registerMicroserviceExceptionFilter } from '@nl-framework/microservices';
+
+registerMicroserviceExceptionFilter(new LoggingFilter());
+```
+
+Use `registerMicroserviceExceptionFilter()` or `registerMicroserviceExceptionFilters()` during bootstrap to apply filters
+to every handler. The dispatcher resolves tokens through dependency injection if available, then instantiates classes or
+uses provided instances.
 
 ## Dapr Setup
 

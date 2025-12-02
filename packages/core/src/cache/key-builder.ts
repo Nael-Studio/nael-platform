@@ -1,4 +1,7 @@
-type CacheKeyPart = string | number | boolean | null | undefined | Record<string, unknown> | Array<unknown>;
+type CacheKeyPrimitive = string | number | boolean | null | undefined;
+type CacheKeyObject = { [key: string]: CacheKeyPart };
+type CacheKeyArray = CacheKeyPart[];
+export type CacheKeyPart = CacheKeyPrimitive | CacheKeyObject | CacheKeyArray;
 
 const normalize = (part: CacheKeyPart): string | null => {
   if (part === undefined || part === null) {
@@ -13,9 +16,11 @@ const normalize = (part: CacheKeyPart): string | null => {
     return `[${part.map((item) => normalize(item)).filter(Boolean).join(',')}]`;
   }
 
-  const entries = Object.keys(part)
+  const objectPart = part as CacheKeyObject;
+
+  const entries = Object.keys(objectPart)
     .sort()
-    .map((key) => `${key}:${normalize((part as Record<string, unknown>)[key])}`);
+    .map((key) => `${key}:${normalize(objectPart[key])}`);
 
   return `{${entries.join(',')}}`;
 };

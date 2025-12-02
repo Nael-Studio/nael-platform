@@ -15,6 +15,8 @@ const DEFAULT_SERIALIZATION_OPTIONS: ClassTransformOptions = {
   exposeDefaultValues: true,
 };
 
+type PlainValue = ReturnType<typeof instanceToPlain>;
+
 /**
  * Serialize class instances or plain objects into JSON-friendly values.
  * Primitives, Responses, streams, and binary buffers are returned as-is.
@@ -22,7 +24,7 @@ const DEFAULT_SERIALIZATION_OPTIONS: ClassTransformOptions = {
 export const serialize = <T = unknown>(
   value: T,
   options?: ClassTransformOptions,
-): T | ReturnType<typeof instanceToPlain> => {
+): T | PlainValue => {
   if (value === null || typeof value !== 'object') {
     return value;
   }
@@ -35,10 +37,12 @@ export const serialize = <T = unknown>(
     return value.map((item) => serialize(item, options)) as unknown as T;
   }
 
-  return instanceToPlain(value as object, {
+  const plainResult = instanceToPlain(value as object, {
     ...DEFAULT_SERIALIZATION_OPTIONS,
     ...options,
-  });
+  }) as PlainValue;
+
+  return plainResult;
 };
 
 export type SerializationOptions = ClassTransformOptions;

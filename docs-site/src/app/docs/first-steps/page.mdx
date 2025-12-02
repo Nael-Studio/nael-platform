@@ -1,6 +1,6 @@
 ---
-title: 'First Steps · Nael Platform'
-description: 'Learn how to create your first Nael Platform application with Bun runtime.'
+title: 'First Steps · Nael Framework'
+description: 'Learn how to create your first Nael Framework application with Bun runtime.'
 ---
 
 import Link from 'next/link';
@@ -46,7 +46,7 @@ export const appService = `import { Injectable } from '@nl-framework/core';
 @Injectable()
 export class AppService {
   getHello(): string {
-    return 'Hello Nael Platform!';
+    return 'Hello Nael Framework!';
   }
 }`;
 
@@ -57,7 +57,7 @@ export const runDev = `bun run dev`;
         <div className="text-sm uppercase tracking-wide text-muted-foreground">Overview</div>
         <h1 className="text-4xl font-semibold">First steps</h1>
         <div className="max-w-2xl text-muted-foreground">
-          In this guide, you&apos;ll learn the core fundamentals of Nael Platform. To get familiar with the essential building blocks
+          In this guide, you&apos;ll learn the core fundamentals of Nael Framework. To get familiar with the essential building blocks
           of the framework, we&apos;ll build a basic HTTP application with features that cover a lot of ground at an introductory level.
         </div>
       </div>
@@ -65,7 +65,7 @@ export const runDev = `bun run dev`;
       <section className="space-y-4">
         <h2 className="text-2xl font-semibold">Language</h2>
         <div className="text-muted-foreground">
-          Nael Platform is built entirely for <Link className="text-primary" href="https://bun.sh" rel="noreferrer" target="_blank">Bun</Link>,
+          Nael Framework is built entirely for <Link className="text-primary" href="https://bun.sh" rel="noreferrer" target="_blank">Bun</Link>,
           a fast all-in-one JavaScript runtime. We use TypeScript and leverage modern ES modules. While the framework is compatible with vanilla JavaScript,
           we strongly recommend using TypeScript for the best development experience.
         </div>
@@ -149,7 +149,7 @@ export const runDev = `bun run dev`;
         <CodeBlock code={runDev} title="Start development server" />
         <div className="text-sm text-muted-foreground">
           This command starts the app with the HTTP server listening on the port defined in `config/default.yaml`. Once the application is running,
-          open your browser and navigate to `http://localhost:3000/`. You should see the `Hello Nael Platform!` message.
+          open your browser and navigate to `http://localhost:3000/`. You should see the `Hello Nael Framework!` message.
         </div>
       </section>
 

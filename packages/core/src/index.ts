@@ -8,6 +8,37 @@ export { Inject } from './decorators/inject';
 export { Module, getModuleMetadata } from './decorators/module';
 export { Controller, getControllerPrefix } from './decorators/controller';
 export { SetMetadata, type CustomDecorator } from './decorators/set-metadata';
+export {
+  UseGuards,
+  getGuardMetadata,
+  listAppliedGuards,
+  GUARDS_METADATA_KEY,
+  type GuardToken,
+} from './decorators/guards';
+export {
+  UseInterceptors,
+  getInterceptorMetadata,
+  listAppliedInterceptors,
+  INTERCEPTORS_METADATA_KEY,
+  type InterceptorToken,
+} from './decorators/interceptors';
+export {
+  UseFilters,
+  getFilterMetadata,
+  listAppliedFilters,
+  FILTERS_METADATA_KEY,
+  type FilterToken,
+} from './decorators/filters';
+export {
+  UsePipes,
+  setPipeMetadata,
+  getHandlerPipes,
+  getParamPipes,
+  getAllPipes,
+  PIPES_METADATA_KEY,
+  PARAM_PIPES_METADATA_KEY,
+  type PipeToken,
+} from './decorators/pipes';
 export type { ModuleMetadata } from './interfaces/module';
 export type {
   Provider,
@@ -46,6 +77,7 @@ export {
   type InMemoryCacheOptions,
   type RedisCacheOptions,
 } from './cache';
+export type { CacheKeyPart } from './cache';
 export { ApplicationException } from './exceptions/application-exception';
 export { getHttpStatusFromException, createHttpException } from './exceptions/http-utils';
 export { getGraphQLCodeFromException, toGraphQLError, createGraphQLException } from './exceptions/graphql-utils';

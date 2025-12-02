@@ -1,5 +1,5 @@
 ---
-title: 'Pipes · Nael Platform'
+title: 'Pipes · Nael Framework'
 description: 'Learn how to use pipes for transforming and validating input data before it reaches route handlers in Nael applications.'
 ---
 
@@ -14,7 +14,8 @@ export class TrimPipe implements PipeTransform<string, string> {
   }
 }`;
 
-export const usePipe = `import { Controller, Get, Query, UsePipes } from '@nl-framework/http';
+export const usePipe = `import { Controller, Get, Query } from '@nl-framework/http';
+import { UsePipes } from '@nl-framework/core';
 
 @Controller('/search')
 export class SearchController {
@@ -78,7 +79,8 @@ return { message: 'User created', data };
 }
 }`;
 
-export const globalValidation = `import { Controller, Post, Body, UsePipes, ValidationPipe } from '@nl-framework/http';
+export const globalValidation = `import { Controller, Post, Body, ValidationPipe } from '@nl-framework/http';
+import { UsePipes } from '@nl-framework/core';
 
 @Controller('/users')
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
@@ -96,7 +98,8 @@ return { message: 'Users created', count: data.length };
 }
 }`;
 
-export const methodLevelPipes = `import { Controller, Post, UsePipes, ValidationPipe } from '@nl-framework/http';
+export const methodLevelPipes = `import { Controller, Post, ValidationPipe } from '@nl-framework/http';
+import { UsePipes } from '@nl-framework/core';
 
 @Controller('/products')
 export class ProductsController {
@@ -350,7 +353,9 @@ export class EntityModule {}`;
       <section className="space-y-4">
         <h2 className="text-2xl font-semibold">Global pipes</h2>
         <div className="text-muted-foreground">
-          Use `@UsePipes()` at the class level to apply pipes to all handler methods:
+          Use `@UsePipes()` at the class level to apply pipes to all handler methods. Import the decorator from
+          `@nl-framework/core` so HTTP, GraphQL, and microservice handlers share identical metadata (each package also
+          re-exports it for backwards compatibility):
         </div>
         <CodeBlock code={globalValidation} title="Controller-level pipes" />
       </section>

@@ -1,4 +1,4 @@
-import { BlobServiceClient, StorageSharedKeyCredential } from '@azure/storage-blob';
+import { BlobSASPermissions, BlobServiceClient, StorageSharedKeyCredential } from '@azure/storage-blob';
 import type { StorageAdapter, UploadOptions, UploadResult } from './types';
 
 export interface AzureBlobAdapterOptions {
@@ -54,7 +54,7 @@ export class AzureBlobStorageAdapter implements StorageAdapter {
     const blob = container.getBlockBlobClient(key);
     const sas = await blob.generateSasUrl({
       expiresOn: new Date(Date.now() + expiresInSeconds * 1000),
-      permissions: 'r',
+      permissions: BlobSASPermissions.parse('r'),
     });
     return sas;
   }

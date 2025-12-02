@@ -63,6 +63,10 @@ export class MicroservicesModule {
             method: h.propertyKey,
             pattern: h.metadata.pattern,
             isEvent: h.metadata.isEvent,
+            guards: h.guards.length,
+            interceptors: h.interceptors.length,
+            pipes: h.pipes.length,
+            filters: h.filters.length,
           })),
         });
       }

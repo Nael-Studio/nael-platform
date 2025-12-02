@@ -1,10 +1,16 @@
 import 'reflect-metadata';
 import { parse, type DocumentNode, GraphQLError } from 'graphql';
-import { transformAndValidate, ValidationException, ApplicationException, toGraphQLError } from '@nl-framework/core';
-import type { ClassType, Token } from '@nl-framework/core';
 import {
+  transformAndValidate,
+  ValidationException,
+  ApplicationException,
+  toGraphQLError,
   listAppliedGuards,
   listAppliedInterceptors,
+  listAppliedFilters,
+} from '@nl-framework/core';
+import type { ClassType, Token } from '@nl-framework/core';
+import {
   PUBLIC_ROUTE_METADATA_KEY,
   isGuardClassToken as isHttpGuardClassToken,
   type GuardToken,
@@ -25,6 +31,8 @@ import { listGraphqlGuards } from './guards/registry';
 import { createGraphqlGuardExecutionContext } from './guards/execution-context';
 import type { GraphqlExecutionContext } from './guards/types';
 import { listGraphQLExceptionFilters } from './filters/registry';
+import type { GraphQLExceptionFilter } from './filters/graphql-exception-filter.interface';
+import type { GraphqlExceptionFilterToken } from './filters/types';
 import {
   listGraphqlInterceptors,
 } from './interceptors/registry';
@@ -46,6 +54,7 @@ export interface GraphqlBuildOptions {
   federation?: FederationBuildOptions;
   guards?: GraphqlGuardRuntimeOptions;
   interceptors?: GraphqlInterceptorRuntimeOptions;
+  filters?: GraphqlFilterRuntimeOptions;
 }
 
 export interface GraphqlBuildArtifacts {
@@ -67,6 +76,10 @@ export interface GraphqlGuardRuntimeOptions {
 }
 
 export interface GraphqlInterceptorRuntimeOptions {
+  resolve<T>(token: Token<T>): Promise<T>;
+}
+
+export interface GraphqlFilterRuntimeOptions {
   resolve<T>(token: Token<T>): Promise<T>;
 }
 
@@ -195,21 +208,113 @@ const getScopedResolver = (
   return missingInterceptorResolver;
 };
 
+interface GraphqlExceptionHandlingOptions {
+  resolverClass?: ClassType;
+  resolverHandlerName?: string;
+  context?: GraphqlContext;
+  resolve?: ScopedResolve;
+}
+
+const isGraphqlExceptionFilterInstance = (
+  token: unknown,
+): token is GraphQLExceptionFilter =>
+  typeof token === 'object' &&
+  token !== null &&
+  typeof (token as GraphQLExceptionFilter).catch === 'function';
+
+const isGraphqlExceptionFilterClass = (
+  token: unknown,
+): token is ClassType<GraphQLExceptionFilter> =>
+  typeof token === 'function' &&
+  typeof (token as { prototype?: { catch?: unknown } }).prototype?.catch === 'function';
+
+const resolveGraphqlExceptionFilter = async (
+  token: GraphqlExceptionFilterToken,
+  resolve?: ScopedResolve,
+): Promise<GraphQLExceptionFilter> => {
+  if (isGraphqlExceptionFilterInstance(token)) {
+    return token;
+  }
+
+  if (resolve) {
+    try {
+      const resolved = await resolve(token as Token<GraphQLExceptionFilter>);
+      if (resolved && isGraphqlExceptionFilterInstance(resolved)) {
+        return resolved;
+      }
+    } catch (error) {
+      if (!isGraphqlExceptionFilterClass(token)) {
+        throw error;
+      }
+    }
+  }
+
+  if (isGraphqlExceptionFilterClass(token)) {
+    const FilterType = token as ClassType<GraphQLExceptionFilter>;
+    const instance = new FilterType();
+    if (isGraphqlExceptionFilterInstance(instance)) {
+      return instance;
+    }
+  }
+
+  throw new Error('Unable to resolve GraphQL exception filter token');
+};
+
+const collectGraphqlExceptionFilters = async (
+  resolverClass: ClassType | undefined,
+  resolverHandlerName: string | undefined,
+  resolve?: ScopedResolve,
+): Promise<GraphQLExceptionFilter[]> => {
+  if (!resolverClass) {
+    return [];
+  }
+
+  const tokens = listAppliedFilters<GraphqlExceptionFilterToken>(
+    resolverClass,
+    resolverHandlerName,
+  );
+
+  if (!tokens.length) {
+    return [];
+  }
+
+  const scopedFilters: GraphQLExceptionFilter[] = [];
+  for (const token of tokens) {
+    const filter = await resolveGraphqlExceptionFilter(token, resolve);
+    scopedFilters.push(filter);
+  }
+  return scopedFilters;
+};
+
 /**
  * Handle exceptions through registered filters and convert to GraphQL errors
  */
-const handleGraphQLException = async (error: unknown): Promise<GraphQLError> => {
+const handleGraphQLException = async (
+  error: unknown,
+  options: GraphqlExceptionHandlingOptions = {},
+): Promise<GraphQLError> => {
   const exception = error instanceof Error ? error : new Error(String(error));
-  const filters = listGraphQLExceptionFilters();
+  const globalFilters = listGraphQLExceptionFilters();
+  const scopedFilters = await collectGraphqlExceptionFilters(
+    options.resolverClass,
+    options.resolverHandlerName,
+    options.resolve,
+  );
+  const filters = [...globalFilters, ...scopedFilters];
+  const filterContext = {
+    resolverClass: options.resolverClass,
+    resolverHandlerName: options.resolverHandlerName,
+    context: options.context,
+  };
 
   // Try exception filters first
   for (const filter of filters) {
     try {
-      const result = await filter.catch(exception);
+      const result = await filter.catch(exception, filterContext);
       if (result) {
         return result;
       }
-    } catch (filterError) {
+    } catch {
       // If filter throws, continue to next filter
       continue;
     }
@@ -451,6 +556,7 @@ const createResolverInvoker = (
   params: ResolverParamDefinition[],
   guardRuntime?: GraphqlGuardRuntimeOptions,
   interceptorRuntime?: GraphqlInterceptorRuntimeOptions,
+  filterRuntime?: GraphqlFilterRuntimeOptions,
 ): ((parent: unknown, args: any, context: any, info: any) => unknown | Promise<unknown>) => {
   const instance = resolver as Record<string, any>;
   const handler = instance[method.methodName];
@@ -564,6 +670,9 @@ const createResolverInvoker = (
   };
 
   return async (parent: unknown, args: any, context: any, info: any) => {
+    const scopedFilterResolver = filterRuntime
+      ? getScopedResolver(context as GraphqlContext, filterRuntime.resolve)
+      : undefined;
     let sanitizedArgs: any = args;
     let precomputed = new Map<number, unknown>();
 
@@ -572,7 +681,12 @@ const createResolverInvoker = (
       sanitizedArgs = result.sanitizedArgs;
       precomputed = result.precomputed;
     } catch (error) {
-      throw await handleGraphQLException(error);
+      throw await handleGraphQLException(error, {
+        resolverClass: method.target,
+        resolverHandlerName: method.methodName,
+        context,
+        resolve: scopedFilterResolver,
+      });
     }
 
     if (guardRuntime) {
@@ -620,7 +734,7 @@ const createResolverInvoker = (
 
     const interceptorTokens: GraphqlInterceptorToken[] = [
       ...listGraphqlInterceptors(),
-      ...listAppliedInterceptors<GraphqlExecutionContext>(method.target, method.methodName),
+      ...listAppliedInterceptors<GraphqlInterceptorToken>(method.target, method.methodName),
     ];
 
     const finalHandler = () => invokeHandler(parent, sanitizedArgs, context, info, precomputed);
@@ -661,7 +775,12 @@ const createResolverInvoker = (
 
       return await finalHandler();
     } catch (error) {
-      throw await handleGraphQLException(error);
+      throw await handleGraphQLException(error, {
+        resolverClass: method.target,
+        resolverHandlerName: method.methodName,
+        context,
+        resolve: scopedFilterResolver,
+      });
     }
   };
 };
@@ -694,6 +813,7 @@ export class GraphqlSchemaBuilder {
 
     const guardRuntime = options.guards;
     const interceptorRuntime = options.interceptors ?? options.guards;
+    const filterRuntime = options.filters ?? options.interceptors ?? options.guards;
 
     const objectTypes = this.storage
       .getObjectTypes()
@@ -818,6 +938,7 @@ export class GraphqlSchemaBuilder {
           this.storage.getResolverParams(resolver.target, method.methodName),
           guardRuntime,
           interceptorRuntime,
+          filterRuntime,
         );
       }
 
@@ -834,6 +955,7 @@ export class GraphqlSchemaBuilder {
           this.storage.getResolverParams(resolver.target, method.methodName),
           guardRuntime,
           interceptorRuntime,
+          filterRuntime,
         );
       }
 
@@ -846,6 +968,7 @@ export class GraphqlSchemaBuilder {
             this.storage.getResolverParams(resolver.target, method.methodName),
             guardRuntime,
             interceptorRuntime,
+            filterRuntime,
           );
         }
 
@@ -856,6 +979,7 @@ export class GraphqlSchemaBuilder {
             this.storage.getResolverParams(resolver.target, resolver.resolveReference.methodName),
             guardRuntime,
             interceptorRuntime,
+            filterRuntime,
           );
           recordFederationDirective(federationDirectives, '@key', true);
         }

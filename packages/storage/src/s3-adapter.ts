@@ -32,11 +32,12 @@ export class S3StorageAdapter implements StorageAdapter {
   }
 
   async uploadObject(key: string, data: ArrayBuffer | Uint8Array | Buffer, options?: UploadOptions): Promise<UploadResult> {
+    const body: Uint8Array | Buffer = data instanceof ArrayBuffer ? new Uint8Array(data) : data;
     await this.client.send(
       new PutObjectCommand({
         Bucket: this.bucket,
         Key: key,
-        Body: data,
+        Body: body,
         ContentType: options?.contentType,
         CacheControl: options?.cacheControl,
       }),

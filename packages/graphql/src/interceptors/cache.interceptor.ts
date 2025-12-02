@@ -1,4 +1,9 @@
-import { buildCacheKey, type CacheStore, type CacheSetOptions } from '@nl-framework/core';
+import {
+  buildCacheKey,
+  type CacheKeyPart,
+  type CacheStore,
+  type CacheSetOptions,
+} from '@nl-framework/core';
 import type { GraphqlExecutionContext } from '../guards/types';
 import type { GraphqlCallHandler, GraphqlInterceptor } from './types';
 
@@ -63,10 +68,17 @@ export class GraphqlCacheInterceptor implements GraphqlInterceptor {
       return this.options.key(context);
     }
 
+    const args = context.getArgs();
+    const argsForKey: CacheKeyPart = Array.isArray(args)
+      ? (args as CacheKeyPart)
+      : args && typeof args === 'object'
+        ? (args as Record<string, CacheKeyPart>)
+        : (args as CacheKeyPart);
+
     return buildCacheKey(
       context.getResolverClass()?.name ?? 'resolver',
       context.getResolverHandlerName() ?? 'handler',
-      context.getArgs(),
+      argsForKey,
     );
   }
 

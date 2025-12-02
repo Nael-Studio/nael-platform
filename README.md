@@ -1,6 +1,6 @@
-# Nael Platform
+# Nael Framework
 
-Nael Platform is a [NestJS](https://nestjs.com/)-inspired application framework built on top of [Bun](https://bun.sh). It exists because we love Nest's developer ergonomics but grew frustrated with how heavy the experience can feel in modern tooling stacks: long boot times, CommonJS-centric builds that complicate native ESM adoption, and slow feedback loops when pairing with newer libraries that expect pure ESM runtimes. By embracing Bun end-to-end—TypeScript transpilation, test running, package management, and production serving—we get dramatically faster startup, tighter iteration loops, and first-class ESM compatibility while keeping the modular architecture, decorators, and structured tooling that make Nest approachable. The project is actively under development and the API surface is expected to evolve.
+Nael Framework is a [NestJS](https://nestjs.com/)-inspired application framework built on top of [Bun](https://bun.sh). It exists because we love Nest's developer ergonomics but grew frustrated with how heavy the experience can feel in modern tooling stacks: long boot times, CommonJS-centric builds that complicate native ESM adoption, and slow feedback loops when pairing with newer libraries that expect pure ESM runtimes. By embracing Bun end-to-end—TypeScript transpilation, test running, package management, and production serving—we get dramatically faster startup, tighter iteration loops, and first-class ESM compatibility while keeping the modular architecture, decorators, and structured tooling that make Nest approachable. The project is actively under development and the API surface is expected to evolve.
 
 ## Table of Contents
 
@@ -86,7 +86,7 @@ The roadmap tracks both the pieces that already landed and the ones we still pla
 
 ## Module Documentation
 
-Nael Platform is built around a modular architecture where each package provides focused functionality while integrating seamlessly through dependency injection. Below is comprehensive documentation for each module.
+Nael Framework is built around a modular architecture where each package provides focused functionality while integrating seamlessly through dependency injection. Below is comprehensive documentation for each module.
 
 ### Core Module (`@nl-framework/core`)
 
@@ -128,6 +128,10 @@ const context = await app.bootstrap(AppModule);
 - Class providers with `useClass` for substitution
 - Module imports and exports for sharing providers
 - Lifecycle hooks: `onModuleInit()`, `onModuleDestroy()`
+
+**Shared Decorators:**
+
+- `@UseGuards()`, `@UseInterceptors()`, and `@UsePipes()` now live in `@nl-framework/core`, so HTTP, GraphQL, and microservice transports share the exact metadata and inheritance semantics. The transport packages continue to re-export the decorators for backwards compatibility, but new code can import directly from the core module.
 
 ---
 
@@ -739,7 +743,7 @@ For test environments, provide a custom worker factory via the `SCHEDULER_WORKER
 
 ## Microservices Architecture
 
-Nael Platform includes a comprehensive microservices module (`@nl-framework/microservices`) that brings NestJS-style message patterns to Bun with first-class Dapr integration. The architecture supports event-driven communication patterns while maintaining the same decorator-based developer experience as the HTTP and GraphQL modules.
+Nael Framework includes a comprehensive microservices module (`@nl-framework/microservices`) that brings NestJS-style message patterns to Bun with first-class Dapr integration. The architecture supports event-driven communication patterns while maintaining the same decorator-based developer experience as the HTTP and GraphQL modules.
 
 ### Key Features
 
@@ -748,6 +752,7 @@ Nael Platform includes a comprehensive microservices module (`@nl-framework/micr
 - **Dapr Transport**: Built-in integration with Dapr sidecar for pub/sub messaging via HTTP API
 - **Pluggable Transports**: Transport interface allows custom implementations (NATS, RabbitMQ, Kafka, etc.)
 - **Automatic Handler Discovery**: Controllers are automatically scanned for message handlers during module initialization
+- **Shared Decorators**: Message handlers understand `@UseGuards()`, `@UseInterceptors()`, and `@UsePipes()` from `@nl-framework/core`, aligning them with the HTTP and GraphQL runtimes
 - **DI Integration**: Full dependency injection support for services, loggers, and other providers
 
 ### Quick Example
@@ -874,7 +879,7 @@ Quick reference for all framework packages:
 
 ## Architecture Principles
 
-Nael Platform follows these core architectural principles:
+Nael Framework follows these core architectural principles:
 
 1. **Modularity First**: Every feature is a self-contained module that can be imported independently
 2. **Decorator-Driven**: Familiar NestJS-style decorators for routing, DI, and metadata
@@ -930,4 +935,4 @@ Add the secret to the repository (or organization) settings before pushing tags;
 
 ## Contributing
 
-Because Nael Platform is in active development, we recommend opening a discussion or issue before embarking on larger contributions. Feedback on architecture, ergonomics, and missing features is especially welcome.
+Because Nael Framework is in active development, we recommend opening a discussion or issue before embarking on larger contributions. Feedback on architecture, ergonomics, and missing features is especially welcome.

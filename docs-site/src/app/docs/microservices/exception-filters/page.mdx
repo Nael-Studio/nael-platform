@@ -1,0 +1,120 @@
+---
+title: 'Exception filters · Microservices'
+description: 'Track the status of exception filters for Nael microservices and learn what is required to enable them.'
+---
+
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const controllerExample = `import { Controller, UseFilters } from '@nl-framework/core';
+import { MessagePattern } from '@nl-framework/microservices';
+import { MicroserviceExceptionFilter } from './filters/logging.filter';
+
+@Controller()
+@UseFilters(MicroserviceExceptionFilter)
+export class OrdersConsumer {
+  @MessagePattern('orders.create')
+  async create(order: OrderDto) {
+    throw new Error('Not implemented');
+  }
+}`;
+
+export const filterSkeleton = `import { Injectable } from '@nl-framework/core';
+import type { MicroserviceExceptionContext, MicroserviceExceptionFilter } from '@nl-framework/microservices';
+
+@Injectable()
+export class LoggingFilter implements MicroserviceExceptionFilter {
+  catch(exception: unknown, context: MicroserviceExceptionContext) {
+    context.logger.error({ pattern: context.pattern, exception });
+    return { ok: false };
+  }
+}`;
+
+export const globalFilterRegistration = `import { registerMicroserviceExceptionFilter } from '@nl-framework/microservices';
+import { LoggingFilter } from './filters/logging.filter';
+
+registerMicroserviceExceptionFilter(new LoggingFilter());`;
+
+<article className="space-y-8">
+  <div className="space-y-3">
+    <Badge className="bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-50">Microservices</Badge>
+    <h1 className="text-4xl font-semibold tracking-tight">Exception filters</h1>
+    <div className="text-lg text-muted-foreground max-w-3xl">
+      Microservice controllers now share the same <code>@UseFilters()</code> decorator as HTTP and GraphQL. This guide
+      explains how to author a <code>MicroserviceExceptionFilter</code>, apply it to message handlers, and register
+      global filters that execute whenever a handler throws.
+    </div>
+  </div>
+
+  <section className="space-y-4" id="status">
+    <h2 className="text-2xl font-semibold">Current status</h2>
+    <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+      <li><code>@UseFilters()</code> ships from <code>@nl-framework/core</code> and microservice controllers read the same
+        metadata helpers as HTTP and GraphQL.</li>
+      <li>The dispatcher resolves handler-scoped filters first, then falls back to globally registered filters.</li>
+      <li><code>MicroserviceExceptionFilter</code>, its execution context, and registry helpers ship from the package so
+        you can build injectable or ad-hoc filters.</li>
+    </ul>
+  </section>
+
+  <section className="space-y-4" id="quick-start">
+    <h2 className="text-2xl font-semibold">Quick start</h2>
+    <ol className="list-decimal space-y-4 pl-5 text-muted-foreground">
+      <li>
+        <strong>Create a filter</strong>: Implement <code>MicroserviceExceptionFilter</code>. The context exposes the
+        message pattern, payload, metadata, controller instance, handler name, whether the handler is an event, and the
+        logger you passed to the module.
+        <CodeBlock code={filterSkeleton} title="logging.filter.ts" />
+      </li>
+      <li>
+        <strong>Attach with @UseFilters()</strong>: Decorate the controller or individual handler. Method-level filters
+        run before class-level filters.
+        <CodeBlock code={controllerExample} title="orders.consumer.ts" />
+      </li>
+      <li>
+        <strong>Register globals (optional)</strong>: Call <code>registerMicroserviceExceptionFilter()</code> or
+        <code>registerMicroserviceExceptionFilters()</code> during bootstrap to run filters for every handler.
+        <CodeBlock code={globalFilterRegistration} title="bootstrap.ts" />
+      </li>
+    </ol>
+  </section>
+
+  <section className="space-y-4" id="example">
+    <h2 className="text-2xl font-semibold">End-to-end example</h2>
+    <p className="text-muted-foreground">
+      Combine the snippets above to build a reusable filter and apply it to a controller. The dispatcher will call the
+      filter whenever <code>OrdersConsumer#create</code> throws, and any value returned from <code>catch()</code>
+      becomes the handler response.
+    </p>
+    <CodeBlock code={filterSkeleton} title="filters/logging.filter.ts" />
+    <CodeBlock code={controllerExample} title="orders.consumer.ts" />
+  </section>
+
+  <section className="space-y-4" id="behavior">
+    <h2 className="text-2xl font-semibold">Runtime behavior</h2>
+    <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+      <li>Filters run whenever a handler throws (sync or async). Events swallow return values; command handlers receive
+        whatever the filter returns.</li>
+      <li>Scoped filters execute before globals. The dispatcher stops once a filter returns a non-<code>undefined</code>
+        value.</li>
+      <li>Tokens resolve through DI first. If a token is a class without DI metadata the dispatcher will <code>new</code>
+        it directly. Passing filter instances works as well.</li>
+      <li>Use the context logger to emit structured errors or forward the exception elsewhere.</li>
+    </ul>
+  </section>
+
+  <section className="space-y-4" id="api">
+    <h2 className="text-2xl font-semibold">API reference</h2>
+    <div className="space-y-3 text-muted-foreground">
+      <p><strong><code>UseFilters(...tokens)</code></strong>: Available from <code>@nl-framework/core</code>. Accepts
+        classes, provider tokens, or filter instances.</p>
+      <p><strong><code>MicroserviceExceptionFilter</code></strong>: Exposes a <code>catch(exception, context)</code>
+        method. Return a value to override the handler response; return <code>undefined</code> to continue to the next
+        filter.</p>
+      <p><strong>Registry helpers</strong>: <code>registerMicroserviceExceptionFilter()</code>,
+        <code>registerMicroserviceExceptionFilters()</code>, <code>listMicroserviceExceptionFilters()</code>, and
+        <code>clearMicroserviceExceptionFilters()</code>. Use them to manage global filters in end-to-end tests or custom
+        setups.</p>
+    </div>
+  </section>
+</article>

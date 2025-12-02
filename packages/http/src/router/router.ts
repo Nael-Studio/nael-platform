@@ -21,6 +21,9 @@ import { getRouteArgsMetadata, type RouteArgMetadata } from '../decorators/param
 import { getMetadata } from '../utils/metadata';
 import { transformAndValidate, ValidationException, ApplicationException, getHttpStatusFromException } from '@nl-framework/core';
 import { listExceptionFilters } from '../filters/registry';
+import { listAppliedFilters } from '../filters/metadata';
+import type { ExceptionFilter } from '../filters/exception-filter.interface';
+import type { ExceptionFilterToken } from '../filters/types';
 import { HttpException } from '../exceptions/http-exception';
 import { getAllPipes } from '../pipes/pipes.metadata';
 import type { PipeTransform, ArgumentMetadata, PipeToken } from '../pipes/pipe-transform.interface';
@@ -169,7 +172,7 @@ export class Router {
         },
         container,
         version: requestVersion,
-      });
+      }, bestMatch.handler);
     }
   }
 
@@ -281,14 +284,18 @@ export class Router {
     });
   }
 
-  private async handleException(error: unknown, context: RequestContext): Promise<Response> {
+  private async handleException(
+    error: unknown,
+    context: RequestContext,
+    handler?: HandlerEntry,
+  ): Promise<Response> {
     const exception = error instanceof Error ? error : new Error(String(error));
-    const filters = listExceptionFilters();
+    const filters = await this.collectExceptionFilters(context, handler);
 
     for (const filter of filters) {
       try {
         return await filter.catch(exception, context);
-      } catch (filterError) {
+      } catch {
         // If a filter throws, continue to the next one
         continue;
       }
@@ -333,6 +340,76 @@ export class Router {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
       },
+    );
+  }
+
+  private async collectExceptionFilters(
+    context: RequestContext,
+    handler?: HandlerEntry,
+  ): Promise<ExceptionFilter[]> {
+    const filters: ExceptionFilter[] = [...listExceptionFilters()];
+
+    if (!handler) {
+      return filters;
+    }
+
+    const scopedTokens = listAppliedFilters<ExceptionFilterToken>(
+      handler.controllerClass,
+      handler.route.handlerName,
+    );
+
+    for (const token of scopedTokens) {
+      const resolved = await this.resolveExceptionFilter(token, context);
+      filters.push(resolved);
+    }
+
+    return filters;
+  }
+
+  private async resolveExceptionFilter(
+    token: ExceptionFilterToken,
+    context: RequestContext,
+  ): Promise<ExceptionFilter> {
+    if (this.isExceptionFilterInstance(token)) {
+      return token;
+    }
+
+    const resolverToken = token as Parameters<RequestContext['container']['resolve']>[0];
+
+    try {
+      const resolved = await context.container.resolve(resolverToken);
+      if (this.isExceptionFilterInstance(resolved)) {
+        return resolved;
+      }
+    } catch (error) {
+      if (!this.isExceptionFilterClass(token)) {
+        throw error;
+      }
+    }
+
+    if (this.isExceptionFilterClass(token)) {
+      const FilterType = token as ClassType<ExceptionFilter>;
+      const instance = new FilterType();
+      if (this.isExceptionFilterInstance(instance)) {
+        return instance;
+      }
+    }
+
+    throw new Error('Unable to resolve exception filter token');
+  }
+
+  private isExceptionFilterInstance(value: unknown): value is ExceptionFilter {
+    return (
+      typeof value === 'object' &&
+      value !== null &&
+      typeof (value as { catch?: unknown }).catch === 'function'
+    );
+  }
+
+  private isExceptionFilterClass(token: unknown): token is ClassType<ExceptionFilter> {
+    return (
+      typeof token === 'function' &&
+      typeof (token as { prototype?: { catch?: unknown } }).prototype?.catch === 'function'
     );
   }
 

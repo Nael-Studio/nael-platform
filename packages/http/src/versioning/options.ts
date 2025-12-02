@@ -31,7 +31,10 @@ export interface HttpVersioningOptions {
   responseHeader?: string;
 }
 
-export const DEFAULT_VERSIONING_OPTIONS: Required<Omit<HttpVersioningOptions, 'defaultVersion'>> = {
+export const DEFAULT_VERSIONING_OPTIONS: (
+  Required<Omit<HttpVersioningOptions, 'defaultVersion' | 'responseHeader'>> &
+  Pick<HttpVersioningOptions, 'responseHeader'>
+) = {
   enabled: false,
   strategies: ['uri'],
   headerName: 'x-api-version',

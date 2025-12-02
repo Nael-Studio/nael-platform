@@ -1,6 +1,6 @@
-## Nael Platform Documentation Site
+## Nael Framework Documentation Site
 
-This package hosts the public documentation for the Nael Platform framework. It is a Next.js App Router
+This package hosts the public documentation for the Nael Framework framework. It is a Next.js App Router
 project styled with Tailwind CSS, [shadcn/ui](https://ui.shadcn.com/), and
 [Kibo UI](https://www.kibo-ui.com/) components for the hero banner + theme switcher.
 

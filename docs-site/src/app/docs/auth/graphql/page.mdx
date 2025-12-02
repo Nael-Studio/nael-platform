@@ -7,8 +7,8 @@ import { CodeBlock } from '@/components/shared/simple-code-block';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export const graphqlGuard = `import { Resolver, Query } from '@nl-framework/graphql';
-import { UseGuards, CurrentSession } from '@nl-framework/auth';
-import { BetterAuthGuard, BetterAuthSession } from '@nl-framework/auth';
+import { UseGuards } from '@nl-framework/core';
+import { CurrentSession, BetterAuthGuard, BetterAuthSession } from '@nl-framework/auth';
 import { ProfileService } from './profile.service';
 import { Profile } from './profile.model';
 
@@ -47,7 +47,8 @@ gql?.useContext(({ req, res }) => ({
 await app.listen({ http: 3000 });`;
 
 export const enrichUser = `import { Resolver, Query } from '@nl-framework/graphql';
-import { UseGuards, CurrentSession, BetterAuthGuard, type BetterAuthSession } from '@nl-framework/auth';
+import { UseGuards } from '@nl-framework/core';
+import { CurrentSession, BetterAuthGuard, type BetterAuthSession } from '@nl-framework/auth';
 
 type AuthUserProfile = BetterAuthSession & {
   email?: string;
@@ -85,7 +86,9 @@ export class MeResolver {
     <h2 className="text-2xl font-semibold">Protect resolvers</h2>
     <div className="text-muted-foreground">
       Wrap queries/mutations with the guard and pull the session from the decorator. Keep your services unaware of auth
-      details by passing the userId/tenant down.
+      details by passing the userId/tenant down. Import `@UseGuards()` from `@nl-framework/core` so GraphQL shares the
+      same guard metadata with HTTP and future microservice handlers (the auth and http packages still re-export it if
+      you prefer shorter imports).
     </div>
     <CodeBlock code={graphqlGuard} title="profile.resolver.ts" />
   </section>

@@ -32,7 +32,7 @@ export function SiteHeader() {
       <div className="mx-auto flex h-16 w-full items-center justify-between px-4 sm:px-6 lg:px-10 xl:px-16">
         <div className="flex items-center gap-6">
           <Link className="font-semibold tracking-tight" href="/">
-            Nael Platform Docs
+            Nael Framework Docs
           </Link>
           <nav className="hidden items-center gap-4 text-sm font-medium md:flex">
             {navItems.map((item) => (
