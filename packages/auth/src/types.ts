@@ -12,8 +12,27 @@ export interface BetterAuthSessionInput {
   [key: string]: unknown;
 }
 
-export interface BetterAuthSessionPayload {
-  user?: unknown;
+/**
+ * The payload returned by BetterAuth's session API.
+ * 
+ * @template U - The type of the user object. Defaults to `unknown`.
+ * 
+ * @example
+ * ```typescript
+ * interface MyUser {
+ *   id: string;
+ *   email: string;
+ *   name?: string;
+ * }
+ * 
+ * const session: BetterAuthSessionPayload<MyUser> = await authService.getSession(request);
+ * if (session?.user) {
+ *   console.log(session.user.email); // TypeScript knows this is a string
+ * }
+ * ```
+ */
+export interface BetterAuthSessionPayload<U = unknown> {
+  user?: U;
   token?: string | null;
   [key: string]: unknown;
 }
