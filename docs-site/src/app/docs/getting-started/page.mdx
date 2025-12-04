@@ -1,0 +1,129 @@
+---
+title: 'Getting Started · Nael Framework'
+description: 'Scaffold and run Nael Framework services with the CLI or the monorepo examples.'
+---
+
+import Link from 'next/link';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+export const installCli = `bun install --global @nl-framework/cli`;
+
+export const bootstrapService = `nl new fleet-service
+cd fleet-service
+bun install
+bun run dev`;
+
+export const runExample = `bun install
+bun run build
+bun run --cwd examples/auth-multi-tenant-http start`;
+
+<div className="space-y-10">
+      <div className="space-y-3">
+        <div className="text-sm uppercase tracking-wide text-muted-foreground">Guide</div>
+        <h1 className="text-4xl font-semibold">Getting started</h1>
+        <div className="max-w-2xl text-muted-foreground">
+          Install the CLI, scaffold a Bun-native service, and explore the curated examples. The
+          CLI mirrors NestJS ergonomics while running entirely on Bun for faster startup times.
+        </div>
+      </div>
+
+      <section className="space-y-6">
+        <Card className="border-border/80">
+          <CardHeader>
+            <CardTitle>1. Install the CLI</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="text-sm text-muted-foreground">
+              The `nl` binary ships generators for new services, modules, controllers,
+              resolvers, and background workers.
+            </div>
+            <CodeBlock code={installCli} title="Install globally" />
+          </CardContent>
+        </Card>
+        <Card className="border-border/80">
+          <CardHeader>
+            <CardTitle>2. Scaffold a service</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="text-sm text-muted-foreground">
+              Choose HTTP, GraphQL, Better Auth, or microservice blueprints. The CLI always boots a
+              NaelFactory instance wired with logging and configuration.
+            </div>
+            <CodeBlock code={bootstrapService} title="Create fleet-service" />
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">3. Run an example locally</h2>
+        <div className="text-muted-foreground">
+          Every capability in the README maps to an example inside `examples/`. Build once at the
+          root, then point the `--cwd` flag to the folder you want to explore.
+        </div>
+        <CodeBlock code={runExample} title="Multi-tenant HTTP example" />
+      </section>
+
+      <section className="space-y-4" id="multi-tenant">
+        <h2 className="text-2xl font-semibold">Multi-tenant Better Auth</h2>
+        <div className="text-muted-foreground">
+          The `auth-multi-tenant-*` examples demonstrate how to hydrate per-tenant configuration,
+          reuse HTTP auth routes, and expose Better Auth via GraphQL. Key steps:
+        </div>
+        <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
+          <li>
+            Register tenant metadata inside <code>config/tenants.yaml</code> and expose typed config tokens.
+          </li>
+          <li>
+            Use <code>BetterAuthMultiTenantGuard</code> to bind sessions to the active tenant.
+          </li>
+          <li>
+            Forward the Better Auth HTTP router via <code>BetterAuthProxyModule</code> so SPA clients stay in sync.
+          </li>
+          <li>Re-use the exported guard in GraphQL resolvers via <code>@UseGuards()</code>.</li>
+        </ul>
+        <div className="text-sm text-muted-foreground">
+          Need a federation-friendly flavor? Switch to `examples/auth-multi-tenant-graphql` and follow
+          the README inside that folder.
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">What the CLI creates</h2>
+        <ul className="grid gap-3 md:grid-cols-2">
+          <li className="rounded-2xl border border-border/70 bg-card p-4">
+            <div className="font-medium"><code>NaelFactory</code> bootstrap</div>
+            <div className="text-sm text-muted-foreground">
+              Unified HTTP + GraphQL + Gateway wiring with shared dependency injection context.
+            </div>
+          </li>
+          <li className="rounded-2xl border border-border/70 bg-card p-4">
+            <div className="font-medium">Config + Logger</div>
+            <div className="text-sm text-muted-foreground">
+              YAML-backed config module and structured logging with child logger support.
+            </div>
+          </li>
+          <li className="rounded-2xl border border-border/70 bg-card p-4">
+            <div className="font-medium">Ready-to-wire Better Auth</div>
+            <div className="text-sm text-muted-foreground">
+              Shared session middleware across HTTP and GraphQL plus helpers for proxying the Better Auth routes.
+            </div>
+          </li>
+          <li className="rounded-2xl border border-border/70 bg-card p-4">
+            <div className="font-medium">Generator commands</div>
+            <div className="text-sm text-muted-foreground">
+              `nl g module users`, `nl g controller auth`, `nl g resolver profile` mirror
+              NestJS-style ergonomics.
+            </div>
+          </li>
+        </ul>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-2xl font-semibold">Next steps</h2>
+        <div className="text-muted-foreground">
+          Head to the <Link className="text-primary" href="/docs/installation">Installation guide</Link> for
+          per-package instructions or open any folder under `examples/` for focused walkthroughs.
+        </div>
+      </section>
+    </div>

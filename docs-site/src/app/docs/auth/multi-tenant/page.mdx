@@ -1,0 +1,110 @@
+---
+title: 'BetterAuth multi-tenant · Auth'
+description: 'Resolve tenants per request, load per-tenant secrets, and share sessions across HTTP and GraphQL.'
+---
+
+import { CodeBlock } from '@/components/shared/simple-code-block';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+export const tenantBootstrap = `import { BetterAuthMultiTenantFactory } from '@nl-framework/auth';
+
+// Register once before bootstrapping HTTP/GraphQL
+BetterAuthMultiTenantFactory.register({
+  async resolveTenant(ctx) {
+    // host-based routing
+    const host = ctx.req.headers.get('host') ?? '';
+    return tenants.find((tenant) => tenant.domain === host);
+  },
+  async secretsFor(tenant) {
+    return {
+      cookieName: \`__Secure-\${tenant.key}\`,
+      secret: tenant.secret,
+    };
+  },
+});`;
+
+export const hostResolver = `// Examples of tenant resolution
+// - Host header: foo.nael.dev -> tenant "foo"
+// - Path prefix: /t/{tenant}/api
+// - Custom header: x-tenant-key
+// Return a tenant object that includes key/domain/secret references.`;
+
+export const httpUsage = `import { Module } from '@nl-framework/core';
+import { BetterAuthProxyModule } from '@nl-framework/auth';
+
+@Module({
+  imports: [
+    BetterAuthProxyModule.forRoot({
+      upstreamUrl: 'https://auth.nael.dev',
+      cookieDomain: '.nael.dev',
+    }),
+  ],
+})
+export class HttpAuthModule {}`;
+
+export const gqlUsage = `import { Resolver, Query } from '@nl-framework/graphql';
+import { UseGuards, CurrentSession, BetterAuthGuard, type BetterAuthSession } from '@nl-framework/auth';
+
+@Resolver()
+export class TenantResolver {
+  @UseGuards(BetterAuthGuard)
+  @Query(() => String)
+  tenantKey(@CurrentSession() session: BetterAuthSession) {
+    return session.tenantKey;
+  }
+}`;
+
+<article className="space-y-8">
+  <div className="space-y-3">
+    <h1 className="text-4xl font-semibold tracking-tight">Multi-tenant auth</h1>
+    <div className="text-lg text-muted-foreground max-w-3xl">
+      Use <code>BetterAuthMultiTenantFactory</code> to resolve a tenant per request and load its cookie name + secret.
+      Both REST and GraphQL reuse the same resolver so sessions stay consistent.
+    </div>
+  </div>
+
+  <section className="space-y-4" id="register">
+    <h2 className="text-2xl font-semibold">Register the resolver</h2>
+    <div className="text-muted-foreground">
+      Call <code>BetterAuthMultiTenantFactory.register</code> once at startup. Implement <code>resolveTenant</code> and
+      <code>secretsFor</code> to return per-tenant config.
+    </div>
+    <CodeBlock code={tenantBootstrap} title="multi-tenant.bootstrap.ts" />
+    <CodeBlock code={hostResolver} title="Resolution patterns" />
+  </section>
+
+  <section className="space-y-4" id="http">
+    <h2 className="text-2xl font-semibold">HTTP integration</h2>
+    <div className="text-muted-foreground">
+      Attach the proxy module after registering the tenant resolver. Each tenant can have its own cookie name to avoid
+      collisions across domains.
+    </div>
+    <CodeBlock code={httpUsage} title="better-auth-proxy.module.ts" />
+  </section>
+
+  <section className="space-y-4" id="graphql">
+    <h2 className="text-2xl font-semibold">GraphQL integration</h2>
+    <div className="text-muted-foreground">
+      Guards reuse the same tenant resolver; <code>@CurrentSession()</code> exposes <code>tenantKey</code> on the session.
+    </div>
+    <CodeBlock code={gqlUsage} title="tenant.resolver.ts" />
+  </section>
+
+  <section className="space-y-3" id="checklist">
+    <h2 className="text-2xl font-semibold">Checklist</h2>
+    <Card className="border-border/70">
+      <CardHeader>
+        <CardTitle>Tenancy best practices</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2 text-sm text-muted-foreground">
+        <ul className="list-disc space-y-2 pl-5">
+          <li>Unique cookie names per tenant (<code>__Secure-{'{tenantKey}'}</code>).</li>
+          <li>Cache secrets per tenant; rotate on access revocation.</li>
+          <li>Resolve tenant before bootstrapping HTTP/GraphQL so guards pick up correct secrets.</li>
+          <li>Expose a <code>/session</code> endpoint that returns <code>tenantKey</code> for SPA hydration.</li>
+          <li>Audit logs by tenant to trace auth flows.</li>
+        </ul>
+      </CardContent>
+    </Card>
+  </section>
+</article>

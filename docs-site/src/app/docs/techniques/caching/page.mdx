@@ -1,0 +1,252 @@
+---
+title: 'Caching · Techniques'
+description: 'Add response caching to HTTP and GraphQL handlers with pluggable stores and Redis support.'
+---
+
+import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const configSnippet = `# config/cache.yaml
+cache:
+  ttlMs: 60000
+  prefix: api
+  redisUrl: \${REDIS_URL}
+  maxEntries: 500`;
+
+export const diHttp = `import Redis from 'ioredis';
+import { Module, ConfigService, Inject } from '@nl-framework/core';
+import { buildCacheKey, InMemoryCacheStore, RedisCacheStore, type CacheStore } from '@nl-framework/core';
+import { ConfigModule } from '@nl-framework/config';
+import { Controller, Get, UseInterceptors, HttpCacheInterceptor } from '@nl-framework/http';
+
+export const CACHE_STORE = Symbol('cache:store');
+export const CACHE_INTERCEPTOR = Symbol('cache:interceptor');
+
+@Controller('/posts')
+@UseInterceptors(CACHE_INTERCEPTOR)
+export class PostsController {
+  constructor(private readonly service: PostsService) {}
+
+  @Get('/')
+  list() {
+    return this.service.listPublished();
+  }
+}
+
+@Module({
+  imports: [ConfigModule.forRoot()],
+  controllers: [PostsController],
+  providers: [
+    {
+      provide: CACHE_STORE,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService<{ cache: any }>): CacheStore => {
+        const ttl = config.get('cache.ttlMs', 30_000) as number;
+        const prefix = config.get('cache.prefix', 'api') as string;
+        const redisUrl = config.get('cache.redisUrl') as string | undefined;
+        const maxEntries = config.get('cache.maxEntries', 500) as number;
+
+        if (redisUrl) {
+          const client = new Redis(redisUrl);
+          return new RedisCacheStore(client, { prefix, ttl });
+        }
+
+        return new InMemoryCacheStore({ ttl, maxEntries });
+      },
+    },
+    {
+      provide: CACHE_INTERCEPTOR,
+      inject: [CACHE_STORE, ConfigService],
+      useFactory: (store: CacheStore, config: ConfigService<{ cache: any }>) =>
+        new HttpCacheInterceptor({
+          store,
+          ttl: config.get('cache.ttlMs', 30_000) as number,
+          key: (ctx) => buildCacheKey('posts', ctx.getRequest().url),
+        }),
+    },
+
+  ],
+})
+export class PostsModule {}`;
+
+export const graphqlCaching = `import { Module, ConfigService } from '@nl-framework/core';
+import { buildCacheKey, InMemoryCacheStore } from '@nl-framework/core';
+import { ConfigModule } from '@nl-framework/config';
+import { Resolver, Query } from '@nl-framework/graphql';
+import { UseInterceptors } from '@nl-framework/http';
+import { GraphqlCacheInterceptor } from '@nl-framework/graphql';
+
+export const GRAPHQL_CACHE = Symbol('cache:graphql');
+
+@Resolver()
+@UseInterceptors(GRAPHQL_CACHE)
+export class ReportsResolver {
+  @Query(() => [String])
+  recentReports() {
+    return this.service.list();
+  }
+}
+
+@Module({
+  imports: [ConfigModule.forRoot()],
+  providers: [
+    ReportsResolver,
+    {
+      provide: GRAPHQL_CACHE,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService<{ cache: any }>) => {
+        const store = new InMemoryCacheStore({ ttl: config.get('cache.ttlMs', 15_000) as number });
+        return new GraphqlCacheInterceptor({
+          store,
+          ttl: config.get('cache.ttlMs', 15_000) as number,
+          key: (ctx) => buildCacheKey('reports', ctx.getResolverHandlerName(), ctx.getArgs()),
+        });
+      },
+    },
+  ],
+})
+export class ReportsModule {}`;
+
+export const redisSnippet = `import Redis from 'ioredis';
+import { Module, ConfigService } from '@nl-framework/core';
+import { RedisCacheStore } from '@nl-framework/core';
+import { ConfigModule } from '@nl-framework/config';
+import { Controller, Get, UseInterceptors, HttpCacheInterceptor } from '@nl-framework/http';
+
+export const CACHE_STORE = Symbol('cache:store');
+export const CACHE_INTERCEPTOR = Symbol('cache:interceptor');
+
+@Controller('/products')
+@UseInterceptors(CACHE_INTERCEPTOR)
+export class ProductsController {
+  @Get('/')
+  list() {
+    return this.service.all();
+  }
+}
+
+@Module({
+  imports: [ConfigModule.forRoot()],
+  controllers: [ProductsController],
+  providers: [
+    {
+      provide: CACHE_STORE,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService<{ cache: any }>) => {
+        const client = new Redis(config.get('cache.redisUrl', process.env.REDIS_URL!) as string);
+        return new RedisCacheStore(client, {
+          prefix: config.get('cache.prefix', 'api') as string,
+          ttl: config.get('cache.ttlMs', 60_000) as number,
+        });
+      },
+    },
+    {
+      provide: CACHE_INTERCEPTOR,
+      inject: [CACHE_STORE, ConfigService],
+      useFactory: (store, config: ConfigService<{ cache: any }>) =>
+        new HttpCacheInterceptor({
+          store,
+          ttl: config.get('cache.ttlMs', 60_000) as number,
+        }),
+    },
+  ],
+})
+export class ProductsModule {}`;
+
+export const manualCaching = `import { buildCacheKey, InMemoryCacheStore } from '@nl-framework/core';
+
+const cache = new InMemoryCacheStore({ ttl: 10_000 });
+
+export async function fetchProfile(id: string) {
+  const key = buildCacheKey('profile', id);
+  const cached = await cache.get(key);
+  if (cached) {
+    return cached;
+  }
+
+  const profile = await queryDatabase(id);
+  await cache.set(key, profile, { ttl: 10_000 });
+  return profile;
+}
+
+export async function invalidateProfile(id: string) {
+  await cache.delete(buildCacheKey('profile', id));
+}`;
+
+<article className="space-y-8">
+      <div className="space-y-3">
+        <Badge className="bg-orange-100 text-orange-900 dark:bg-orange-900/30 dark:text-orange-50">
+          Techniques
+        </Badge>
+        <h1 className="text-4xl font-semibold tracking-tight">Caching</h1>
+        <div className="text-lg text-muted-foreground">
+          Cache expensive responses without coupling your handlers to storage details. Nael ships a CacheStore interface,
+          an in-memory LRU implementation, Redis adapter, and cache interceptors for both HTTP and GraphQL pipelines.
+          Keys are stable via `buildCacheKey()`, TTLs are millisecond-based, and you stay in control of what
+          gets cached.
+        </div>
+      </div>
+
+      <section className="space-y-4" id="stores">
+        <h2 className="text-2xl font-semibold">Configure once via DI</h2>
+        <div className="text-muted-foreground">
+          Drive cache settings from `ConfigModule` and expose stores/interceptors as providers. The examples
+          below use Symbols so `@UseInterceptors()` can resolve instances from the container and still fall back
+          to in-memory caching when Redis isn&apos;t configured.
+        </div>
+        <CodeBlock code={configSnippet} title="config/cache.yaml" />
+      </section>
+
+      <section className="space-y-4" id="http">
+        <h2 className="text-2xl font-semibold">HTTP caching via interceptor</h2>
+        <div className="text-muted-foreground">
+          Register the store + interceptor as providers so the HTTP pipeline can resolve them through DI. Override keys,
+          TTLs, and cacheable status codes in the factory. `HttpCacheInterceptor` caches GET/HEAD responses by
+          default and replays them as normal `Response` objects.
+        </div>
+        <CodeBlock code={diHttp} title="DI-friendly HTTP cache" />
+        <div className="rounded-lg border border-sky-500/40 bg-sky-500/10 p-4 text-sm text-sky-800 dark:text-sky-100">
+          <strong>Tip:</strong> Use `shouldCacheResult` to skip caching on auth/tenant mismatches or when response headers
+          carry `cache-control: no-store`.
+        </div>
+      </section>
+
+      <section className="space-y-4" id="graphql">
+        <h2 className="text-2xl font-semibold">GraphQL result caching</h2>
+        <div className="text-muted-foreground">
+          Mirror the DI approach for resolvers. Build keys from resolver name + args and stick to queries unless your
+          mutations are idempotent.
+        </div>
+        <CodeBlock code={graphqlCaching} title="GraphQL query caching" />
+      </section>
+
+      <section className="space-y-4" id="redis">
+        <h2 className="text-2xl font-semibold">Bring your own Redis</h2>
+        <div className="text-muted-foreground">
+          Swap the store provider for `RedisCacheStore` to share cache across workers. Prefix keys per app or tenant,
+          and let the interceptor apply the TTL defined in config.
+        </div>
+        <CodeBlock code={redisSnippet} title="Redis-backed cache (DI)" />
+      </section>
+
+      <section className="space-y-4" id="manual">
+        <h2 className="text-2xl font-semibold">Manual caching & invalidation</h2>
+        <div className="text-muted-foreground">
+          Use `buildCacheKey()` with primitives and objects to generate stable keys, then call the store directly in
+          jobs, queues, or services. Invalidate aggressively after writes or use short TTLs to avoid stale data.
+        </div>
+        <CodeBlock code={manualCaching} title="Programmatic caching" />
+      </section>
+
+      <section className="space-y-3" id="tips">
+        <h2 className="text-2xl font-semibold">Best practices</h2>
+        <ul className="list-disc space-y-2 pl-6 text-muted-foreground">
+          <li>Cache only deterministic, side-effect-free handlers (GET/HEAD, queries).</li>
+          <li>Scope keys by tenant/user when responses depend on identity or locale.</li>
+          <li>Prefer short TTLs and post-write invalidation to avoid stale pages.</li>
+          <li>Log cache hits/misses in dev; wrap the store if you need metrics.</li>
+          <li>Use <Link className="text-primary underline" href="/docs/interceptors">interceptors</Link> to compose caching with logging or tracing.</li>
+        </ul>
+      </section>
+    </article>

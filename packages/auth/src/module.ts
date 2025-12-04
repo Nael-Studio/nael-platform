@@ -1,7 +1,6 @@
 import { Module, type ClassType, type Provider } from '@nl-framework/core';
 import { LoggerFactory } from '@nl-framework/logger';
-import { betterAuth, type Adapter, type BetterAuthOptions, type BetterAuthPlugin } from 'better-auth';
-import type { AdapterFactory } from 'better-auth/adapters';
+import { betterAuth, type BetterAuthOptions, type BetterAuthPlugin } from 'better-auth';
 import {
   BETTER_AUTH_ADAPTER,
   BETTER_AUTH_INSTANCE,
@@ -20,6 +19,7 @@ import type {
   BetterAuthOptionsFactory,
 } from './interfaces/module-options';
 import { BetterAuthService } from './service';
+import type { BetterAuthAdapter, BetterAuthAdapterFactory, BetterAuthInstance } from './types';
 
 const createAdapterProvider = (): Provider => ({
   provide: BETTER_AUTH_ADAPTER,
@@ -47,7 +47,7 @@ const createAuthInstanceProvider = (): Provider => ({
     const config = {
       ...options.betterAuth,
     } as BetterAuthOptions & {
-      adapter?: Adapter | AdapterFactory;
+      adapter?: BetterAuthAdapter | BetterAuthAdapterFactory;
       database?: BetterAuthOptions['database'];
       plugins?: BetterAuthPlugin[];
     };
@@ -62,7 +62,7 @@ const createAuthInstanceProvider = (): Provider => ({
 
     config.plugins = plugins;
 
-    const auth = betterAuth(config);
+    const auth = betterAuth(config) as unknown as BetterAuthInstance;
 
     if (options.autoRunMigrations) {
       const context = (auth as { context?: { runMigrations?: () => Promise<void> } }).context;
@@ -92,12 +92,12 @@ const COMMON_PROVIDERS: Provider[] = [createAdapterProvider(), createAuthInstanc
 const createSynchronousProviders = (
   normalized: NormalizedBetterAuthModuleOptions,
 ): Provider[] => [
-  {
-    provide: BETTER_AUTH_OPTIONS,
-    useValue: normalized,
-  },
-  ...COMMON_PROVIDERS,
-];
+    {
+      provide: BETTER_AUTH_OPTIONS,
+      useValue: normalized,
+    },
+    ...COMMON_PROVIDERS,
+  ];
 
 const createAsyncOptionsProvider = (options: BetterAuthModuleAsyncOptions): Provider => {
   if (options.useFactory) {
@@ -151,7 +151,7 @@ export class BetterAuthModule {
       providers: [...createSynchronousProviders(normalized), BetterAuthService],
       exports: [BetterAuthService, BETTER_AUTH_INSTANCE, BETTER_AUTH_OPTIONS, BETTER_AUTH_ADAPTER],
     })
-    class BetterAuthRootModule {}
+    class BetterAuthRootModule { }
 
     return BetterAuthRootModule;
   }
@@ -168,7 +168,7 @@ export class BetterAuthModule {
       providers: [...providers, BetterAuthService],
       exports: [BetterAuthService, BETTER_AUTH_INSTANCE, BETTER_AUTH_OPTIONS, BETTER_AUTH_ADAPTER],
     })
-    class BetterAuthRootAsyncModule {}
+    class BetterAuthRootAsyncModule { }
 
     return BetterAuthRootAsyncModule;
   }
@@ -177,7 +177,7 @@ export class BetterAuthModule {
     registerGlobalPlugins(plugins);
 
     @Module({})
-    class BetterAuthPluginModule {}
+    class BetterAuthPluginModule { }
 
     return BetterAuthPluginModule;
   }

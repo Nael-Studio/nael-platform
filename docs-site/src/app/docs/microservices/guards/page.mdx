@@ -1,0 +1,92 @@
+---
+title: 'Guards · Microservices'
+description: 'Protect message handlers with shared UseGuards metadata and registry helpers.'
+---
+
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const guardExample = `import { Injectable } from '@nl-framework/core';
+import type { GuardDecision, CanActivate } from '@nl-framework/http';
+
+@Injectable()
+export class TenantGuard implements CanActivate {
+  async canActivate(): GuardDecision {
+    // Use request-scoped state, DI, or metadata here. Microservice-specific
+    // execution context is coming soon, so keep logic side-effect free.
+    return { allow: true };
+  }
+}`;
+
+export const controllerSample = `import { Controller, UseGuards } from '@nl-framework/core';
+import { MessagePattern } from '@nl-framework/microservices';
+import { TenantGuard } from './guards/tenant.guard';
+
+@Controller()
+@UseGuards(TenantGuard)
+export class BillingConsumer {
+  @MessagePattern('billing.charge')
+  async charge(payload: { tenantId: string; amount: number }) {
+    return { ok: true };
+  }
+
+  @MessagePattern('billing.refund')
+  @UseGuards(TenantGuard)
+  async refund(payload: { tenantId: string; amount: number }) {
+    return { ok: true };
+  }
+}`;
+
+<article className="space-y-8">
+  <div className="space-y-3">
+    <Badge className="bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-50">Microservices</Badge>
+    <h1 className="text-4xl font-semibold tracking-tight">Guards</h1>
+    <div className="text-lg text-muted-foreground max-w-3xl">
+      Microservice controllers use the shared <code>@UseGuards()</code> decorator from <code>@nl-framework/core</code>
+      just like HTTP and GraphQL. This page captures the current status of guard metadata within the microservice
+      dispatcher and shows how to prepare guards for when runtime enforcement lands.
+    </div>
+  </div>
+
+  <section className="space-y-4" id="status">
+    <h2 className="text-2xl font-semibold">Current status</h2>
+    <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+      <li><code>@UseGuards()</code> is defined in core and attaches metadata to controllers/handlers.</li>
+      <li><code>listMessageHandlers()</code> captures guard tokens for microservice handlers, so DI metadata is ready.</li>
+      <li>The microservice dispatcher does not yet execute guard tokens—filters are wired up first, guards are next.</li>
+      <li>A microservice-specific execution context plus global guard registry is on the roadmap.</li>
+    </ul>
+  </section>
+
+  <section className="space-y-4" id="guardian">
+    <h2 className="text-2xl font-semibold">Create a guard</h2>
+    <div className="text-muted-foreground">
+      Guards implement <code>CanActivate</code> (exported from <code>@nl-framework/http</code> today). The example below
+      simply returns <code>{`{ allow: true }`}</code>, but you can inject services and read state once the execution
+      context is available.
+    </div>
+    <CodeBlock code={guardExample} title="guards/tenant.guard.ts" />
+  </section>
+
+  <section className="space-y-4" id="apply">
+    <h2 className="text-2xl font-semibold">Attach with @UseGuards()</h2>
+    <div className="text-muted-foreground">
+      Apply guards at the controller or method level. Method-level guards execute before class-level ones, and metadata is
+      inherited exactly like other transports. Even though the dispatcher does not call guards yet, decorating controllers
+      today ensures your metadata is ready once enforcement is added.
+    </div>
+    <CodeBlock code={controllerSample} title="billing.consumer.ts" />
+  </section>
+
+  <section className="space-y-4" id="behavior">
+    <h2 className="text-2xl font-semibold">Behavior</h2>
+    <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+      <li>Metadata order mirrors HTTP/GraphQL: method-level guards precede controller-level guards. When global guards
+        arrive they will run last.</li>
+      <li>Return <code>{`{ allow: false }`}</code> (or <code>false</code>) to reject the message. Provide a <code>reason</code>
+        to make logs actionable.</li>
+      <li>While the guard execution context is under construction, keep guards side-effect free so they are easy to adapt
+        once <code>switchToRpc()</code> APIs become available.</li>
+    </ul>
+  </section>
+</article>

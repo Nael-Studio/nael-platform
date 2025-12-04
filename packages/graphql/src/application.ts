@@ -7,6 +7,7 @@ import { buildSubgraphSchema } from '@apollo/subgraph';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { RequestContext } from '@nl-framework/http';
 import { GraphqlSchemaBuilder, type GraphqlBuildOptions } from './schema-builder';
+import { GRAPHQL_CONTAINER_RESOLVER } from './constants';
 // Ensure built-in scalars (e.g., JSON) are registered even when this module is deep-imported.
 import './scalars';
 
@@ -18,7 +19,7 @@ export interface GraphqlServerOptions {
   context?: GraphqlContextFactory;
 }
 
-export interface GraphqlApplicationOptions extends ApplicationOptions, GraphqlServerOptions {}
+export interface GraphqlApplicationOptions extends ApplicationOptions, GraphqlServerOptions { }
 
 export interface GraphqlListenResult {
   url: string;
@@ -39,6 +40,7 @@ export class GraphqlApplication {
   private apolloServer?: ApolloServer<GraphqlContext>;
   private apolloServerStarted = false;
   private logger: Logger;
+  private readonly unsubscribeModuleListener: () => void;
 
   constructor(
     private readonly context: ApplicationContext,
@@ -58,13 +60,17 @@ export class GraphqlApplication {
 
     const resolverCount = this.context.getResolvers().length;
     this.logger.info(`GraphQL module loaded (resolvers=${resolverCount})`);
+
+    this.unsubscribeModuleListener = this.context.addModuleLoadListener(async ({ module }) => {
+      await this.invalidateSchema(module.name ?? 'AnonymousModule');
+    });
   }
 
   async createHttpHandler(path = this.options.path ?? '/graphql'): Promise<(ctx: RequestContext) => Promise<Response>> {
-    const server = await this.ensureApolloServer({ start: true });
     const normalizedPath = this.normalizePath(path);
 
     return async (ctx: RequestContext): Promise<Response> => {
+      const server = await this.ensureApolloServer({ start: true });
       const requestUrl = new URL(ctx.request.url);
       if (requestUrl.pathname !== normalizedPath) {
         return new Response('Not Found', { status: 404 });
@@ -85,6 +91,8 @@ export class GraphqlApplication {
           Object.assign(baseContext, extra);
         }
       }
+
+      Reflect.set(baseContext as object, GRAPHQL_CONTAINER_RESOLVER, ctx.container.resolve);
 
       const response = await server.executeHTTPGraphQLRequest({
         httpGraphQLRequest: httpRequest,
@@ -109,6 +117,7 @@ export class GraphqlApplication {
     }
 
     this.logger.info('GraphQL server stopped');
+    this.unsubscribeModuleListener?.();
 
     if (this.ownsContext) {
       await this.context.close();
@@ -127,16 +136,19 @@ export class GraphqlApplication {
         guards: {
           resolve: <T>(token: Token<T>) => this.context.get(token),
         },
+        interceptors: {
+          resolve: <T>(token: Token<T>) => this.context.get(token),
+        },
       });
 
       this.apolloServer = this.options.federation?.enabled
         ? new ApolloServer<GraphqlContext>({
-            schema: buildSubgraphSchema({ typeDefs: artifacts.document, resolvers: artifacts.resolvers }),
-          })
+          schema: buildSubgraphSchema({ typeDefs: artifacts.document, resolvers: artifacts.resolvers }),
+        })
         : new ApolloServer<GraphqlContext>({
-            typeDefs: artifacts.document,
-            resolvers: artifacts.resolvers,
-          });
+          typeDefs: artifacts.document,
+          resolvers: artifacts.resolvers,
+        });
     }
 
     if (start && !this.apolloServerStarted) {
@@ -145,6 +157,20 @@ export class GraphqlApplication {
     }
 
     return this.apolloServer;
+  }
+
+  private async invalidateSchema(moduleName: string): Promise<void> {
+    if (!this.apolloServer) {
+      return;
+    }
+
+    if (this.apolloServerStarted) {
+      await this.apolloServer.stop();
+    }
+
+    this.apolloServer = undefined;
+    this.apolloServerStarted = false;
+    this.logger.info('GraphQL schema invalidated after module load', { module: moduleName });
   }
 
   private normalizePath(path: string): string {

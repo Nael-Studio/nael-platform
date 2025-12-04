@@ -1,15 +1,30 @@
-import type { Adapter, BetterAuthOptions, BetterAuthPlugin } from 'better-auth';
-import type { AdapterFactory } from 'better-auth/adapters';
+import type { BetterAuthOptions, BetterAuthPlugin } from 'better-auth';
 import { normalizeConnectionName } from '@nl-framework/orm';
 import { mergePluginCollections } from './plugins';
 import type { BetterAuthModuleOptions } from '../interfaces/module-options';
+import type { BetterAuthAdapter, BetterAuthAdapterFactory } from '../types';
+
+const resolveLegacyAdapter = (
+  adapter: BetterAuthAdapter | BetterAuthAdapterFactory | undefined,
+  options: BetterAuthOptions,
+): BetterAuthOptions['database'] | undefined => {
+  if (!adapter) {
+    return undefined;
+  }
+
+  if (typeof adapter === 'function') {
+    return (adapter as BetterAuthAdapterFactory)(options);
+  }
+
+  return adapter as BetterAuthOptions['database'];
+};
 
 export interface NormalizedBetterAuthModuleOptions {
   betterAuth: BetterAuthOptions;
   basePlugins: BetterAuthPlugin[];
   extendPlugins: BetterAuthPlugin[];
   connectionName: string;
-  adapter?: Adapter | AdapterFactory;
+  adapter?: BetterAuthAdapter | BetterAuthAdapterFactory;
   database?: BetterAuthOptions['database'];
   autoRunMigrations: boolean;
 }
@@ -46,12 +61,7 @@ export const normalizeModuleOptions = (
   const betterAuth = ensureSecret(copied);
 
   const legacyAdapter = options.adapter;
-  const providedDatabase = options.database ??
-    (legacyAdapter
-      ? (typeof legacyAdapter === 'function'
-          ? (legacyAdapter as AdapterFactory)
-          : ((() => legacyAdapter) as AdapterFactory))
-      : undefined);
+  const providedDatabase = options.database ?? resolveLegacyAdapter(legacyAdapter, betterAuth);
 
   if (!providedDatabase) {
     throw new Error(

@@ -1,4 +1,3 @@
-import type { AdapterFactory } from 'better-auth/adapters';
 import { mongodbAdapter, type MongoDBAdapterConfig } from 'better-auth/adapters/mongodb';
 import type { Db } from 'mongodb';
 import type { OrmConnection } from '@nl-framework/orm';
@@ -9,7 +8,7 @@ const isMongoDatabase = (value: unknown): value is Db =>
 export const createMongoAdapterFromDb = (
   db: Db,
   config?: MongoDBAdapterConfig,
-): AdapterFactory => mongodbAdapter(db, config);
+) => mongodbAdapter(db, config);
 
 export const resolveMongoDatabase = async (connection: OrmConnection): Promise<Db> => {
   await connection.ensureConnection();
@@ -25,4 +24,4 @@ export const resolveMongoDatabase = async (connection: OrmConnection): Promise<D
 export const createMongoAdapterFromOrm = async (
   connection: OrmConnection,
   config?: MongoDBAdapterConfig,
-): Promise<AdapterFactory> => mongodbAdapter(await resolveMongoDatabase(connection), config);
+) => mongodbAdapter(await resolveMongoDatabase(connection), config);

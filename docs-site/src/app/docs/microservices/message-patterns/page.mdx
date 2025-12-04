@@ -1,0 +1,76 @@
+---
+title: 'Message patterns · Microservices'
+description: 'Define message and event patterns for Nael microservices using Dapr transport.'
+---
+
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const patterns = `import { Injectable } from '@nl-framework/core';
+import { MessagePattern, EventPattern } from '@nl-framework/microservices';
+
+@Injectable()
+export class NotificationsConsumer {
+  @MessagePattern('notifications.send')
+  async send(payload: { to: string; body: string }) {
+    // request/response pattern
+    return { ok: true };
+  }
+
+  @EventPattern('notifications.events.delivered')
+  async delivered(payload: { messageId: string }) {
+    // fire-and-forget event
+    console.log('Delivered', payload.messageId);
+  }
+}`;
+
+export const objectPattern = `@MessagePattern({ app: 'billing', method: 'charge' })
+async charge(payload: { id: string; amount: number }) {
+  // Equivalent to send('billing:charge')
+}`;
+
+<article className="space-y-8">
+  <div className="space-y-3">
+    <Badge className="bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-50">Microservices</Badge>
+    <h1 className="text-4xl font-semibold tracking-tight">Message patterns</h1>
+    <div className="text-lg text-muted-foreground max-w-3xl">
+      Use <code>@MessagePattern</code> for request/response and <code>@EventPattern</code> for pub/sub events. Patterns map
+      to Dapr service invocation and topics, keeping your code transport-agnostic.
+    </div>
+  </div>
+
+  <section className="space-y-4" id="declare">
+    <h2 className="text-2xl font-semibold">Declare patterns</h2>
+    <div className="text-muted-foreground">
+      Decorate consumer methods with patterns. Nael discovers handlers and logs them on startup.
+    </div>
+    <CodeBlock code={patterns} title="notifications.consumer.ts" />
+  </section>
+
+  <section className="space-y-4" id="object">
+    <h2 className="text-2xl font-semibold">Object patterns</h2>
+    <div className="text-muted-foreground">
+      Use object patterns to make app/method explicit. The Dapr transport resolves these into invocation targets.
+    </div>
+    <CodeBlock code={objectPattern} title="billing.consumer.ts" />
+  </section>
+
+  <section className="space-y-4" id="mapping">
+    <h2 className="text-2xl font-semibold">Pattern mapping</h2>
+    <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+      <li><strong>MessagePattern</strong> → Dapr service invocation: <code>invoke/{'{'}appId{'}'}/method/{'{'}method{'}'}</code>.</li>
+      <li><strong>EventPattern</strong> → Dapr pub/sub publish: <code>publish/{'{'}pubsubName{'}'}/{'{'}topic{'}'}</code>.</li>
+      <li>String patterns: <code>"app:method"</code> or <code>"app.method"</code> → <code>appId</code> + <code>method</code>.</li>
+      <li>Object patterns: <code>{`{ app|service|target, method|action|cmd }`}</code>.</li>
+    </ul>
+  </section>
+
+  <section className="space-y-4" id="tips">
+    <h2 className="text-2xl font-semibold">Tips</h2>
+    <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+      <li>Keep naming consistent: use <code>service:method</code> or <code>service.method</code> for clarity.</li>
+      <li>Use <code>EventPattern</code> for fan-out notifications; <code>MessagePattern</code> when you expect a reply.</li>
+      <li>Centralize pattern strings in a constants file to avoid typos across producers/consumers.</li>
+    </ul>
+  </section>
+</article>

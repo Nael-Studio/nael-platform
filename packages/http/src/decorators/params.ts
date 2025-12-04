@@ -1,11 +1,19 @@
 import { getMetadata, setMetadata } from '../utils/metadata';
+import type { RequestContext } from '../interfaces/http';
 
-type RouteArgType = 'body' | 'param' | 'query' | 'headers' | 'request' | 'context';
+type RouteArgType = 'body' | 'param' | 'query' | 'headers' | 'request' | 'context' | 'custom';
 
-export interface RouteArgMetadata {
+export type RouteParamFactory<Data = unknown, Result = unknown> = (
+  data: Data | undefined,
+  context: RequestContext,
+  designType?: unknown,
+) => Result | Promise<Result>;
+
+export interface RouteArgMetadata<Data = unknown> {
   index: number;
   type: RouteArgType;
-  data?: string;
+  data?: Data;
+  factory?: RouteParamFactory<Data>;
 }
 
 const ROUTE_ARGS_METADATA_KEY = Symbol.for('nl:http:route:args');
@@ -85,3 +93,35 @@ export const getRouteArgsMetadata = (
   ((getMetadata(ROUTE_ARGS_METADATA_KEY, target, propertyKey) as RouteArgMetadata[]) ?? []).slice().sort(
     (a, b) => a.index - b.index,
   );
+
+export const createHttpParamDecorator = <Data = unknown, Result = unknown>(
+  factory: RouteParamFactory<Data, Result>,
+): ((data?: Data) => ParameterDecorator) =>
+  (data?: Data) =>
+    ((targetOrValue: unknown, propertyKeyOrContext: unknown, parameterIndex?: number) => {
+      const metadata: RouteArgMetadata = {
+        index: parameterIndex ?? 0,
+        type: 'custom',
+        data,
+        factory: factory as RouteParamFactory,
+      };
+
+      if (isStage3ParameterContext(propertyKeyOrContext)) {
+        const context = propertyKeyOrContext;
+        context.addInitializer(function () {
+          const prototype = context.static ? this : Object.getPrototypeOf(this);
+          if (!prototype) {
+            return;
+          }
+          appendRouteArgMetadata(prototype, context.name, {
+            index: context.index,
+            type: 'custom',
+            data,
+            factory: factory as RouteParamFactory,
+          });
+        });
+        return;
+      }
+
+      appendRouteArgMetadata(targetOrValue as object, propertyKeyOrContext as string | symbol, metadata);
+    }) as ParameterDecorator;

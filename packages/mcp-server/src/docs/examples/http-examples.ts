@@ -91,13 +91,13 @@ export class TodosModule {}
   {
     id: 'http-guard-pipeline',
     category: 'http',
-    title: 'Authentication Guard Pipeline',
-    description: 'Combine global middleware and route-level guards to protect sensitive endpoints.',
-    code: `import { Controller, Get, UseGuards } from '@nl-framework/http';
-import { SessionGuard } from '@nl-framework/auth';
+  title: 'Authentication Guard Pipeline',
+  description: 'Combine global middleware and route-level guards to protect sensitive endpoints.',
+  code: `import { Controller, Get, UseGuards } from '@nl-framework/http';
+import { AuthGuard } from '@nl-framework/auth';
 
 @Controller('/me')
-@UseGuards(SessionGuard)
+@UseGuards(AuthGuard)
 export class MeController {
   @Get('/')
   profile(context: RequestContext) {

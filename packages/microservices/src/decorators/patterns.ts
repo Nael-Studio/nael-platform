@@ -1,4 +1,11 @@
 import 'reflect-metadata';
+import type { FilterToken, GuardToken, InterceptorToken, PipeToken } from '@nl-framework/core';
+import {
+  getAllPipes,
+  listAppliedFilters,
+  listAppliedGuards,
+  listAppliedInterceptors,
+} from '@nl-framework/core';
 import type { MessagePattern } from '../interfaces/transport';
 
 const MESSAGE_PATTERN_METADATA = Symbol.for('nl:microservices:message-pattern');
@@ -7,6 +14,15 @@ const EVENT_PATTERN_METADATA = Symbol.for('nl:microservices:event-pattern');
 export interface PatternMetadata {
   pattern: MessagePattern;
   isEvent: boolean;
+}
+
+export interface MessageHandlerDefinition {
+  propertyKey: string;
+  metadata: PatternMetadata;
+  guards: GuardToken[];
+  interceptors: InterceptorToken[];
+  pipes: PipeToken[];
+  filters: FilterToken[];
 }
 
 export function MessagePattern(pattern: MessagePattern): MethodDecorator {
@@ -33,16 +49,22 @@ export function getMessagePatternMetadata(
   );
 }
 
-export function listMessageHandlers(target: object): Array<{ propertyKey: string; metadata: PatternMetadata }> {
+export function listMessageHandlers(target: object): MessageHandlerDefinition[] {
   const prototype = typeof target === 'function' ? target.prototype : target;
-  const handlers: Array<{ propertyKey: string; metadata: PatternMetadata }> = [];
+  const ControllerClass = typeof target === 'function' ? target : target.constructor;
+  const handlers: MessageHandlerDefinition[] = [];
 
   for (const propertyKey of Object.getOwnPropertyNames(prototype)) {
     if (propertyKey === 'constructor') continue;
 
     const metadata = getMessagePatternMetadata(prototype, propertyKey);
     if (metadata) {
-      handlers.push({ propertyKey, metadata });
+      const guards = ControllerClass ? listAppliedGuards(ControllerClass, propertyKey) : [];
+      const interceptors = ControllerClass ? listAppliedInterceptors(ControllerClass, propertyKey) : [];
+      const pipes = getAllPipes(prototype, propertyKey);
+      const filters = ControllerClass ? listAppliedFilters(ControllerClass, propertyKey) : [];
+
+      handlers.push({ propertyKey, metadata, guards, interceptors, pipes, filters });
     }
   }
 

@@ -1,11 +1,14 @@
 import type { ClassType, Token } from './interfaces/provider';
-import { Container } from './container/container';
+import { Container, type ResolveOptions } from './container/container';
 import { ConfigLoader, type ConfigLoadOptions } from './config/config-loader';
 import { ConfigService } from './config/config.service';
 import { GLOBAL_PROVIDERS } from './constants';
 import { LoggerFactory } from '@nl-framework/logger';
 import type { LoggerOptions } from '@nl-framework/logger';
 import { Logger } from '@nl-framework/logger';
+import { createContextId, type ContextId } from './scope';
+import { ModuleManager, type ModuleLoadListener, type ModuleLoadResult } from './module-manager';
+import { LazyModuleLoader } from './lazy-module-loader';
 
 export interface ApplicationOptions {
   config?: ConfigLoadOptions;
@@ -13,43 +16,47 @@ export interface ApplicationOptions {
 }
 
 export class ApplicationContext {
-  private readonly controllers = new Map<ClassType, unknown[]>();
-  private readonly resolvers = new Map<ClassType, unknown[]>();
-
   constructor(
     private readonly container: Container,
-    controllers: Map<ClassType, unknown[]>,
-    resolvers: Map<ClassType, unknown[]>,
+    private readonly modules: ModuleManager,
     private readonly configService: ConfigService,
     private readonly logger: Logger,
-  ) {
-    controllers.forEach((instances, moduleClass) => {
-      this.controllers.set(moduleClass, instances);
-    });
+  ) { }
 
-    resolvers.forEach((instances, moduleClass) => {
-      this.resolvers.set(moduleClass, instances);
-    });
+  async get<T>(token: Token<T>, options: ResolveOptions = {}): Promise<T> {
+    return this.container.resolve(token, options);
   }
 
-  async get<T>(token: Token<T>): Promise<T> {
-    return this.container.resolve(token);
+  peek<T>(token: Token<T>, options: ResolveOptions = {}): T | undefined {
+    return this.container.peek(token, options);
+  }
+
+  async create<T>(type: ClassType<T>, options: ResolveOptions = {}): Promise<T> {
+    return this.container.create(type, options);
+  }
+
+  createContextId(label?: string): ContextId {
+    return createContextId(label);
+  }
+
+  releaseContext(contextId: ContextId): void {
+    this.container.releaseContext(contextId);
   }
 
   getResolvers<T = unknown>(module?: ClassType): T[] {
-    if (module) {
-      return (this.resolvers.get(module) ?? []) as T[];
-    }
-
-    return Array.from(this.resolvers.values()).flat() as T[];
+    return this.modules.getResolvers(module);
   }
 
   getControllers<T = unknown>(module?: ClassType): T[] {
-    if (module) {
-      return (this.controllers.get(module) ?? []) as T[];
-    }
+    return this.modules.getControllers(module);
+  }
 
-    return Array.from(this.controllers.values()).flat() as T[];
+  async loadModule(moduleClass: ClassType): Promise<ModuleLoadResult> {
+    return this.modules.loadModule(moduleClass);
+  }
+
+  addModuleLoadListener(listener: ModuleLoadListener): () => void {
+    return this.modules.addLoadListener(listener);
   }
 
   getConfig<TConfig extends Record<string, unknown> = Record<string, unknown>>(): ConfigService<TConfig> {
@@ -67,6 +74,16 @@ export class ApplicationContext {
 
 export class Application {
   private readonly container = new Container();
+  private readonly moduleManager = new ModuleManager(this.container);
+
+  constructor() {
+    this.container.registerProvider({
+      provide: ModuleManager,
+      useValue: this.moduleManager,
+    });
+
+    this.container.registerProvider(LazyModuleLoader);
+  }
 
   async bootstrap(rootModule: ClassType, options: ApplicationOptions = {}): Promise<ApplicationContext> {
     this.container.registerProvider({
@@ -104,44 +121,17 @@ export class Application {
     });
 
     await this.container.registerModule(rootModule);
+    await this.moduleManager.hydrateRegisteredModules();
 
     const configService = await this.container.resolve(ConfigService);
-
-    const controllersMap = new Map<ClassType, unknown[]>();
-    const resolversMap = new Map<ClassType, unknown[]>();
-    const bootstrapMap = new Map<ClassType, Token[]>();
-    for (const moduleClass of this.container.getModules()) {
-      const definition = this.container.getModuleDefinition(moduleClass);
-      if (!definition) {
-        continue;
-      }
-      const controllerInstances = await this.container.instantiateControllers(
-        definition.controllers,
-      );
-      controllersMap.set(moduleClass, controllerInstances);
-
-      const resolverInstances = await Promise.all(
-        definition.resolvers.map((resolver) => this.container.resolve(resolver)),
-      );
-      resolversMap.set(moduleClass, resolverInstances);
-
-      const bootstrapTokens = definition.bootstrap ?? [];
-      const instantiated: Token[] = [];
-      for (const token of new Set<Token>(bootstrapTokens)) {
-        await this.container.resolve(token);
-        instantiated.push(token);
-      }
-      bootstrapMap.set(moduleClass, instantiated);
-    }
-
     const moduleSummaries = Array.from(this.container.getModules()).map((moduleClass) => {
       const definition = this.container.getModuleDefinition(moduleClass);
       return {
         name: moduleClass.name ?? 'AnonymousModule',
-        controllers: controllersMap.get(moduleClass)?.length ?? 0,
-        resolvers: resolversMap.get(moduleClass)?.length ?? 0,
+        controllers: this.moduleManager.getControllers(moduleClass).length,
+        resolvers: this.moduleManager.getResolvers(moduleClass).length,
         providers: definition?.metadata.providers?.length ?? 0,
-        bootstrap: bootstrapMap.get(moduleClass)?.length ?? 0,
+        bootstrap: this.moduleManager.getBootstrapTokens(moduleClass).length,
       };
     });
 
@@ -149,8 +139,7 @@ export class Application {
 
     return new ApplicationContext(
       this.container,
-      controllersMap,
-      resolversMap,
+      this.moduleManager,
       configService,
       rootLogger,
     );

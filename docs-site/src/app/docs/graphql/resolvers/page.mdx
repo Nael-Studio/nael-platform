@@ -1,0 +1,130 @@
+---
+title: 'Resolvers · GraphQL'
+description: 'Build resolvers in Nael GraphQL: queries, mutations, guards, and context patterns.'
+---
+
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+import Link from 'next/link';
+
+export const resolverBasics = `import { Resolver, Query, Mutation, Args } from '@nl-framework/graphql';
+import { ProfileService } from './profile.service';
+import { Profile } from './profile.model';
+
+@Resolver(() => Profile)
+export class ProfileResolver {
+  constructor(private readonly service: ProfileService) {}
+
+  @Query(() => Profile)
+  me() {
+    return this.service.me();
+  }
+
+  @Mutation(() => Profile)
+  updateProfile(@Args('displayName') displayName: string) {
+    return this.service.updateDisplayName(displayName);
+  }
+}`;
+
+export const guardExample = `import { UseGuards, CurrentSession, BetterAuthGuard, type BetterAuthSession } from '@nl-framework/auth';
+import { Resolver, Query } from '@nl-framework/graphql';
+
+@Resolver()
+export class SessionResolver {
+  @UseGuards(BetterAuthGuard)
+  @Query(() => String)
+  userId(@CurrentSession() session: BetterAuthSession) {
+    return session.userId;
+  }
+}`;
+
+export const typedArgs = `import { ArgsType, Field, Resolver, Mutation, Args } from '@nl-framework/graphql';
+
+@ArgsType()
+class UpdateProfileInput {
+  @Field()
+  displayName!: string;
+
+  @Field({ nullable: true })
+  avatarUrl?: string;
+}
+
+@Resolver()
+export class ProfileMutationResolver {
+  constructor(private readonly service: ProfileService) {}
+
+  @Mutation(() => Boolean)
+  async updateProfile(@Args() input: UpdateProfileInput) {
+    await this.service.updateProfile(input);
+    return true;
+  }
+}`;
+
+export const ctxExample = `// When creating GraphQLModule, pass context:
+// GraphQLModule.forRoot({
+//   context: ({ req, res }) => ({ request: req, response: res }),
+// });
+//
+// Then in resolvers you can access context via decorators or from ExecutionContext in guards/interceptors.
+`;
+
+<article className="space-y-8">
+  <div className="space-y-3">
+    <Badge className="bg-sky-100 text-sky-900 dark:bg-sky-900/30 dark:text-sky-50">GraphQL</Badge>
+    <h1 className="text-4xl font-semibold tracking-tight">Resolvers</h1>
+    <div className="text-lg text-muted-foreground max-w-3xl">
+      Write resolvers with DI-backed services, guards, and typed arguments. Pair with BetterAuth to secure fields and
+      keep sessions consistent across REST and GraphQL.
+    </div>
+  </div>
+
+  <section className="space-y-4" id="basics">
+    <h2 className="text-2xl font-semibold">Queries & mutations</h2>
+    <div className="text-muted-foreground">
+      Use decorators from <code>@nl-framework/graphql</code> to map class methods to fields. Inject services to keep
+      logic out of the resolver.
+    </div>
+    <CodeBlock code={resolverBasics} title="profile.resolver.ts" />
+  </section>
+
+  <section className="space-y-4" id="guards">
+    <h2 className="text-2xl font-semibold">Protect resolvers</h2>
+    <div className="text-muted-foreground">
+      Wrap resolvers with <code>BetterAuthGuard</code> and access sessions via <code>@CurrentSession()</code>. The guard
+      uses the same cookies set by the REST proxy module.
+    </div>
+    <CodeBlock code={guardExample} title="session.resolver.ts" />
+    <div className="text-sm text-muted-foreground">
+      More patterns: <Link className="text-primary underline" href="/docs/auth/graphql">BetterAuth GraphQL</Link>.
+    </div>
+  </section>
+
+  <section className="space-y-4" id="args">
+    <h2 className="text-2xl font-semibold">Typed arguments</h2>
+    <div className="text-muted-foreground">
+      Use <code>@ArgsType()</code> classes for structured inputs. This keeps validation/types aligned between resolver and
+      schema.
+    </div>
+    <CodeBlock code={typedArgs} title="profile.mutation.ts" />
+  </section>
+
+  <section className="space-y-4" id="context">
+    <h2 className="text-2xl font-semibold">Context</h2>
+    <div className="text-muted-foreground">
+      Provide <code>request</code>/<code>response</code> to the context in <code>GraphQLModule.forRoot</code> so guards
+      and interceptors can access cookies/headers. Add per-request services to the context if needed, but prefer DI
+      injection for most flows.
+    </div>
+    <CodeBlock code={ctxExample} title="Context wiring" />
+  </section>
+
+  <section className="space-y-4" id="next">
+    <h2 className="text-2xl font-semibold">Next steps</h2>
+    <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+      <li>Add interceptors to log latency or map responses.</li>
+      <li>Use input validation pipes on mutation arguments if needed.</li>
+      <li>Enable federation for multi-service graphs.</li>
+      <li>Wire subscriptions if your transport supports it.</li>
+    </ul>
+  </section>
+</article>

@@ -1,0 +1,147 @@
+---
+title: 'Dapr · Microservices'
+description: 'Use Dapr as the transport layer for Nael microservices: pub/sub, service invocation, and sidecar ergonomics.'
+---
+
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+import Link from 'next/link';
+
+export const transportConfig = `import { DaprTransport } from '@nl-framework/microservices';
+
+const transport = new DaprTransport({
+  daprHost: 'localhost',
+  daprHttpPort: 3500,
+  pubsubName: 'redis-pubsub',
+  invocationResolver: (pattern, data) => {
+    // customize mapping from pattern -> appId/method
+    if (typeof pattern === 'string') {
+      const [appId, method] = pattern.split(':');
+      return { appId, method, httpVerb: 'POST' };
+    }
+    return { appId: pattern.app as string, method: pattern.method as string, httpVerb: 'POST' };
+  },
+});`;
+
+export const consumer = `import { Injectable } from '@nl-framework/core';
+import { MessagePattern, EventPattern } from '@nl-framework/microservices';
+
+@Injectable()
+export class BillingConsumer {
+  @MessagePattern('billing.charge')
+  async charge(payload: { userId: string; amount: number }) {
+    // handle request/response
+    return { ok: true };
+  }
+
+  @EventPattern('billing.events.invoice-created')
+  async invoiceCreated(payload: { invoiceId: string }) {
+    // fire-and-forget event
+    console.log('Invoice created', payload.invoiceId);
+  }
+}`;
+
+export const publisher = `import { Injectable } from '@nl-framework/core';
+import { MicroserviceClient } from '@nl-framework/microservices';
+
+@Injectable()
+export class OrdersService {
+  constructor(private readonly client: MicroserviceClient) {}
+
+  async emitOrderCreated(order: { id: string }) {
+    await this.client.emit('orders.events.created', order);
+  }
+
+  async invokeBilling(body: { id: string; amount: number }) {
+    return this.client.send<{ ok: boolean }>('billing:charge', body);
+  }
+}`;
+
+export const daprComponents = `# components/pubsub.yaml
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: redis-pubsub
+spec:
+  type: pubsub.redis
+  version: v1
+  metadata:
+    - name: redisHost
+      value: localhost:6379
+---
+# components/statestore.yaml (optional)
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: statestore
+spec:
+  type: state.redis
+  version: v1
+  metadata:
+    - name: redisHost
+      value: localhost:6379
+`;
+
+<article className="space-y-8">
+  <div className="space-y-3">
+    <Badge className="bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-50">Microservices</Badge>
+    <h1 className="text-4xl font-semibold tracking-tight">Dapr</h1>
+    <div className="text-lg text-muted-foreground max-w-3xl">
+      Dapr sidecars give Nael microservices a consistent transport for pub/sub and service invocation without pulling
+      vendor SDKs into your code. Swap Redis/Kafka/HTTP by changing Dapr components, not application code.
+    </div>
+  </div>
+
+  <section className="space-y-4" id="why">
+    <h2 className="text-2xl font-semibold">Why Dapr</h2>
+    <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+      <li>Sidecar abstracts pub/sub + service invocation: no vendor SDKs in your services.</li>
+      <li>Consistent metadata/observability across languages if you add polyglot services.</li>
+      <li>Pluggable pub/sub (Redis, Kafka) without changing your code.</li>
+      <li>Health endpoints, retries, and tracing via Dapr components.</li>
+    </ul>
+  </section>
+
+  <section className="space-y-4" id="configure">
+    <h2 className="text-2xl font-semibold">Configure the transport</h2>
+    <div className="text-muted-foreground">
+      Use <code>DaprTransport</code> to map message patterns to service invocation and pub/sub topics. Customize the
+      <code>invocationResolver</code> if you prefer structured patterns.
+    </div>
+    <CodeBlock code={transportConfig} title="transport.ts" />
+  </section>
+
+  <section className="space-y-4" id="handlers">
+    <h2 className="text-2xl font-semibold">Handlers</h2>
+    <div className="text-muted-foreground">
+      Decorate methods with <code>@MessagePattern</code> (request/response) and <code>@EventPattern</code> (fire-and-forget).
+    </div>
+    <CodeBlock code={consumer} title="billing.consumer.ts" />
+  </section>
+
+  <section className="space-y-4" id="publish">
+    <h2 className="text-2xl font-semibold">Publish/invoke</h2>
+    <div className="text-muted-foreground">
+      Inject <code>MicroserviceClient</code> to emit events or invoke other services. Patterns map to Dapr pub/sub topics
+      or service invocation URLs.
+    </div>
+    <CodeBlock code={publisher} title="orders.service.ts" />
+  </section>
+
+  <section className="space-y-4" id="components">
+    <h2 className="text-2xl font-semibold">Dapr components</h2>
+    <div className="text-muted-foreground">
+      Define pub/sub and state components in YAML; swap providers without touching code.
+    </div>
+    <CodeBlock code={daprComponents} title="components/*.yaml" />
+  </section>
+
+  <section className="space-y-4" id="next">
+    <h2 className="text-2xl font-semibold">Next steps</h2>
+    <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+      <li>Add retries/dead-letter queues in Dapr component metadata.</li>
+      <li>Propagate auth by signing requests in <code>invocationResolver</code> or adding headers before <code>send()</code>.</li>
+      <li>Observe with Dapr tracing/metrics; pair with <Link className="text-primary underline" href="/docs/microservices/overview">Microservices overview</Link> for handler patterns.</li>
+    </ul>
+  </section>
+</article>

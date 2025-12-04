@@ -1,4 +1,4 @@
-import { relative } from 'node:path';
+import { join, relative } from 'node:path';
 import packageJson from '../package.json' assert { type: 'json' };
 import { runGenerateLibCommand } from './commands/generate-lib';
 import { runGenerateModuleCommand } from './commands/generate-module';
@@ -30,6 +30,7 @@ const printHelp = () => {
   console.log(`
 Usage:
   nl new <project-name> [options]
+  nl new app <project-name> [next-app-name] [options]
   nl generate module <module-name> [options]
   nl generate service <service-name> --module <module-name> [options]
   nl generate controller <controller-name> --module <module-name> [options]
@@ -45,6 +46,7 @@ Usage:
 
 Commands:
   new                           Scaffold a new Bun-native Nael Framework service
+  new app                       Scaffold a backend service plus an optional Next.js frontend
   generate module, g module     Scaffold a feature module under ./src/modules
   generate service, g service   Add a provider inside an existing module
   generate controller, g controller Create an HTTP controller inside an existing module
@@ -54,6 +56,8 @@ Commands:
 
 Options:
   --install         Run "bun install" after scaffolding
+  --with-next[=dir] Generate a Next.js app alongside the backend (optional directory name)
+  --next-app <dir>  Set the Next.js app directory name (implies --with-next)
   --module, -m      Target module name when generating services, controllers, resolvers, or models
   --force, -f       Overwrite existing files in the target directory
   --help            Display this help message
@@ -148,13 +152,39 @@ export const run = async (argv: string[] = Bun.argv): Promise<number> => {
 
   try {
     if (command === 'new') {
-      const projectName = positionals[0];
+      let projectName = positionals[0];
+      let withNext = false;
+      let nextAppName: string | undefined;
+
       if (!projectName) {
         throw new CliError('Please provide a project name, e.g. "nl new my-service".');
       }
 
+      if (projectName === 'app') {
+        projectName = positionals[1];
+        if (!projectName) {
+          throw new CliError('Please provide a project name after "nl new app".');
+        }
+        withNext = true;
+        nextAppName = positionals[2];
+      }
+
       const install = flags.has('--install');
       const force = flags.has('--force') || flags.has('-f');
+
+      if (flags.has('--with-next') || flags.has('--next')) {
+        withNext = true;
+        const value = flags.get('--with-next') ?? flags.get('--next');
+        if (typeof value === 'string' && value.trim()) {
+          nextAppName = value.trim();
+        }
+      }
+
+      const nextAppFlag = flags.get('--next-app');
+      if (typeof nextAppFlag === 'string' && nextAppFlag.trim()) {
+        withNext = true;
+        nextAppName = nextAppFlag.trim();
+      }
 
       const result = await runNewCommand({
         projectName,
@@ -162,6 +192,8 @@ export const run = async (argv: string[] = Bun.argv): Promise<number> => {
         bunVersion,
         force,
         install,
+        withNext,
+        nextAppName,
       });
 
       printBanner();
@@ -181,6 +213,23 @@ export const run = async (argv: string[] = Bun.argv): Promise<number> => {
         }
       }
 
+      if (result.frontend) {
+        const frontendRel = relative(process.cwd(), result.frontend.directory) || result.frontend.directory;
+        console.log(`\nFrontend created at ${result.frontend.directory}`);
+        if (result.frontend.createdFiles.length) {
+          console.log('\nFrontend created files:');
+          for (const file of result.frontend.createdFiles) {
+            console.log(`  • ${join(frontendRel, file)}`);
+          }
+        }
+        if (result.frontend.overwrittenFiles.length) {
+          console.log('\nFrontend overwritten files:');
+          for (const file of result.frontend.overwrittenFiles) {
+            console.log(`  • ${join(frontendRel, file)}`);
+          }
+        }
+      }
+
       console.log('\nNext steps:');
       const relPath = projectName === '.' ? '.' : projectName;
       if (relPath !== '.') {
@@ -189,7 +238,19 @@ export const run = async (argv: string[] = Bun.argv): Promise<number> => {
       if (!result.installedDependencies) {
         console.log('  bun install');
       }
-      console.log('  bun run src/main.ts\n');
+      console.log('  bun run src/main.ts');
+
+      if (result.frontend) {
+        const frontendRel = result.frontend.directory === result.projectDir
+          ? '.'
+          : relative(process.cwd(), result.frontend.directory) || result.frontend.directory;
+        if (!result.frontend.installedDependencies) {
+          console.log(`  cd ${frontendRel} && bun install`);
+        }
+        console.log(`  cd ${frontendRel} && bun run dev\n`);
+      } else {
+        console.log('');
+      }
 
       return 0;
     }

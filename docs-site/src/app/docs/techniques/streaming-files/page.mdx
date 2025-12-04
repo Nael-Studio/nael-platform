@@ -1,0 +1,192 @@
+---
+title: 'Streaming files · Techniques'
+description: 'Stream files and large responses in Nael using Bun-native ReadableStreams, range requests, and headers.'
+---
+
+import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const basicStream = `import { Controller, Get, Param } from '@nl-framework/http';
+
+@Controller('/files')
+export class FileController {
+  @Get('/:name')
+  async download(@Param('name') name: string) {
+    const file = Bun.file(\`./uploads/\${name}\`);
+    if (!(await file.exists())) {
+      return new Response('Not found', { status: 404 });
+    }
+
+    const size = (await file.stat()).size;
+    const stream = file.stream();
+
+    return new Response(stream, {
+      headers: {
+        'content-type': file.type || 'application/octet-stream',
+        'content-length': size.toString(),
+        'cache-control': 'private, max-age=60',
+        'content-disposition': \`attachment; filename="\${name}"\`,
+      },
+    });
+  }
+}`;
+
+export const rangeStream = `import { Controller, Get, Param, Req } from '@nl-framework/http';
+
+@Controller('/video')
+export class VideoController {
+  @Get('/:name')
+  async streamWithRange(@Param('name') name: string, @Req() req: Request) {
+    const file = Bun.file(\`./media/\${name}\`);
+    if (!(await file.exists())) {
+      return new Response('Not found', { status: 404 });
+    }
+
+    const { size } = await file.stat();
+    const range = req.headers.get('range');
+    if (!range) {
+      return new Response(file.stream(), {
+        headers: {
+          'content-length': size.toString(),
+          'content-type': file.type || 'video/mp4',
+        },
+      });
+    }
+
+    // Parse bytes=START-END
+    const match = /bytes=(\\d+)-(\\d*)/.exec(range);
+    const start = match ? Number(match[1]) : 0;
+    const end = match && match[2] ? Number(match[2]) : size - 1;
+    const chunk = file.slice(start, end + 1);
+
+    return new Response(chunk.stream(), {
+      status: 206,
+      headers: {
+        'content-range': \`bytes \${start}-\${end}/\${size}\`,
+        'content-length': (end - start + 1).toString(),
+        'accept-ranges': 'bytes',
+        'content-type': file.type || 'video/mp4',
+      },
+    });
+  }
+}`;
+
+export const proxyStream = `import { Controller, Get, Query } from '@nl-framework/http';
+
+@Controller('/proxy')
+export class ProxyController {
+  @Get('/asset')
+  async proxy(@Query('url') url: string) {
+    if (!url) return new Response('url required', { status: 400 });
+
+    const upstream = await fetch(url);
+    if (!upstream.ok || !upstream.body) {
+      return new Response('failed to fetch', { status: upstream.status });
+    }
+
+    // Pass through streaming body and headers
+    const headers = new Headers(upstream.headers);
+    headers.set('cache-control', headers.get('cache-control') ?? 'public, max-age=300');
+    return new Response(upstream.body, {
+      status: upstream.status,
+      headers,
+    });
+  }
+}`;
+
+export const streamTips = `// Tips for streaming handlers
+// - Prefer Response bodies that are ReadableStreams (file.stream(), fetch().body).
+// - Set content-length when known; include content-type and caching headers.
+// - For large media, support Range to enable seek/resume.
+// - Avoid buffering: don't call arrayBuffer() unless necessary.
+// - Pair with compression only for textual streams; skip binaries.`;
+
+export const storageStream = `import { Controller, Get, Param, Inject } from '@nl-framework/http';
+import { STORAGE_ADAPTER, type StorageAdapter } from '@nl-framework/storage';
+
+@Controller('/objects')
+export class ObjectController {
+  constructor(@Inject(STORAGE_ADAPTER) private readonly storage: StorageAdapter) {}
+
+  @Get('/:key')
+  async streamFromStorage(@Param('key') key: string) {
+    const obj = await this.storage.getObjectStream(key);
+    if (!obj) {
+      return new Response('Not found', { status: 404 });
+    }
+
+    // getObjectStream returns { stream: ReadableStream, contentType?: string, contentLength?: number }
+    const headers = new Headers({
+      'content-type': obj.contentType ?? 'application/octet-stream',
+      'cache-control': 'public, max-age=300',
+    });
+    if (obj.contentLength) headers.set('content-length', obj.contentLength.toString());
+
+    return new Response(obj.stream, { headers });
+  }
+}`;
+
+<article className="space-y-8">
+  <div className="space-y-3">
+    <Badge className="bg-indigo-100 text-indigo-900 dark:bg-indigo-900/30 dark:text-indigo-50">
+      Techniques
+    </Badge>
+    <h1 className="text-4xl font-semibold tracking-tight">Streaming files</h1>
+    <div className="text-lg text-muted-foreground">
+      Serve large downloads without buffering by returning Bun-native <code>ReadableStream</code> bodies. Add range
+      support for media, pass through upstream streams, and set headers so clients can cache and resume downloads.
+    </div>
+  </div>
+
+  <section className="space-y-4" id="basic">
+    <h2 className="text-2xl font-semibold">Simple download</h2>
+    <div className="text-muted-foreground">
+      Use <code>Bun.file().stream()</code> to stream from disk or object storage. Include length, type, and
+      <code>content-disposition</code> to hint downloads.
+    </div>
+    <CodeBlock code={basicStream} title="file.controller.ts" />
+  </section>
+
+  <section className="space-y-4" id="range">
+    <h2 className="text-2xl font-semibold">Range / seek support</h2>
+    <div className="text-muted-foreground">
+      Video/audio players expect <code>Range</code> responses. Slice the file, return <code>206</code>, and set
+      <code>content-range</code>, <code>accept-ranges</code>, and <code>content-length</code>.
+    </div>
+    <CodeBlock code={rangeStream} title="Range-enabled stream" />
+  </section>
+
+  <section className="space-y-4" id="proxy">
+    <h2 className="text-2xl font-semibold">Proxy an upstream stream</h2>
+    <div className="text-muted-foreground">
+      You can forward <code>fetch</code> streams directly. Preserve headers you need and set sensible cache-control to
+      avoid over-fetching.
+    </div>
+    <CodeBlock code={proxyStream} title="Proxy streaming response" />
+  </section>
+
+  <section className="space-y-4" id="storage">
+    <h2 className="text-2xl font-semibold">Stream from StorageModule</h2>
+    <div className="text-muted-foreground">
+      If you use the Nael StorageModule, ask the adapter for a streaming body (S3/Azure drivers expose readable
+      streams). Pass through length/type headers when available so clients can show progress.
+    </div>
+    <CodeBlock code={storageStream} title="stream-from-storage.controller.ts" />
+    <div className="text-sm text-muted-foreground">
+      Ensure your adapter exposes <code>getObjectStream</code> (or similar) that returns a <code>ReadableStream</code>.
+      For S3, call <code>GetObjectCommand</code> and wrap <code>response.Body</code> in a <code>ReadableStream</code>;
+      for Azure, use <code>downloadToBuffer</code> or <code>readableStreamBody</code>. Avoid buffering—pipe directly to
+      the Response.
+    </div>
+  </section>
+
+  <section className="space-y-3" id="tips">
+    <h2 className="text-2xl font-semibold">Tips</h2>
+    <CodeBlock code={streamTips} title="Notes" />
+    <div className="text-sm text-muted-foreground">
+      Combine with <Link className="text-primary underline" href="/docs/techniques/compression">compression</Link> for
+      textual streams only, and with <Link className="text-primary underline" href="/docs/techniques/caching">caching</Link> to avoid regenerating heavy files.
+    </div>
+  </section>
+</article>

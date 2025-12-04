@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { CliError } from '../utils/cli-error';
 import { createProjectTemplate, type ProjectTemplateContext, type TemplateFile } from '../templates/project-template';
+import { createNextTemplate } from '../templates/next-template';
 import { fileExists } from '../utils/fs';
 import { toValidPackageName } from '../utils/package-name';
 
@@ -13,6 +14,8 @@ export interface NewCommandOptions {
   cwd?: string;
   force?: boolean;
   install?: boolean;
+  withNext?: boolean;
+  nextAppName?: string;
 }
 
 export interface NewCommandResult {
@@ -21,6 +24,12 @@ export interface NewCommandResult {
   createdFiles: string[];
   overwrittenFiles: string[];
   installedDependencies: boolean;
+  frontend?: {
+    directory: string;
+    createdFiles: string[];
+    overwrittenFiles: string[];
+    installedDependencies: boolean;
+  };
 }
 
 export const runNewCommand = async (options: NewCommandOptions): Promise<NewCommandResult> => {
@@ -60,28 +69,66 @@ export const runNewCommand = async (options: NewCommandOptions): Promise<NewComm
   const createdFiles: string[] = [];
   const overwrittenFiles: string[] = [];
 
-  for (const file of templateFiles) {
-    const destination = join(targetDir, file.path);
-    const destinationDir = dirname(destination);
-    await mkdir(destinationDir, { recursive: true });
+  const writeTemplateFiles = async (
+    baseDir: string,
+    files: TemplateFile[],
+    accumulator: { created: string[]; overwritten: string[] },
+  ) => {
+    for (const file of files) {
+      const destination = join(baseDir, file.path);
+      const destinationDir = dirname(destination);
+      await mkdir(destinationDir, { recursive: true });
 
-    const alreadyExists = await fileExists(destination);
-    if (alreadyExists && !options.force) {
-      throw new CliError(
-        `File ${relative(targetDir, destination)} already exists. Use --force to overwrite generated files.`,
-      );
+      const alreadyExists = await fileExists(destination);
+      if (alreadyExists && !options.force) {
+        throw new CliError(
+          `File ${relative(baseDir, destination)} already exists. Use --force to overwrite generated files.`,
+        );
+      }
+
+      await Bun.write(destination, file.contents);
+      if (file.mode) {
+        await chmod(destination, file.mode);
+      }
+
+      if (alreadyExists) {
+        accumulator.overwritten.push(relative(baseDir, destination));
+      } else {
+        accumulator.created.push(relative(baseDir, destination));
+      }
+    }
+  };
+
+  await writeTemplateFiles(targetDir, templateFiles, { created: createdFiles, overwritten: overwrittenFiles });
+
+  let frontendResult: NewCommandResult['frontend'];
+  if (options.withNext) {
+    const nextAppName = options.nextAppName ?? 'web';
+    const nextPackageName = toValidPackageName(nextAppName);
+    const nextDir = join(targetDir, nextAppName);
+    const nextTemplateFiles = createNextTemplate({
+      appName: nextAppName,
+      packageName: nextPackageName,
+      bunVersion: options.bunVersion,
+      directory: nextAppName,
+    });
+
+    const nextCreated: string[] = [];
+    const nextOverwritten: string[] = [];
+
+    const nextStatsExists = existsSync(nextDir);
+    if (!nextStatsExists) {
+      await mkdir(nextDir, { recursive: true });
     }
 
-    await Bun.write(destination, file.contents);
-    if (file.mode) {
-      await chmod(destination, file.mode);
-    }
+    await writeTemplateFiles(nextDir, nextTemplateFiles, { created: nextCreated, overwritten: nextOverwritten });
 
-    if (alreadyExists) {
-      overwrittenFiles.push(relative(targetDir, destination));
-    } else {
-      createdFiles.push(relative(targetDir, destination));
-    }
+    frontendResult = {
+      directory: nextDir,
+      createdFiles: nextCreated,
+      overwrittenFiles: nextOverwritten,
+      installedDependencies: false,
+    };
   }
 
   if (options.install) {
@@ -95,6 +142,19 @@ export const runNewCommand = async (options: NewCommandOptions): Promise<NewComm
     if (exitCode !== 0) {
       throw new CliError('bun install failed', exitCode ?? 1);
     }
+
+    if (frontendResult) {
+      const nextInstall = Bun.spawn(['bun', 'install'], {
+        cwd: frontendResult.directory,
+        stdout: 'inherit',
+        stderr: 'inherit',
+      });
+      const nextExit = await nextInstall.exited;
+      if (nextExit !== 0) {
+        throw new CliError('bun install failed in Next.js app', nextExit ?? 1);
+      }
+      frontendResult.installedDependencies = true;
+    }
   }
 
   return {
@@ -103,5 +163,6 @@ export const runNewCommand = async (options: NewCommandOptions): Promise<NewComm
     createdFiles,
     overwrittenFiles,
     installedDependencies: Boolean(options.install),
+    frontend: frontendResult,
   };
 };

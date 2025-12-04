@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test';
+import { UseFilters, UseGuards, UseInterceptors, UsePipes } from '@nl-framework/core';
 import { MessagePattern, EventPattern, listMessageHandlers } from '../src/decorators/patterns';
 
 class TestController {
@@ -15,6 +16,19 @@ class TestController {
   regularMethod() {
     return 'not a handler';
   }
+}
+
+@UseGuards('classGuard')
+@UseInterceptors('classInterceptor')
+@UsePipes('classPipe')
+@UseFilters('classFilter')
+class DecoratedController {
+  @MessagePattern('decorated')
+  @UseGuards('methodGuard')
+  @UseInterceptors('methodInterceptor')
+  @UsePipes('methodPipe')
+  @UseFilters('methodFilter')
+  handle(): void {}
 }
 
 describe('Message Pattern Decorators', () => {
@@ -41,5 +55,16 @@ describe('Message Pattern Decorators', () => {
     const regularHandler = handlers.find(h => h.propertyKey === 'regularMethod');
 
     expect(regularHandler).toBeUndefined();
+  });
+
+  it('captures guard/interceptor/pipe/filter metadata for handlers', () => {
+    const handlers = listMessageHandlers(DecoratedController);
+    const handler = handlers.find(h => h.propertyKey === 'handle');
+
+    expect(handler).toBeDefined();
+    expect(handler?.guards).toEqual(['classGuard', 'methodGuard']);
+    expect(handler?.interceptors).toEqual(['classInterceptor', 'methodInterceptor']);
+    expect(handler?.pipes).toEqual(['classPipe', 'methodPipe']);
+    expect(handler?.filters).toEqual(['methodFilter', 'classFilter']);
   });
 });

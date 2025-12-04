@@ -1,0 +1,123 @@
+---
+title: 'Mutations · GraphQL'
+description: 'Implement mutations in Nael GraphQL with typed inputs, validation, auth guards, and service-backed logic.'
+---
+
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+import Link from 'next/link';
+
+export const mutationBasics = `import { Resolver, Mutation, Args } from '@nl-framework/graphql';
+import { ProfileService } from './profile.service';
+import { Profile } from './profile.model';
+
+@Resolver(() => Profile)
+export class ProfileMutationResolver {
+  constructor(private readonly service: ProfileService) {}
+
+  @Mutation(() => Profile)
+  async updateDisplayName(@Args('displayName') displayName: string) {
+    return this.service.updateDisplayName(displayName);
+  }
+}`;
+
+export const argsTypeExample = `import { ArgsType, Field, Resolver, Mutation, Args } from '@nl-framework/graphql';
+
+@ArgsType()
+export class UpdateProfileInput {
+  @Field()
+  displayName!: string;
+
+  @Field({ nullable: true })
+  avatarUrl?: string;
+}
+
+@Resolver()
+export class ProfileMutationResolver {
+  constructor(private readonly service: ProfileService) {}
+
+  @Mutation(() => Boolean)
+  async updateProfile(@Args() input: UpdateProfileInput) {
+    await this.service.updateProfile(input);
+    return true;
+  }
+}`;
+
+export const authMutation = `import { Resolver, Mutation, Args } from '@nl-framework/graphql';
+import { UseGuards, BetterAuthGuard, CurrentSession, type BetterAuthSession } from '@nl-framework/auth';
+import { Profile } from './profile.model';
+import { ProfileService } from './profile.service';
+
+@Resolver(() => Profile)
+export class SecureProfileMutationResolver {
+  constructor(private readonly service: ProfileService) {}
+
+  @UseGuards(BetterAuthGuard)
+  @Mutation(() => Profile)
+  async updateEmail(
+    @CurrentSession() session: BetterAuthSession,
+    @Args('email') email: string,
+  ) {
+    return this.service.updateEmail(session.userId, email);
+  }
+}`;
+
+export const validationNote = `// Add validation pipes if you want to enforce shape on ArgsType inputs
+// Example:
+// http?.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }))
+// Works for GraphQL args too when using @ArgsType() + class-validator decorators.
+`;
+
+<article className="space-y-8">
+  <div className="space-y-3">
+    <Badge className="bg-sky-100 text-sky-900 dark:bg-sky-900/30 dark:text-sky-50">GraphQL</Badge>
+    <h1 className="text-4xl font-semibold tracking-tight">Mutations</h1>
+    <div className="text-lg text-muted-foreground max-w-3xl">
+      Define mutations with typed args, secure them with BetterAuthGuard, and keep business logic inside services.
+    </div>
+  </div>
+
+  <section className="space-y-4" id="basic">
+    <h2 className="text-2xl font-semibold">Basic mutation</h2>
+    <div className="text-muted-foreground">
+      Map mutation fields to service calls. Keep resolvers thin by injecting services via DI.
+    </div>
+    <CodeBlock code={mutationBasics} title="profile.mutation.ts" />
+  </section>
+
+  <section className="space-y-4" id="typed-args">
+    <h2 className="text-2xl font-semibold">Typed inputs</h2>
+    <div className="text-muted-foreground">
+      Use <code>@ArgsType()</code> classes for structured inputs so your schema and TypeScript stay in sync.
+    </div>
+    <CodeBlock code={argsTypeExample} title="update-profile.input.ts" />
+  </section>
+
+  <section className="space-y-4" id="auth">
+    <h2 className="text-2xl font-semibold">Protect mutations</h2>
+    <div className="text-muted-foreground">
+      Wrap mutations with <code>BetterAuthGuard</code> and use <code>@CurrentSession()</code> to pull user identity
+      before calling your services.
+    </div>
+    <CodeBlock code={authMutation} title="secure-profile.mutation.ts" />
+  </section>
+
+  <section className="space-y-4" id="validation">
+    <h2 className="text-2xl font-semibold">Validation</h2>
+    <div className="text-muted-foreground">
+      Apply global validation pipes if you decorate your <code>@ArgsType()</code> classes with class-validator. This
+      keeps mutation inputs clean without duplicating checks.
+    </div>
+    <CodeBlock code={validationNote} title="Validation note" />
+  </section>
+
+  <section className="space-y-4" id="next">
+    <h2 className="text-2xl font-semibold">Next steps</h2>
+    <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+      <li>Add interceptors for auditing and latency metrics.</li>
+      <li>Introduce input unions or interfaces for polymorphic mutations.</li>
+      <li>Pair with <Link className="text-primary underline" href="/docs/auth/graphql">BetterAuth GraphQL</Link> to align session handling.</li>
+      <li>Enable federation directives if this service is part of a larger graph.</li>
+    </ul>
+  </section>
+</article>

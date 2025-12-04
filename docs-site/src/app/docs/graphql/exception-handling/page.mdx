@@ -1,0 +1,283 @@
+---
+title: 'GraphQL Exception Handling - NL Framework'
+description: 'Learn how to handle exceptions in GraphQL resolvers using NL Framework'
+---
+
+import { CodeBlock } from '@/components/shared/simple-code-block';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+
+export const basicUsage = `import { ApplicationException } from '@nl-framework/graphql';
+import { Resolver, Query, Mutation, Arg } from '@nl-framework/graphql';
+
+  @Resolver()
+  export class UserResolver {
+  @Query(() => User)
+  async getUser(@Arg('id') id: string): Promise<User> {
+    const user = await this.userRepository.findById(id);
+
+    if (!user) {
+      throw ApplicationException.notFound('User not found');
+    }
+
+    return user;
+
+  }
+
+  @Mutation(() => User)
+  async createUser(@Arg('input') input: CreateUserInput): Promise<User> {
+    const existing = await this.userRepository.findByEmail(input.email);
+
+    if (existing) {
+      throw ApplicationException.conflict(
+        'User already exists',
+        { email: input.email }
+      );
+    }
+
+    return this.userRepository.create(input);
+
+  }
+}`;
+
+export const customFilter = `import { GraphQLExceptionFilter } from '@nl-framework/graphql';
+import { GraphQLError } from 'graphql';
+import { ApplicationException } from '@nl-framework/core';
+
+  export class CustomGraphQLExceptionFilter implements GraphQLExceptionFilter {
+  async catch(exception: Error): Promise<GraphQLError | null> {
+    if (exception instanceof ApplicationException) {
+      return new GraphQLError(exception.message, {
+        extensions: {
+          code: exception.code,
+          details: exception.details,
+          timestamp: new Date().toISOString(),
+          service: 'user-service',
+        },
+      });
+    }
+    
+    return null;
+  }
+}`;
+
+export const registerFilter = `import { 
+  createGraphqlApplication, 
+  registerGraphQLExceptionFilter 
+} from '@nl-framework/graphql';
+
+  async function bootstrap() {
+    const app = await createGraphqlApplication({
+modules: [AppModule],
+  });
+
+registerGraphQLExceptionFilter(new CustomGraphQLExceptionFilter());
+
+    await app.start();
+}`;
+
+export const errorResponse = `{
+  "data": null,
+  "errors": [
+    {
+      "message": "User not found",
+      "locations": [{ "line": 2, "column": 3 }],
+      "path": ["getUser"],
+      "extensions": {
+        "code": "NOT_FOUND",
+        "details": { "userId": "123" }
+      }
+    }
+  ]
+}`;
+
+export const authError = `@Resolver()
+  export class PostResolver {
+  @Query(() => [Post])
+  async myPosts(@Context('user') user: User): Promise<Post[]> {
+    if (!user) {
+      throw ApplicationException.unauthorized('You must be logged in');
+    }
+    
+    return this.postRepository.findByAuthor(user.id);
+  }
+}`;
+
+export const validationError = `@Resolver()
+  export class PostResolver {
+  @Mutation(() => Post)
+  async createPost(@Arg('input') input: CreatePostInput): Promise<Post> {
+    if (input.title.length < 3) {
+      throw ApplicationException.validationError(
+        'Title must be at least 3 characters',
+        { field: 'title', min: 3 }
+      );
+    }
+    
+    return this.postRepository.create(input);
+  }
+}`;
+
+export const advancedFilter = `export class DetailedGraphQLExceptionFilter implements GraphQLExceptionFilter {
+  async catch(exception: Error): Promise<GraphQLError | null> {
+    if (exception.message.includes('unique constraint')) {
+      return new GraphQLError('Duplicate entry', {
+        extensions: {
+          code: 'DUPLICATE_ENTRY',
+          originalError: exception.message,
+        },
+      });
+    }
+    
+    if (exception instanceof ApplicationException) {
+      return new GraphQLError(exception.message, {
+        extensions: {
+          code: exception.code,
+          details: exception.details,
+          cause: exception.cause?.message,
+        },
+      });
+    }
+    
+    if (process.env.NODE_ENV === 'production') {
+      return new GraphQLError('An error occurred', {
+        extensions: { code: 'INTERNAL_SERVER_ERROR' },
+      });
+    }
+    
+    return null;
+  }
+}`;
+
+<article className="space-y-8">
+      <div className="space-y-3">
+        <Badge className="bg-primary/10 text-primary">GraphQL</Badge>
+        <h1 className="text-4xl font-semibold tracking-tight">Exception Handling</h1>
+        <div className="text-lg text-muted-foreground">
+          Exception handling in GraphQL allows you to catch and format errors from resolvers, 
+          providing consistent error responses to clients. NL Framework provides exception filters 
+          that integrate seamlessly with GraphQL error formatting.
+        </div>
+      </div>
+
+      <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950">
+        <CardContent className="pt-6">
+          <div className="text-sm text-blue-900 dark:text-blue-100">
+            <strong>💡 Transport-Agnostic:</strong> `ApplicationException` from{" "}
+            `@nl-framework/core` works across HTTP, GraphQL, and any other transport layer.
+            Use the same exception class everywhere!
+          </div>
+        </CardContent>
+      </Card>
+
+      <section className="space-y-4" id="application-exception">
+        <h2 className="text-2xl font-semibold">ApplicationException</h2>
+        <div className="text-muted-foreground">
+          The `ApplicationException` class is transport-agnostic and automatically converts to
+          appropriate GraphQL error codes:
+        </div>
+        <CodeBlock code={basicUsage} title="Using ApplicationException in resolvers" />
+      </section>
+
+      <section className="space-y-4" id="error-codes">
+        <h2 className="text-2xl font-semibold">GraphQL Error Codes</h2>
+        <div className="text-muted-foreground">
+          `ApplicationException` error codes are automatically mapped to GraphQL error codes:
+        </div>
+        <Card className="border-border/70">
+          <CardContent className="pt-6">
+            <div className="space-y-2 text-sm">
+              <div className="grid grid-cols-2 gap-4 font-semibold text-muted-foreground">
+                <div>ApplicationException Code</div>
+                <div>GraphQL Error Code</div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>`BAD_REQUEST`</div>
+                <div>`BAD_USER_INPUT`</div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>`UNAUTHORIZED`</div>
+                <div>`UNAUTHENTICATED`</div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>`FORBIDDEN`</div>
+                <div>`FORBIDDEN`</div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>`NOT_FOUND`</div>
+                <div>`NOT_FOUND`</div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>`VALIDATION_ERROR`</div>
+                <div>`BAD_USER_INPUT`</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="space-y-4" id="exception-filters">
+        <h2 className="text-2xl font-semibold">GraphQL Exception Filters</h2>
+        <div className="text-muted-foreground">
+          Exception filters allow you to customize how exceptions are converted to GraphQL errors:
+        </div>
+        <CodeBlock code={customFilter} title="Custom exception filter" />
+
+        <div className="space-y-3">
+          <h3 className="text-xl font-semibold">Registering Exception Filters</h3>
+          <CodeBlock code={registerFilter} title="Register global filter" />
+        </div>
+      </section>
+
+      <section className="space-y-4" id="error-response-format">
+        <h2 className="text-2xl font-semibold">Error Response Format</h2>
+        <div className="text-muted-foreground">
+          GraphQL errors are returned in the standard GraphQL error format:
+        </div>
+        <CodeBlock code={errorResponse} title="GraphQL error response" />
+      </section>
+
+      <section className="space-y-4" id="common-patterns">
+        <h2 className="text-2xl font-semibold">Common Patterns</h2>
+
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-xl font-semibold mb-3">Authentication Errors</h3>
+            <CodeBlock code={authError} title="Unauthorized access" />
+          </div>
+
+          <div>
+            <h3 className="text-xl font-semibold mb-3">Validation Errors</h3>
+            <CodeBlock code={validationError} title="Input validation" />
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-4" id="advanced-filter">
+        <h2 className="text-2xl font-semibold">Advanced Exception Filter</h2>
+        <CodeBlock code={advancedFilter} title="Production-ready filter" />
+      </section>
+
+      <section className="space-y-4" id="best-practices">
+        <h2 className="text-2xl font-semibold">Best Practices</h2>
+        <Card className="border-border/70">
+          <CardContent className="space-y-2 pt-6 text-sm text-muted-foreground">
+            <div><strong>Use ApplicationException:</strong> Always use <code>ApplicationException</code> for consistent error handling across HTTP and GraphQL.</div>
+            <div><strong>Include Details:</strong> Add relevant details to help clients understand and handle errors appropriately.</div>
+            <div><strong>Don't Expose Sensitive Information:</strong> Never include passwords, tokens, or sensitive data in error messages.</div>
+            <div><strong>Use Appropriate Error Codes:</strong> Choose the right error code to help clients handle errors programmatically.</div>
+            <div><strong>Filter Errors in Production:</strong> Use exception filters to hide internal error details in production.</div>
+          </CardContent>
+        </Card>
+      </section>
+
+      <Card className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
+        <CardContent className="pt-6">
+          <div className="text-sm text-green-900 dark:text-green-100">
+            <strong>✅ Summary:</strong> GraphQL exception handling in NL Framework uses `ApplicationException` for
+            transport-agnostic errors with automatic conversion to standard GraphQL error codes. Exception filters enable
+            custom error formatting, and the system provides consistent error handling across HTTP and GraphQL.
+          </div>
+        </CardContent>
+      </Card>
+    </article>

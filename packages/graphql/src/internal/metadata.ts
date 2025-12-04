@@ -1,5 +1,5 @@
 import type { ClassType } from '@nl-framework/core';
-import type { GraphQLScalarType } from 'graphql';
+import type { GraphQLResolveInfo, GraphQLScalarType } from 'graphql';
 
 export type TypeThunk = () => unknown;
 
@@ -95,7 +95,7 @@ export interface ResolverMethodDefinition {
   options: ResolverMethodOptions;
 }
 
-export type ResolverParamKind = 'arg' | 'args' | 'context' | 'info' | 'parent';
+export type ResolverParamKind = 'arg' | 'args' | 'context' | 'info' | 'parent' | 'custom';
 
 export interface ResolverParamOptions {
   description?: string;
@@ -103,6 +103,19 @@ export interface ResolverParamOptions {
   defaultValue?: unknown;
   list?: boolean;
 }
+
+export interface GraphqlParamDecoratorContext {
+  parent: unknown;
+  args: Record<string, unknown>;
+  context: any;
+  info: GraphQLResolveInfo;
+}
+
+export type GraphqlParamFactory<Data = unknown, Result = unknown> = (
+  data: Data | undefined,
+  ctx: GraphqlParamDecoratorContext,
+  designType?: unknown,
+) => Result | Promise<Result>;
 
 export interface ResolverParamDefinition {
   target: ClassType;
@@ -113,6 +126,8 @@ export interface ResolverParamDefinition {
   typeThunk?: TypeThunk;
   designType?: unknown;
   options: ResolverParamOptions;
+  data?: unknown;
+  factory?: GraphqlParamFactory;
 }
 
 export interface ResolverClassDefinition {
@@ -161,7 +176,7 @@ export class GraphqlMetadataStorage {
   private readonly enumTypesByName = new Map<string, EnumTypeDefinition>();
   private readonly scalarTypesByName = new Map<string, ScalarTypeDefinition>();
 
-  private constructor() {}
+  private constructor() { }
 
   addObjectType(target: ClassType, options: ObjectTypeOptions = {}): void {
     this.objectTypes.set(target, {
@@ -245,7 +260,7 @@ export class GraphqlMetadataStorage {
       if (existingByRef.name !== definition.name) {
         throw new Error(
           `Enum has already been registered under the name "${existingByRef.name}". ` +
-            'Use a unique name per enum reference.',
+          'Use a unique name per enum reference.',
         );
       }
       this.enumTypes.set(enumRef, { ...existingByRef, ...definition, enumRef });

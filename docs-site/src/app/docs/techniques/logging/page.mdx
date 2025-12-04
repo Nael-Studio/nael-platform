@@ -1,0 +1,187 @@
+---
+title: 'Logging · Techniques'
+description: 'Structured logging with DI-friendly factories, request middleware, and transport customization in Nael.'
+---
+
+import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const configureLogger = `import { NaelFactory } from '@nl-framework/platform';
+import { Logger } from '@nl-framework/logger';
+
+const appLogger = new Logger({
+  context: 'orders-api',
+  level: (process.env.LOG_LEVEL as any) ?? 'INFO',
+});
+
+const app = await NaelFactory.create(AppModule, { logger: appLogger });
+await app.listen({ http: 3000 });`;
+
+export const requestLogging = `import { MiddlewareHandler } from '@nl-framework/http';
+import { LoggerFactory } from '@nl-framework/logger';
+
+export const createRequestLogger = async (loggerFactory: LoggerFactory): Promise<MiddlewareHandler> => {
+  const logger = loggerFactory.create({ context: 'HttpRequest' });
+
+  return async (ctx, next) => {
+    const start = Date.now();
+    try {
+      const res = await next();
+      logger.info('Handled request', {
+        method: ctx.request.method,
+        path: new URL(ctx.request.url).pathname,
+        status: res.status,
+        elapsedMs: Date.now() - start,
+      });
+      return res;
+    } catch (error) {
+      logger.error('Request failed', error instanceof Error ? error : undefined, {
+        method: ctx.request.method,
+        path: new URL(ctx.request.url).pathname,
+        elapsedMs: Date.now() - start,
+      });
+      throw error;
+    }
+  };
+};`;
+
+export const childLoggers = `import { Injectable } from '@nl-framework/core';
+import { LoggerFactory } from '@nl-framework/logger';
+
+@Injectable()
+export class BillingService {
+  private readonly logger = this.loggerFactory.create({ context: 'Billing' });
+
+  constructor(private readonly loggerFactory: LoggerFactory) {}
+
+  async charge(customerId: string, amount: number) {
+    const op = this.logger.child('Charge', { level: 'INFO' });
+    op.info('Initiating charge', { customerId, amount });
+    // ...
+    op.info('Charge complete', { customerId, amount });
+  }
+}`;
+
+export const customTransport = `import { Logger, type LogMessage, type LoggerTransport } from '@nl-framework/logger';
+
+class HttpTransport implements LoggerTransport {
+  async log(entry: LogMessage) {
+    await fetch('https://logs.example.com/ingest', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(entry),
+    });
+  }
+}
+
+const logger = new Logger({ transports: [new HttpTransport()], context: 'jobs' });
+logger.info('Job started');`;
+
+export const elasticApm = `import apm from 'elastic-apm-node';
+import { Logger, type LogMessage, type LoggerTransport } from '@nl-framework/logger';
+
+apm.start({
+  serviceName: 'orders-api',
+  serverUrl: process.env.ELASTIC_APM_SERVER_URL,
+  secretToken: process.env.ELASTIC_APM_SECRET_TOKEN,
+  environment: process.env.NODE_ENV ?? 'development',
+});
+
+class ElasticApmTransport implements LoggerTransport {
+  log(entry: LogMessage) {
+    // Avoid blocking; Elastic APM agent batches internally
+    const span = apm.currentSpan || apm.startSpan(entry.context ?? 'log');
+    if (span) {
+      span.addLabels({
+        level: entry.level.toLowerCase(),
+        message: entry.message,
+        ...(entry.meta ?? {}),
+      });
+      span.end();
+    }
+
+    if (entry.error instanceof Error) {
+      apm.captureError(entry.error, {
+        handled: true,
+        custom: {
+          context: entry.context,
+          ...entry.meta,
+        },
+      });
+    }
+
+  }
+}
+
+const logger = new Logger({
+  context: 'orders-api',
+  transports: [new ElasticApmTransport()],
+});
+
+logger.info('Booting service');`;
+
+<article className="space-y-8">
+      <div className="space-y-3">
+        <Badge className="bg-slate-100 text-slate-900 dark:bg-slate-900/30 dark:text-slate-50">
+          Techniques
+        </Badge>
+        <h1 className="text-4xl font-semibold tracking-tight">Logging</h1>
+        <div className="text-lg text-muted-foreground">
+          Emit structured logs across HTTP handlers, schedulers, and microservices. Nael&apos;s logger ships with JSON output,
+          child contexts, and pluggable transports so you can route logs to stdout, files, or remote collectors.
+        </div>
+      </div>
+
+      <section className="space-y-4" id="bootstrap">
+        <h2 className="text-2xl font-semibold">Bootstrap a shared logger</h2>
+        <div className="text-muted-foreground">
+          Provide a root `Logger` when bootstrapping your app to set the service name and log level. Downstream
+          modules receive the same factory to create context-specific children.
+        </div>
+        <CodeBlock code={configureLogger} title="app bootstrap" />
+      </section>
+
+      <section className="space-y-4" id="http">
+        <h2 className="text-2xl font-semibold">HTTP request logging</h2>
+        <div className="text-muted-foreground">
+          Add an HTTP middleware that logs method, path, status, and latency. Use `LoggerFactory` to keep
+          contextual loggers scoped to the request pipeline.
+        </div>
+        <CodeBlock code={requestLogging} title="request-logging.middleware.ts" />
+      </section>
+
+      <section className="space-y-4" id="di">
+        <h2 className="text-2xl font-semibold">Inject and branch contexts</h2>
+        <div className="text-muted-foreground">
+          Inject `LoggerFactory` into services and create child loggers per operation or tenant. Child loggers
+          inherit transports and levels unless you override them.
+        </div>
+        <CodeBlock code={childLoggers} title="billing.service.ts" />
+      </section>
+
+      <section className="space-y-4" id="transports">
+        <h2 className="text-2xl font-semibold">Customize transports</h2>
+        <div className="text-muted-foreground">
+          The default console transport prints JSON to stdout. Implement `LoggerTransport` to forward logs to
+          HTTP collectors, files, or observability backends.
+        </div>
+        <CodeBlock code={customTransport} title="custom transport" />
+        <div className="text-muted-foreground">
+          For Elastic APM, start the agent once and implement a transport that adds log metadata as span labels and captures errors:
+        </div>
+        <CodeBlock code={elasticApm} title="Elastic APM transport" />
+      </section>
+
+      <section className="space-y-3" id="tips">
+        <h2 className="text-2xl font-semibold">Best practices</h2>
+        <ul className="list-disc space-y-2 pl-6 text-muted-foreground">
+          <li>Set <code>LOG_LEVEL</code> via env; default to <code>INFO</code> in prod and <code>DEBUG</code> locally.</li>
+          <li>Include correlation IDs (request IDs, tenant IDs) in child loggers to trace flows.</li>
+          <li>Emit structured objects, not interpolated strings, so downstream systems can parse fields.</li>
+          <li>Use separate contexts for long-running workers or schedulers to keep noise isolated.</li>
+          <li>Pair with <Link className="text-primary underline" href="/docs/techniques/queues">Queues</Link> and{" "}
+            <Link className="text-primary underline" href="/docs/techniques/task-scheduling">Task scheduling</Link> for end-to-end observability.</li>
+        </ul>
+      </section>
+    </article>

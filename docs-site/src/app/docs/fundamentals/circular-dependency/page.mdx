@@ -1,0 +1,128 @@
+---
+title: 'Circular dependencies · Nael Framework'
+description: 'Break circular references between providers and modules using forwardRef, ModuleRef, and lazy resolution patterns.'
+---
+
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const forwardRefProviders = `import { Inject, Injectable, forwardRef } from '@nl-framework/core';
+
+@Injectable()
+export class UsersService {
+  constructor(
+    @Inject(forwardRef(() => PaymentsService))
+    private readonly payments: PaymentsService,
+  ) {}
+
+  async createUser() {
+    await this.payments.provisionWallet();
+  }
+}
+
+@Injectable()
+export class PaymentsService {
+  constructor(private readonly users: UsersService) {}
+
+  async provisionWallet() {/* ... */}
+}`;
+
+export const moduleForwardRef = `import { Module, forwardRef } from '@nl-framework/core';
+
+@Module({
+  providers: [UsersService],
+  exports: [UsersService],
+  imports: [forwardRef(() => PaymentsModule)],
+})
+export class UsersModule {}
+
+@Module({
+  providers: [PaymentsService],
+  exports: [PaymentsService],
+  imports: [forwardRef(() => UsersModule)],
+})
+export class PaymentsModule {}`;
+
+export const lazyResolution = `import { Injectable } from '@nl-framework/core';
+import { ModuleRef } from '@nl-framework/core';
+
+@Injectable()
+export class ReportsService {
+  constructor(private readonly moduleRef: ModuleRef) {}
+
+  async run() {
+    const exporter = await this.moduleRef.resolve(ExporterService, { strict: false });
+    return exporter.export();
+  }
+}`;
+
+export const setterInjection = `import { Injectable, Inject, forwardRef, OnModuleInit } from '@nl-framework/core';
+
+@Injectable()
+export class NotificationsService implements OnModuleInit {
+  private emailService!: EmailService;
+
+  constructor(@Inject(forwardRef(() => EmailService)) private readonly email: EmailService) {}
+
+  onModuleInit() {
+    this.emailService = this.email;
+  }
+}
+
+@Injectable()
+export class EmailService {
+  constructor(private readonly notifications: NotificationsService) {}
+}`;
+
+<article className="space-y-8">
+      <div className="space-y-3">
+        <Badge className="bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-50">Fundamentals</Badge>
+        <h1 className="text-4xl font-semibold tracking-tight">Circular dependencies</h1>
+        <div className="text-lg text-muted-foreground">
+          Sometimes two services need each other. Nael can resolve those cycles when you explicitly signal them with helpers like `forwardRef`
+          or by lazily fetching a provider from `ModuleRef`. This page covers the common escape hatches and when to reach for them.
+        </div>
+      </div>
+
+      <section className="space-y-4" id="providers">
+        <h2 className="text-2xl font-semibold">Provider-level forwardRef</h2>
+        <div className="text-muted-foreground">
+          Wrap the token passed to `@Inject()` in `forwardRef()` so the container evaluates the reference only after both classes
+          are defined. This keeps constructor injection intact while avoiding <em>undefined</em> errors at runtime.
+        </div>
+        <CodeBlock code={forwardRefProviders} title="Mutual services" />
+        <div className="text-sm text-muted-foreground">
+          Consider whether the cycle reveals a tighter coupling than necessary. Sometimes extracting a shared interface or domain event eliminates the loop.
+        </div>
+      </section>
+
+      <section className="space-y-4" id="modules">
+        <h2 className="text-2xl font-semibold">Module imports with forwardRef</h2>
+        <div className="text-muted-foreground">
+          Modules can also depend on each other. When both need to import the other&rsquo;s exports, wrap the module reference in `forwardRef`
+          inside the `imports` array. Nael will inline a thunk that resolves to the actual module once it is defined.
+        </div>
+        <CodeBlock code={moduleForwardRef} title="Cross-importing modules" />
+      </section>
+
+      <section className="space-y-4" id="lazy">
+        <h2 className="text-2xl font-semibold">Lazy resolution via ModuleRef</h2>
+        <div className="text-muted-foreground">
+          `ModuleRef` lets you resolve providers on demand, outside of the constructor. Use this when eager injection would create a cycle but
+          the dependency is only needed for specific code paths.
+        </div>
+        <CodeBlock code={lazyResolution} title="Resolving after startup" />
+        <div className="text-sm text-muted-foreground">
+          Passing `{'{ strict: false }'}` allows looking up tokens from imported modules. Prefer explicit module exports to keep ownership clear.
+        </div>
+      </section>
+
+      <section className="space-y-4" id="setters">
+        <h2 className="text-2xl font-semibold">Setter or lifecycle injection</h2>
+        <div className="text-muted-foreground">
+          When you must reference a provider immediately after construction, you can inject a forward reference and assign it during lifecycle hooks
+          such as `onModuleInit`. It&rsquo;s more verbose, but it keeps constructors minimal.
+        </div>
+        <CodeBlock code={setterInjection} title="Assign in onModuleInit" />
+      </section>
+    </article>

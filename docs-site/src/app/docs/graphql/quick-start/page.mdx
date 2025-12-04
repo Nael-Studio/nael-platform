@@ -1,0 +1,127 @@
+---
+title: 'GraphQL quick start · GraphQL'
+description: 'Bootstrap a Nael GraphQL server, wire schemas/resolvers, and secure it with BetterAuth.'
+---
+
+import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const installDeps = `bun add @nl-framework/graphql @nl-framework/platform @nl-framework/auth`;
+
+export const appModule = `import { Module } from '@nl-framework/core';
+import { GraphQLModule } from '@nl-framework/graphql';
+import { BetterAuthProxyModule } from '@nl-framework/auth';
+import { ProfileModule } from './modules/profile/profile.module';
+
+@Module({
+  imports: [
+    BetterAuthProxyModule.forRoot({
+      upstreamUrl: 'https://auth.nael.dev',
+      cookieDomain: '.nael.dev',
+    }),
+    GraphQLModule.forRoot({
+      autoSchemaFile: 'schema.gql',
+      playground: true,
+      context: ({ req, res }) => ({ request: req, response: res }),
+    }),
+    ProfileModule,
+  ],
+})
+export class AppModule {}`;
+
+export const bootstrap = `import { NaelFactory } from '@nl-framework/platform';
+import { AppModule } from './app.module';
+
+async function bootstrap() {
+  const app = await NaelFactory.create(AppModule);
+  await app.listen({ http: 3000 });
+}
+
+bootstrap();`;
+
+export const profileResolver = `import { Resolver, Query } from '@nl-framework/graphql';
+import { UseGuards, CurrentSession, BetterAuthGuard, BetterAuthSession } from '@nl-framework/auth';
+import { ProfileService } from './profile.service';
+import { Profile } from './profile.model';
+
+@Resolver(() => Profile)
+export class ProfileResolver {
+  constructor(private readonly service: ProfileService) {}
+
+  @UseGuards(BetterAuthGuard)
+  @Query(() => Profile)
+  me(@CurrentSession() session: BetterAuthSession) {
+    return this.service.resolveProfile(session.userId);
+  }
+}`;
+
+export const profileModel = `import { Field, ObjectType } from '@nl-framework/graphql';
+
+@ObjectType()
+export class Profile {
+  @Field()
+  id!: string;
+
+  @Field({ nullable: true })
+  displayName?: string;
+
+  @Field({ nullable: true })
+  email?: string;
+}`;
+
+<article className="space-y-8">
+  <div className="space-y-3">
+    <Badge className="bg-sky-100 text-sky-900 dark:bg-sky-900/30 dark:text-sky-50">GraphQL</Badge>
+    <h1 className="text-4xl font-semibold tracking-tight">GraphQL quick start</h1>
+    <div className="text-lg text-muted-foreground max-w-3xl">
+      Create a Nael GraphQL server with schema-first tooling, BetterAuth integration, and a sample resolver. This guide
+      uses auto-generated schemas; swap to code-first or SDL files as needed.
+    </div>
+  </div>
+
+  <section className="space-y-4" id="install">
+    <h2 className="text-2xl font-semibold">Install packages</h2>
+    <div className="text-muted-foreground">
+      Add GraphQL, platform bootstrap, and auth packages. The auth proxy shares cookies with the GraphQL guard.
+    </div>
+    <CodeBlock code={installDeps} title="Install" />
+  </section>
+
+  <section className="space-y-4" id="module">
+    <h2 className="text-2xl font-semibold">Define AppModule</h2>
+    <div className="text-muted-foreground">
+      Register GraphQLModule with <code>autoSchemaFile</code> for code-first schemas. Pipe the BetterAuth proxy so REST
+      and GraphQL reuse the same session cookies.
+    </div>
+    <CodeBlock code={appModule} title="app.module.ts" />
+  </section>
+
+  <section className="space-y-4" id="bootstrap">
+    <h2 className="text-2xl font-semibold">Bootstrap</h2>
+    <div className="text-muted-foreground">
+      Create the application and start the HTTP server. The GraphQL adapter is auto-wired by <code>GraphQLModule</code>.
+    </div>
+    <CodeBlock code={bootstrap} title="main.ts" />
+  </section>
+
+  <section className="space-y-4" id="resolver">
+    <h2 className="text-2xl font-semibold">Add a resolver</h2>
+    <div className="text-muted-foreground">
+      Protect a resolver with <code>BetterAuthGuard</code> and inject the session. Pull user profile data from your own
+      service to keep auth lean.
+    </div>
+    <CodeBlock code={profileResolver} title="profile.resolver.ts" />
+    <CodeBlock code={profileModel} title="profile.model.ts" />
+  </section>
+
+  <section className="space-y-4" id="next">
+    <h2 className="text-2xl font-semibold">Next steps</h2>
+    <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+      <li>Add mutations and input types for profile updates.</li>
+      <li>Enable federation by adding <code>federation: true</code> to <code>GraphQLModule</code> config and directives to types.</li>
+      <li>Wire subscriptions if you need realtime (configure WebSocket transport separately).</li>
+      <li>See <Link className="text-primary underline" href="/docs/auth/graphql">BetterAuth GraphQL</Link> for deeper guard/session patterns.</li>
+    </ul>
+  </section>
+</article>

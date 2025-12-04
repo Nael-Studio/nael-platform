@@ -17,6 +17,7 @@ export {
   Head,
   getRouteDefinitions,
 } from './decorators/routes';
+export { Version } from './versioning/metadata';
 export {
   Body,
   Param,
@@ -24,7 +25,9 @@ export {
   Headers,
   Req,
   Context,
+  createHttpParamDecorator,
 } from './decorators/params';
+export type { RouteParamFactory } from './decorators/params';
 export {
   HttpApplication,
   createHttpApplication,
@@ -44,6 +47,12 @@ export {
   registerHttpGuards,
   listHttpGuards,
   clearHttpGuards,
+} from './registry';
+export {
+  registerHttpInterceptor,
+  registerHttpInterceptors,
+  listHttpInterceptors,
+  clearHttpInterceptors,
 } from './registry';
 export {
   type GuardDecision,
@@ -68,4 +77,74 @@ export {
   isGuardClassToken,
   isGuardFunctionToken,
 } from './guards/utils';
+export {
+  type HttpInterceptor,
+  type CallHandler,
+  type InterceptorFunction,
+  type InterceptorInstance,
+  type InterceptorToken,
+  type BaseInterceptor,
+  type BaseInterceptorFunction,
+  type BaseInterceptorInstance,
+  type BaseInterceptorToken,
+  type GenericInterceptor,
+  type GenericInterceptorFunction,
+  type GenericInterceptorInstance,
+  type GenericInterceptorToken,
+} from './interceptors/types';
+export {
+  HttpInterceptorContextBase,
+  createHttpInterceptorExecutionContext,
+  type HttpInterceptorExecutionContext,
+} from './interceptors/execution-context';
+export {
+  UseInterceptors,
+  getInterceptorMetadata,
+  listAppliedInterceptors,
+  HTTP_INTERCEPTORS_METADATA_KEY,
+} from './interceptors/metadata';
+export {
+  markInterceptorToken,
+  isInterceptorClassToken,
+  isInterceptorFunctionToken,
+} from './interceptors/utils';
+export { HttpCacheInterceptor, type HttpCacheInterceptorOptions } from './interceptors/cache.interceptor';
+export {
+  HttpSerializationInterceptor,
+  type HttpSerializationInterceptorOptions,
+} from './interceptors/serialization.interceptor';
+export {
+  type HttpVersioningOptions,
+  type VersioningStrategy,
+} from './versioning/options';
 export { PUBLIC_ROUTE_METADATA_KEY } from './constants';
+export { HttpException, getHttpStatusFromException } from './exceptions/http-exception';
+export { ApplicationException } from '@nl-framework/core';
+export { type ExceptionFilter } from './filters/exception-filter.interface';
+export {
+  registerExceptionFilter,
+  registerExceptionFilters,
+  listExceptionFilters,
+  clearExceptionFilters,
+} from './filters/registry';
+export {
+  UseFilters,
+  getFilterMetadata,
+  listAppliedFilters,
+  HTTP_FILTERS_METADATA_KEY,
+} from './filters/metadata';
+export { type ExceptionFilterToken } from './filters/types';
+export {
+  type PipeTransform,
+  type ArgumentMetadata,
+  type PipeToken,
+} from './pipes/pipe-transform.interface';
+export { UsePipes, getAllPipes } from './pipes/pipes.metadata';
+export {
+  ParseIntPipe,
+  ParseFloatPipe,
+  ParseBoolPipe,
+  ParseArrayPipe,
+  DefaultValuePipe,
+} from './pipes/built-in.pipes';
+export { ValidationPipe, type ValidationPipeOptions } from './pipes/validation.pipe';

@@ -1,0 +1,186 @@
+---
+title: 'Session · Techniques'
+description: 'Implement cookie-backed sessions in Nael HTTP apps with signed IDs and pluggable stores.'
+---
+
+import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const sessionStore = `import { Injectable } from '@nl-framework/core';
+
+type SessionData = { userId: string; expiresAt: number; [key: string]: unknown };
+
+@Injectable()
+export class SessionStore {
+  private store = new Map<string, SessionData>();
+
+  async get(id: string) {
+    const data = this.store.get(id);
+    if (!data) return null;
+    if (Date.now() > data.expiresAt) {
+      this.store.delete(id);
+      return null;
+    }
+    return data;
+  }
+
+  async set(id: string, data: Omit<SessionData, 'expiresAt'>, ttlMs: number) {
+    this.store.set(id, { ...data, expiresAt: Date.now() + ttlMs });
+  }
+
+  async delete(id: string) {
+    this.store.delete(id);
+  }
+}`;
+
+export const signer = `import { createHmac, randomUUID } from 'node:crypto';
+
+const secret = process.env.SESSION_SECRET ?? 'dev-secret';
+const cookieName = 'nl.sid';
+const ttlMs = 1000 * 60 * 30; // 30 minutes
+
+export function signSessionId(id: string) {
+  const sig = createHmac('sha256', secret).update(id).digest('hex');
+  return \`\${id}.\${sig}\`;
+}
+
+export function verifySessionId(value: string | null) {
+  if (!value) return null;
+  const [id, sig] = value.split('.');
+  if (!id || !sig) return null;
+  const expected = createHmac('sha256', secret).update(id).digest('hex');
+  return expected === sig ? id : null;
+}
+
+export function issueSessionId() {
+  return randomUUID();
+}
+
+export function buildCookieHeader(signedId: string) {
+  return \`\${cookieName}=\${signedId}; Path=/; HttpOnly; SameSite=Lax; Max-Age=\${ttlMs / 1000}\`;
+}
+
+export function readSessionCookie(req: Request) {
+  const raw = req.headers.get('cookie') ?? '';
+  const match = raw.match(/nl\\.sid=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}`;
+
+export const sessionMiddleware = `import { NaelFactory } from '@nl-framework/platform';
+import { AppModule } from './app.module';
+import { SessionStore } from './session.store';
+import { buildCookieHeader, issueSessionId, signSessionId, verifySessionId, readSessionCookie } from './session.signer';
+
+const app = await NaelFactory.create(AppModule);
+const http = app.getHttpApplication();
+const sessions = app.get(SessionStore);
+
+http?.use(async (ctx, next) => {
+  const signed = readSessionCookie(ctx.request);
+  const sessionId = verifySessionId(signed);
+
+  if (sessionId) {
+    const data = await sessions.get(sessionId);
+    if (data) {
+      ctx.state.session = { id: sessionId, data };
+    }
+  }
+
+  const res = await next();
+
+  // If a login handler stored ctx.state.newSession, issue cookie
+  if (ctx.state.newSession) {
+    const id = issueSessionId();
+    await sessions.set(id, ctx.state.newSession, 1000 * 60 * 30);
+    const headers = new Headers(res.headers);
+    headers.append('set-cookie', buildCookieHeader(signSessionId(id)));
+    return new Response(res.body, { status: res.status, headers });
+  }
+
+  return res;
+});`;
+
+export const loginController = `import { Controller, Post, Req, Body } from '@nl-framework/http';
+import { SessionStore } from './session.store';
+
+@Controller('/auth')
+export class AuthController {
+  constructor(private readonly sessions: SessionStore) {}
+
+  @Post('/login')
+  async login(@Req() req: any, @Body() body: any) {
+    // TODO: validate credentials
+    const userId = 'user-123';
+    // Mark for middleware to issue cookie
+    req.ctx.state.newSession = { userId };
+    return { ok: true, userId };
+  }
+
+  @Post('/logout')
+  async logout(@Req() req: any) {
+    const sessionId = req.ctx.state.session?.id;
+    if (sessionId) {
+      await this.sessions.delete(sessionId);
+    }
+    return new Response(null, {
+      status: 204,
+      headers: { 'set-cookie': 'nl.sid=; Path=/; Max-Age=0' },
+    });
+  }
+}`;
+
+<article className="space-y-8">
+  <div className="space-y-3">
+    <Badge className="bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-50">Techniques</Badge>
+    <h1 className="text-4xl font-semibold tracking-tight">Session</h1>
+    <div className="text-lg text-muted-foreground">
+      Nael doesn&apos;t ship a session manager by default. Use signed, cookie-based session IDs and a pluggable store
+      (in-memory, Redis, SQL) to keep users logged in across requests.
+    </div>
+  </div>
+
+  <section className="space-y-4" id="store">
+    <h2 className="text-2xl font-semibold">Session store</h2>
+    <div className="text-muted-foreground">
+      Create a simple store service. Swap the Map for Redis/Postgres in production and enforce expirations.
+    </div>
+    <CodeBlock code={sessionStore} title="session.store.ts" />
+  </section>
+
+  <section className="space-y-4" id="signing">
+    <h2 className="text-2xl font-semibold">Sign session IDs</h2>
+    <div className="text-muted-foreground">
+      Use an HMAC signature to prevent tampering. Store only an opaque ID in the cookie; session data stays server-side.
+    </div>
+    <CodeBlock code={signer} title="session.signer.ts" />
+  </section>
+
+  <section className="space-y-4" id="middleware">
+    <h2 className="text-2xl font-semibold">Attach middleware</h2>
+    <div className="text-muted-foreground">
+      Load sessions before controllers and issue cookies after login. Attach session data to <code>ctx.state</code> so
+      downstream handlers can read it.
+    </div>
+    <CodeBlock code={sessionMiddleware} title="main.ts" />
+  </section>
+
+  <section className="space-y-4" id="controllers">
+    <h2 className="text-2xl font-semibold">Login/logout flow</h2>
+    <div className="text-muted-foreground">
+      Set <code>ctx.state.newSession</code> after successful auth to trigger cookie issuance. Clear sessions and cookies
+      on logout.
+    </div>
+    <CodeBlock code={loginController} title="auth.controller.ts" />
+  </section>
+
+  <section className="space-y-3" id="tips">
+    <h2 className="text-2xl font-semibold">Tips</h2>
+    <ul className="list-disc space-y-2 pl-6 text-muted-foreground">
+      <li>Prefer Redis or another external store for production; keep TTLs short and rotate IDs on privilege changes.</li>
+      <li>Mark cookies <code>HttpOnly</code> and <code>SameSite=Lax/Strict</code>; add <code>Secure</code> in HTTPS.</li>
+      <li>Pair with <Link className="text-primary underline" href="/docs/techniques/better-auth">BetterAuth</Link> if you need multi-tenant or JWT flows.</li>
+      <li>Store only small, immutable data in the session; fetch fresh user/permissions from your DB on each request.</li>
+    </ul>
+  </section>
+</article>

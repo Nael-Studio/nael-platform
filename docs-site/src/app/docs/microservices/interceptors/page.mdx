@@ -1,0 +1,94 @@
+---
+title: 'Interceptors · Microservices'
+description: 'Share @UseInterceptors metadata across transports and prepare interceptors for the dispatcher pipeline.'
+---
+
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const interceptorExample = `import { Injectable, UseInterceptors } from '@nl-framework/core';
+import type { GenericInterceptor, CallHandler } from '@nl-framework/http';
+
+@Injectable()
+export class TimingInterceptor implements GenericInterceptor<unknown> {
+  async intercept(_context: unknown, next: CallHandler) {
+    const started = Date.now();
+    try {
+      return await next.handle();
+    } finally {
+      console.log('handler duration', Date.now() - started);
+    }
+  }
+}`;
+
+export const controllerSample = `import { Controller, UseInterceptors } from '@nl-framework/core';
+import { MessagePattern } from '@nl-framework/microservices';
+import { TimingInterceptor } from './interceptors/timing.interceptor';
+
+@Controller()
+@UseInterceptors(TimingInterceptor)
+export class OrdersConsumer {
+  @MessagePattern('orders.create')
+  async create(order: OrderDto) {
+    return { ok: true };
+  }
+
+  @MessagePattern('orders.cancel')
+  @UseInterceptors(TimingInterceptor)
+  async cancel(order: OrderDto) {
+    return { ok: true };
+  }
+}`;
+
+<article className="space-y-8">
+  <div className="space-y-3">
+    <Badge className="bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-50">Microservices</Badge>
+    <h1 className="text-4xl font-semibold tracking-tight">Interceptors</h1>
+    <div className="text-lg text-muted-foreground max-w-3xl">
+      Microservice controllers reuse the <code>@UseInterceptors()</code> decorator from <code>@nl-framework/core</code>.
+      Although the dispatcher does not execute interceptor chains yet, annotating handlers today ensures your metadata is
+      ready once the execution pipeline ships.
+    </div>
+  </div>
+
+  <section className="space-y-4" id="status">
+    <h2 className="text-2xl font-semibold">Current status</h2>
+    <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+      <li><code>UseInterceptors()</code> attaches metadata at both the class and handler level, identical to HTTP and
+        GraphQL.</li>
+      <li><code>listMessageHandlers()</code> captures interceptor tokens so DI can resolve them when the dispatcher learns
+        how to execute chains.</li>
+      <li>A microservice-specific interceptor context plus <code>CallHandler</code> adapter is under development.</li>
+    </ul>
+  </section>
+
+  <section className="space-y-4" id="create">
+    <h2 className="text-2xl font-semibold">Author an interceptor</h2>
+    <div className="text-muted-foreground">
+      You can implement the generic interceptor contracts exported by <code>@nl-framework/http</code> today.
+      <code>GenericInterceptor</code> mirrors Nest-style interceptors and lets you share logic across transports.
+    </div>
+    <CodeBlock code={interceptorExample} title="interceptors/timing.interceptor.ts" />
+  </section>
+
+  <section className="space-y-4" id="apply">
+    <h2 className="text-2xl font-semibold">Apply with @UseInterceptors()</h2>
+    <div className="text-muted-foreground">
+      Decorate the controller for global coverage or a single handler for scoped interception. Method-level interceptors
+      execute before class-level interceptors once the dispatcher pipeline lands, matching HTTP semantics.
+    </div>
+    <CodeBlock code={controllerSample} title="orders.consumer.ts" />
+  </section>
+
+  <section className="space-y-4" id="behavior">
+    <h2 className="text-2xl font-semibold">Behavior & roadmap</h2>
+    <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+      <li>Interceptors are executed in the order declared: method-level → controller-level → (future) global interceptors.</li>
+      <li>Return the transformed result from <code>next.handle()</code>, or throw to short-circuit the response.</li>
+      <li>Keep interceptors stateless or inject services so they are transport-agnostic; they will plug into the
+        microservice execution context without changes once available.</li>
+      <li>Runtime support is actively being built. Track the microservice changelog to know when interceptor execution is
+        wired up.</li>
+    </ul>
+  </section>
+</article>

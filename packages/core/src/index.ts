@@ -2,10 +2,43 @@ import 'reflect-metadata';
 
 export { Application, ApplicationContext, type ApplicationOptions } from './application';
 export { Container } from './container/container';
-export { Injectable, isInjectable } from './decorators/injectable';
+export { Injectable, isInjectable, getInjectableMetadata } from './decorators/injectable';
+export type { InjectableOptions, InjectableMetadata } from './decorators/injectable';
 export { Inject } from './decorators/inject';
 export { Module, getModuleMetadata } from './decorators/module';
 export { Controller, getControllerPrefix } from './decorators/controller';
+export { SetMetadata, type CustomDecorator } from './decorators/set-metadata';
+export {
+  UseGuards,
+  getGuardMetadata,
+  listAppliedGuards,
+  GUARDS_METADATA_KEY,
+  type GuardToken,
+} from './decorators/guards';
+export {
+  UseInterceptors,
+  getInterceptorMetadata,
+  listAppliedInterceptors,
+  INTERCEPTORS_METADATA_KEY,
+  type InterceptorToken,
+} from './decorators/interceptors';
+export {
+  UseFilters,
+  getFilterMetadata,
+  listAppliedFilters,
+  FILTERS_METADATA_KEY,
+  type FilterToken,
+} from './decorators/filters';
+export {
+  UsePipes,
+  setPipeMetadata,
+  getHandlerPipes,
+  getParamPipes,
+  getAllPipes,
+  PIPES_METADATA_KEY,
+  PARAM_PIPES_METADATA_KEY,
+  type PipeToken,
+} from './decorators/pipes';
 export type { ModuleMetadata } from './interfaces/module';
 export type {
   Provider,
@@ -16,6 +49,12 @@ export type {
   ClassType,
 } from './interfaces/provider';
 export { forwardRef, isForwardRef } from './interfaces/provider';
+export { Scope, createContextId, DEFAULT_CONTEXT_ID } from './scope';
+export type { ContextId } from './scope';
+export { ModuleRef } from './module-ref';
+export type { ModuleRefResolveOptions } from './module-ref';
+export { LazyModuleLoader } from './lazy-module-loader';
+export type { ModuleLoadResult, ModuleLoadListener } from './module-manager';
 export { ConfigLoader } from './config/config-loader';
 export { ConfigService } from './config/config.service';
 export type { ConfigLoadOptions } from './config/config-loader';
@@ -27,3 +66,18 @@ export {
   type ValidationIssue,
   type TransformValidationOptions,
 } from './utils/validation';
+export { serialize, type SerializationOptions } from './utils/serialization';
+export { SerializeOptions, getSerializationOptions } from './decorators/serialization-options';
+export {
+  buildCacheKey,
+  InMemoryCacheStore,
+  RedisCacheStore,
+  type CacheStore,
+  type CacheSetOptions,
+  type InMemoryCacheOptions,
+  type RedisCacheOptions,
+} from './cache';
+export type { CacheKeyPart } from './cache';
+export { ApplicationException } from './exceptions/application-exception';
+export { getHttpStatusFromException, createHttpException } from './exceptions/http-utils';
+export { getGraphQLCodeFromException, toGraphQLError, createGraphQLException } from './exceptions/graphql-utils';

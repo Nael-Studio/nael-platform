@@ -1,0 +1,106 @@
+---
+title: 'Scalars · GraphQL'
+description: 'Define and register custom scalars in Nael GraphQL for dates, UUIDs, and domain-specific types.'
+---
+
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+import Link from 'next/link';
+
+export const customScalar = `import { GraphQLScalarType, Kind } from 'graphql';
+import { Module } from '@nl-framework/core';
+import { GraphQLModule } from '@nl-framework/graphql';
+
+// Simple Date scalar
+export const DateScalar = new GraphQLScalarType({
+  name: 'Date',
+  description: 'ISO8601 date',
+  serialize(value: unknown) {
+    if (value instanceof Date) return value.toISOString();
+    if (typeof value === 'string' || typeof value === 'number') return new Date(value).toISOString();
+    throw new TypeError('DateScalar can only serialize Date | string | number');
+  },
+  parseValue(value: unknown) {
+    if (typeof value === 'string' || typeof value === 'number') return new Date(value);
+    throw new TypeError('DateScalar expects string | number');
+  },
+  parseLiteral(ast) {
+    if (ast.kind === Kind.STRING || ast.kind === Kind.INT) {
+      return new Date(ast.value);
+    }
+    return null;
+  },
+});
+
+@Module({
+  imports: [
+    GraphQLModule.forRoot({
+      autoSchemaFile: 'schema.gql',
+      resolvers: { Date: DateScalar },
+    }),
+  ],
+})
+export class AppModule {}`;
+
+export const useScalar = `import { Resolver, Query, Field, ObjectType } from '@nl-framework/graphql';
+
+@ObjectType()
+class Event {
+  @Field()
+  name!: string;
+
+  @Field(() => DateScalar)
+  start!: Date;
+}
+
+@Resolver(() => Event)
+export class EventResolver {
+  @Query(() => Event)
+  nextEvent() {
+    return { name: 'Launch', start: new Date() };
+  }
+}`;
+
+export const scalarTips = `// Tips
+// - Register scalars in GraphQLModule.forRoot via 'resolvers' map
+// - For common scalars (UUID, JSON), reuse community packages if desired
+// - Ensure serialize/parseValue/parseLiteral handle invalid input defensively
+`;
+
+<article className="space-y-8">
+  <div className="space-y-3">
+    <Badge className="bg-sky-100 text-sky-900 dark:bg-sky-900/30 dark:text-sky-50">GraphQL</Badge>
+    <h1 className="text-4xl font-semibold tracking-tight">Scalars</h1>
+    <div className="text-lg text-muted-foreground max-w-3xl">
+      Add custom scalars to handle domain-specific types like dates, UUIDs, or JSON. Register them in{" "}
+      <code>GraphQLModule.forRoot</code> and reference them in your schema.
+    </div>
+  </div>
+
+  <section className="space-y-4" id="define">
+    <h2 className="text-2xl font-semibold">Define a scalar</h2>
+    <div className="text-muted-foreground">
+      Implement <code>GraphQLScalarType</code> with serialize/parse handlers. Keep error messages explicit to avoid
+      silent coercion.
+    </div>
+    <CodeBlock code={customScalar} title="date.scalar.ts" />
+  </section>
+
+  <section className="space-y-4" id="use">
+    <h2 className="text-2xl font-semibold">Use the scalar</h2>
+    <div className="text-muted-foreground">
+      Reference the scalar in your object types and resolvers. The runtime will call your parse/serialize logic
+      automatically.
+    </div>
+    <CodeBlock code={useScalar} title="event.resolver.ts" />
+  </section>
+
+  <section className="space-y-4" id="tips">
+    <h2 className="text-2xl font-semibold">Tips</h2>
+    <CodeBlock code={scalarTips} title="Notes" />
+    <div className="text-sm text-muted-foreground">
+      Explore <Link className="text-primary underline" href="/docs/graphql/resolvers">Resolvers</Link> and{" "}
+      <Link className="text-primary underline" href="/docs/graphql/mutations">Mutations</Link> for more patterns.
+    </div>
+  </section>
+</article>

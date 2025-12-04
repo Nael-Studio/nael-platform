@@ -1,0 +1,125 @@
+---
+title: 'Pipes · Microservices'
+description: 'Transform message payloads with UsePipes and shared pipe metadata.'
+---
+
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const sanitizePipe = `import { Injectable } from '@nl-framework/core';
+import type { PipeTransform, ArgumentMetadata } from '@nl-framework/http';
+
+@Injectable()
+export class SanitizePayloadPipe implements PipeTransform {
+  transform(value: unknown, metadata: ArgumentMetadata) {
+    if (metadata.type !== 'custom' || typeof value !== 'object' || value === null) {
+      return value;
+    }
+
+    const clone = { ...(value as Record<string, unknown>) };
+    if (typeof clone.notes === 'string') {
+      clone.notes = clone.notes.trim();
+    }
+    return clone;
+  }
+}`;
+
+export const controllerSample = `import { Controller, UsePipes } from '@nl-framework/core';
+import { MessagePattern } from '@nl-framework/microservices';
+import { SanitizePayloadPipe } from './pipes/sanitize-payload.pipe';
+
+@Controller()
+@UsePipes(SanitizePayloadPipe)
+export class InventoryConsumer {
+  @MessagePattern('inventory.reserve')
+  async reserve(payload: { sku: string; notes?: string }) {
+    // payload arrives trimmed by SanitizePayloadPipe
+    return { reserved: payload.sku };
+  }
+
+  @MessagePattern('inventory.release')
+  @UsePipes(SanitizePayloadPipe)
+  async release(payload: { sku: string; notes?: string }) {
+    return { released: payload.sku };
+  }
+}`;
+
+export const parameterDecorator = `import { PipeToken, setPipeMetadata } from '@nl-framework/core';
+
+export const MessageData = (...pipes: PipeToken[]): ParameterDecorator => {
+  return (target, propertyKey, parameterIndex) => {
+    if (propertyKey === undefined) {
+      return;
+    }
+    setPipeMetadata(target, propertyKey, parameterIndex, pipes);
+  };
+};
+`;
+
+export const parameterUsage = `import { MessagePattern } from '@nl-framework/microservices';
+import { MessageData } from './decorators/message-data.decorator';
+import { ValidationPipe } from '@nl-framework/http';
+
+@MessagePattern('inventory.bulk-reserve')
+async bulkReserve(@MessageData(ValidationPipe) dto: ReserveDto) {
+  // dto is validated via ValidationPipe before hitting the handler
+}`;
+
+<article className="space-y-8">
+  <div className="space-y-3">
+    <Badge className="bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-50">Microservices</Badge>
+    <h1 className="text-4xl font-semibold tracking-tight">Pipes</h1>
+    <div className="text-lg text-muted-foreground max-w-3xl">
+      Microservice controllers share the same <code>@UsePipes()</code> decorator defined in <code>@nl-framework/core</code>.
+      That means handler-level and parameter-level pipes behave just like they do in HTTP and GraphQL transports, and the
+      metadata lives in one place.
+    </div>
+  </div>
+
+  <section className="space-y-4" id="pipe">
+    <h2 className="text-2xl font-semibold">Create a pipe</h2>
+    <div className="text-muted-foreground">
+      Pipes implement <code>PipeTransform</code>. The interface ships from the HTTP package today, so import both
+      <code>PipeTransform</code> and <code>ArgumentMetadata</code> from <code>@nl-framework/http</code> until the contract
+      moves into core.
+    </div>
+    <CodeBlock code={sanitizePipe} title="pipes/sanitize-payload.pipe.ts" />
+  </section>
+
+  <section className="space-y-4" id="apply">
+    <h2 className="text-2xl font-semibold">Apply with @UsePipes()</h2>
+    <div className="text-muted-foreground">
+      Decorate the controller to run pipes for every handler, or decorate an individual method for scoped transforms.
+      Method-level pipes execute before class-level pipes, mirroring HTTP semantics, and tokens resolve through dependency
+      injection when possible.
+    </div>
+    <CodeBlock code={controllerSample} title="inventory.consumer.ts" />
+  </section>
+
+  <section className="space-y-4" id="parameters">
+    <h2 className="text-2xl font-semibold">Parameter pipes</h2>
+    <div className="space-y-3 text-muted-foreground">
+      <p>
+        Use <code>setPipeMetadata()</code> to attach pipes to a specific parameter. Many transports expose helper
+        decorators (e.g., <code>@Body()</code> in HTTP) that do this for you. For microservices, you can build a custom
+        decorator and reuse it across handlers.
+      </p>
+      <CodeBlock code={parameterDecorator} title="decorators/message-data.decorator.ts" />
+      <CodeBlock code={parameterUsage} title="inventory.consumer.ts" />
+    </div>
+  </section>
+
+  <section className="space-y-4" id="behavior">
+    <h2 className="text-2xl font-semibold">Behavior & order</h2>
+    <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+      <li>Class-level pipes run last; method-level ones run first; parameter pipes append to whatever was declared on the
+        handler.</li>
+      <li>Pipes can be DI tokens or instantiated objects. If the dependency injector cannot resolve a class, the runtime
+        will <code>new</code> it automatically.</li>
+      <li>Return the transformed value from <code>transform()</code>. Throw custom exceptions (e.g.,
+        <code>ApplicationException</code>) to abort the handler.</li>
+      <li>Re-exported metadata means microservices, HTTP, and GraphQL can share the exact same pipes without wrapping
+        decorators.</li>
+    </ul>
+  </section>
+</article>

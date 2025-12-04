@@ -1,14 +1,14 @@
 import { Inject, Injectable } from '@nl-framework/core';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
 import { BETTER_AUTH_INSTANCE } from './constants';
-import type { BetterAuthInstance, BetterAuthSessionPayload } from './types';
+import type { BetterAuthInstance, BetterAuthSessionInput, BetterAuthSessionPayload } from './types';
 
 export interface BetterAuthSessionOptions {
   disableCookieCache?: boolean;
   disableRefresh?: boolean;
 }
 
-type GetSessionParameters = Parameters<BetterAuthInstance['api']['getSession']>[0];
+type GetSessionParameters = BetterAuthSessionInput;
 
 @Injectable()
 export class BetterAuthService {
@@ -36,9 +36,9 @@ export class BetterAuthService {
     const headers = input instanceof Request ? input.headers : input;
     const query = options.disableCookieCache || options.disableRefresh
       ? {
-          disableCookieCache: options.disableCookieCache,
-          disableRefresh: options.disableRefresh,
-        }
+        disableCookieCache: options.disableCookieCache,
+        disableRefresh: options.disableRefresh,
+      }
       : undefined;
 
     try {

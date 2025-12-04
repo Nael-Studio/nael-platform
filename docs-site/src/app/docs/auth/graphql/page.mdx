@@ -1,0 +1,144 @@
+---
+title: 'BetterAuth with GraphQL · Auth'
+description: 'Protect GraphQL resolvers using BetterAuthGuard and inject sessions into the resolver context.'
+---
+
+import { CodeBlock } from '@/components/shared/simple-code-block';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+export const graphqlGuard = `import { Resolver, Query } from '@nl-framework/graphql';
+import { UseGuards } from '@nl-framework/core';
+import { CurrentSession, BetterAuthGuard, BetterAuthSession } from '@nl-framework/auth';
+import { ProfileService } from './profile.service';
+import { Profile } from './profile.model';
+
+@Resolver(() => Profile)
+export class ProfileResolver {
+  constructor(private readonly service: ProfileService) {}
+
+  @UseGuards(BetterAuthGuard)
+  @Query(() => Profile)
+  me(@CurrentSession() session: BetterAuthSession) {
+    return this.service.resolveProfile(session.userId);
+  }
+}`;
+
+export const contextNote = `// When bootstrapping Nael GraphQL:
+// Ensure your GraphQL adapter injects request/response into the context
+// so BetterAuthGuard can read cookies and write headers when needed.
+`;
+
+export const graphqlBootstrap = `import { NaelFactory } from '@nl-framework/platform';
+import { AppModule } from './app.module';
+import { BetterAuthSessionStore } from '@nl-framework/auth';
+
+const app = await NaelFactory.create(AppModule);
+const gql = app.getGraphQLApplication();
+
+// Share the same session store instance
+const sessionStore = app.get(BetterAuthSessionStore);
+
+gql?.useContext(({ req, res }) => ({
+  request: req,
+  response: res,
+  sessionStore,
+}));
+
+await app.listen({ http: 3000 });`;
+
+export const enrichUser = `import { Resolver, Query } from '@nl-framework/graphql';
+import { UseGuards } from '@nl-framework/core';
+import { CurrentSession, BetterAuthGuard, type BetterAuthSession } from '@nl-framework/auth';
+
+type AuthUserProfile = BetterAuthSession & {
+  email?: string;
+  roles?: string[];
+  displayName?: string;
+};
+
+@Resolver()
+export class MeResolver {
+  constructor(private readonly profiles: UserProfilesService) {}
+
+  @UseGuards(BetterAuthGuard)
+  @Query(() => AuthUserGraphQLType)
+  async me(@CurrentSession() session: BetterAuthSession) {
+    const profile = await this.profiles.findByUserId(session.userId);
+    return {
+      ...session,
+      email: profile?.email,
+      roles: profile?.roles ?? [],
+      displayName: profile?.displayName ?? profile?.fullName,
+    } satisfies AuthUserProfile;
+  }
+}`;
+
+<article className="space-y-8">
+  <div className="space-y-3">
+    <h1 className="text-4xl font-semibold tracking-tight">BetterAuth with GraphQL</h1>
+    <div className="text-lg text-muted-foreground max-w-3xl">
+      Secure GraphQL resolvers with <code>BetterAuthGuard</code> and inject sessions via <code>@CurrentSession()</code>.
+      Guards reuse the same cookies set by the REST proxy module.
+    </div>
+  </div>
+
+  <section className="space-y-4" id="guard">
+    <h2 className="text-2xl font-semibold">Protect resolvers</h2>
+    <div className="text-muted-foreground">
+      Wrap queries/mutations with the guard and pull the session from the decorator. Keep your services unaware of auth
+      details by passing the userId/tenant down. Import `@UseGuards()` from `@nl-framework/core` so GraphQL shares the
+      same guard metadata with HTTP and future microservice handlers (the auth and http packages still re-export it if
+      you prefer shorter imports).
+    </div>
+    <CodeBlock code={graphqlGuard} title="profile.resolver.ts" />
+  </section>
+
+  <section className="space-y-4" id="api-surface">
+    <h2 className="text-2xl font-semibold">GraphQL-side API surface</h2>
+    <Card className="border-border/70">
+      <CardHeader>
+        <CardTitle>Guards, decorators, stores</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2 text-sm text-muted-foreground">
+        <ul className="list-disc space-y-2 pl-5">
+          <li><strong>BetterAuthGuard</strong> — reads cookies from the GraphQL context request/response.</li>
+          <li><strong>@CurrentSession()</strong> — injects <code>BetterAuthSession</code> into resolvers.</li>
+          <li><strong>BetterAuthSessionStore</strong> — share with REST to avoid duplicate session lookups.</li>
+          <li><strong>BetterAuthMultiTenantFactory</strong> — resolve tenant before booting GraphQL (host-based).</li>
+        </ul>
+      </CardContent>
+    </Card>
+  </section>
+
+  <section className="space-y-4" id="context">
+    <h2 className="text-2xl font-semibold">GraphQL context</h2>
+    <Card className="border-border/70">
+      <CardHeader>
+        <CardTitle>Context requirements</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2 text-sm text-muted-foreground">
+        <ul className="list-disc space-y-2 pl-5">
+          <li>Ensure the GraphQL adapter exposes <code>request</code> and <code>response</code> on the context.</li>
+          <li>Share the same BetterAuth session store used by REST to avoid re-fetching sessions.</li>
+          <li>In multi-tenant mode, resolve tenant secrets before initializing the GraphQL server.</li>
+          <li>Test with SPA clients by calling a lightweight <code>me</code> resolver that returns session state.</li>
+        </ul>
+      </CardContent>
+    </Card>
+    <CodeBlock code={graphqlBootstrap} title="Bootstrap GraphQL context" />
+    <CodeBlock code={contextNote} title="Bootstrapping note" />
+  </section>
+
+  <section className="space-y-4" id="profile">
+    <h2 className="text-2xl font-semibold">Extend AuthUser in GraphQL</h2>
+    <div className="text-muted-foreground">
+      Build a typed profile resolver that merges the BetterAuth session with your domain profile (email, roles,
+      display name). Keep the session store lean and hydrate extra fields per request.
+    </div>
+    <CodeBlock code={enrichUser} title="me resolver with profile" />
+    <div className="text-sm text-muted-foreground">
+      Map <code>AuthUserProfile</code> to a GraphQL type and keep it in sync with your REST <code>/auth/me</code> contract
+      to avoid drift between transports.
+    </div>
+  </section>
+</article>

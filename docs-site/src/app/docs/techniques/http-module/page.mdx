@@ -1,0 +1,144 @@
+---
+title: 'HTTP module · Techniques'
+description: 'Configure the Nael HTTP module, global middleware, and request pipeline behaviors.'
+---
+
+import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const httpModule = `import { Module } from '@nl-framework/core';
+import { HttpModule } from '@nl-framework/http';
+
+@Module({
+  imports: [
+    HttpModule.forRoot({
+      cors: true,
+      helmet: true,
+      globalPrefix: '/api',
+    }),
+  ],
+})
+export class AppModule {}`;
+
+export const bootstrap = `import { NaelFactory } from '@nl-framework/platform';
+import { AppModule } from './app.module';
+
+async function bootstrap() {
+  const app = await NaelFactory.create(AppModule);
+  const http = app.getHttpApplication();
+
+  http?.use((ctx, next) => {
+    console.log(ctx.request.method, ctx.request.url);
+    return next();
+  });
+
+  await app.listen({ http: 3000 });
+}
+
+bootstrap();`;
+
+export const controllers = `import { Controller, Get } from '@nl-framework/http';
+
+@Controller('/health')
+export class HealthController {
+  @Get('/')
+  ping() {
+    return { status: 'ok', ts: Date.now() };
+  }
+}`;
+
+export const filters = `import { Catch, ExceptionFilter, HttpException } from '@nl-framework/http';
+
+@Catch(HttpException)
+export class JsonExceptionFilter implements ExceptionFilter<HttpException> {
+  catch(exception: HttpException) {
+    const payload = {
+      statusCode: exception.getStatus?.() ?? 500,
+      error: exception.message ?? 'Internal Server Error',
+    };
+    return new Response(JSON.stringify(payload), {
+      status: payload.statusCode,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+}`;
+
+export const interceptors = `import { CallHandler, ExecutionContext, NestInterceptor } from '@nl-framework/http';
+
+export class TimingInterceptor implements NestInterceptor {
+  async intercept(context: ExecutionContext, next: CallHandler) {
+    const start = performance.now();
+    const res = await next.handle();
+    const ms = (performance.now() - start).toFixed(1);
+    console.log('[HTTP]', context.switchToHttp().getRequest().url, ms + 'ms');
+    return res;
+  }
+}`;
+
+<article className="space-y-8">
+  <div className="space-y-3">
+    <Badge className="bg-blue-100 text-blue-900 dark:bg-blue-900/30 dark:text-blue-50">Techniques</Badge>
+    <h1 className="text-4xl font-semibold tracking-tight">HTTP module</h1>
+    <div className="text-lg text-muted-foreground">
+      Configure the Nael HTTP module to serve controllers, middleware, and global pipeline hooks. Apply CORS/helmet,
+      set a global prefix, and attach filters/interceptors to standardize responses.
+    </div>
+  </div>
+
+  <section className="space-y-4" id="configure">
+    <h2 className="text-2xl font-semibold">Configure the module</h2>
+    <div className="text-muted-foreground">
+      Register <code>HttpModule.forRoot()</code> inside your root module. Toggle CORS/helmet and set a global prefix to
+      keep routes consistent (<code>/api/**</code>).
+    </div>
+    <CodeBlock code={httpModule} title="app.module.ts" />
+  </section>
+
+  <section className="space-y-4" id="bootstrap">
+    <h2 className="text-2xl font-semibold">Bootstrap & middleware</h2>
+    <div className="text-muted-foreground">
+      Grab the HTTP adapter via <code>getHttpApplication()</code> and register middleware. Anything passed to{" "}
+      <code>http.use</code> runs before controllers—logging, compression, auth checks, etc.
+    </div>
+    <CodeBlock code={bootstrap} title="main.ts" />
+  </section>
+
+  <section className="space-y-4" id="controllers">
+    <h2 className="text-2xl font-semibold">Controllers & routes</h2>
+    <div className="text-muted-foreground">
+      Use <code>@Controller()</code> and HTTP method decorators to define endpoints. DI works the same as other modules;
+      inject services or repositories as needed.
+    </div>
+    <CodeBlock code={controllers} title="health.controller.ts" />
+  </section>
+
+  <section className="space-y-4" id="filters">
+    <h2 className="text-2xl font-semibold">Exception filters</h2>
+    <div className="text-muted-foreground">
+      Implement <code>ExceptionFilter</code> to shape errors consistently (JSON body, status codes). Register globally
+      via <code>http.useGlobalFilters(new JsonExceptionFilter())</code>.
+    </div>
+    <CodeBlock code={filters} title="json-exception.filter.ts" />
+  </section>
+
+  <section className="space-y-4" id="interceptors">
+    <h2 className="text-2xl font-semibold">Interceptors</h2>
+    <div className="text-muted-foreground">
+      Wrap handler execution with interceptors for logging, caching, or response mapping. Register with{" "}
+      <code>http.useGlobalInterceptors(new TimingInterceptor())</code>.
+    </div>
+    <CodeBlock code={interceptors} title="timing.interceptor.ts" />
+  </section>
+
+  <section className="space-y-3" id="tips">
+    <h2 className="text-2xl font-semibold">Tips</h2>
+    <ul className="list-disc space-y-2 pl-6 text-muted-foreground">
+      <li>Keep middleware stateless and fast; prefer guards/interceptors for auth and response shaping.</li>
+      <li>Expose health checks and readiness endpoints under the global prefix for probes.</li>
+      <li>Pair with <Link className="text-primary underline" href="/docs/techniques/compression">compression</Link> and{" "}
+        <Link className="text-primary underline" href="/docs/techniques/logging">logging</Link> to complete the pipeline.</li>
+      <li>Share DI tokens across transports (HTTP, GraphQL, Dapr) so services stay consistent.</li>
+    </ul>
+  </section>
+</article>

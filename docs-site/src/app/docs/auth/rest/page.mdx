@@ -1,0 +1,171 @@
+---
+title: 'BetterAuth with REST · Auth'
+description: 'Proxy hosted BetterAuth routes through Nael HTTP, share sessions, and support multi-tenant secrets.'
+---
+
+import { CodeBlock } from '@/components/shared/simple-code-block';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+export const httpProxy = `import { Module } from '@nl-framework/core';
+import { BetterAuthProxyModule } from '@nl-framework/auth';
+
+@Module({
+  imports: [
+    BetterAuthProxyModule.forRoot({
+      upstreamUrl: 'https://auth.nael.dev',
+      cookieDomain: '.nael.dev',
+    }),
+  ],
+})
+export class HttpAuthModule {}`;
+
+export const multiTenantBootstrap = `import { BetterAuthMultiTenantFactory } from '@nl-framework/auth';
+
+BetterAuthMultiTenantFactory.register({
+  async resolveTenant(ctx) {
+    return tenants.find((tenant) => tenant.domain === ctx.req.host);
+  },
+  async secretsFor(tenant) {
+    return {
+      cookieName: \`__Secure-\${tenant.key}\`,
+      secret: tenant.secret,
+    };
+  },
+});`;
+
+export const sessionPropagation = `// tips
+// - Proxy BetterAuth before custom routes to ensure middleware ordering.
+// - Share BetterAuthSessionStore across HTTP + GraphQL.
+// - Expose GET /session for SPA hydration.
+// - Set Secure/SameSite on cookies in production.
+`;
+
+export const sessionEndpoint = `import { Controller, Get } from '@nl-framework/http';
+import { CurrentSession, BetterAuthSession } from '@nl-framework/auth';
+
+@Controller('/auth')
+export class SessionController {
+  @Get('/session')
+  me(@CurrentSession() session: BetterAuthSession | null) {
+    if (!session) return new Response(null, { status: 204 });
+    return { userId: session.userId, expiresAt: session.expiresAt, tenant: session.tenantKey };
+  }
+}`;
+
+export const enrichUser = `import { Controller, Get, Req } from '@nl-framework/http';
+import { CurrentSession, BetterAuthSession } from '@nl-framework/auth';
+
+// Domain type you own
+export type AuthUserProfile = BetterAuthSession & {
+  email?: string;
+  roles?: string[];
+  displayName?: string;
+};
+
+// Service that stitches BetterAuth session + your DB profile
+@Controller('/auth')
+export class UserProfileController {
+  @Get('/me')
+  async me(@CurrentSession() session: BetterAuthSession | null, @Req() req: any) {
+    if (!session) return new Response(null, { status: 204 });
+
+    // Example: fetch from your profiles module / repository
+    const profile = await req.ctx.container.get('UserProfilesService').findByUserId(session.userId);
+
+    const enriched: AuthUserProfile = {
+      ...session,
+      email: profile?.email,
+      roles: profile?.roles ?? [],
+      displayName: profile?.displayName ?? profile?.fullName,
+    };
+
+    return enriched;
+  }
+}`;
+
+<article className="space-y-8">
+  <div className="space-y-3">
+    <h1 className="text-4xl font-semibold tracking-tight">BetterAuth with REST</h1>
+    <div className="text-lg text-muted-foreground max-w-3xl">
+      Reuse the hosted BetterAuth router inside your Bun HTTP server. Keep session cookies consistent across routes and
+      hydrate tenant-specific secrets when running multi-tenant.
+    </div>
+  </div>
+
+  <section className="space-y-4" id="proxy">
+    <h2 className="text-2xl font-semibold">Proxy hosted routes</h2>
+    <div className="text-muted-foreground">
+      Attach <code>BetterAuthProxyModule</code> to your root HTTP module. It forwards auth routes to the hosted
+      BetterAuth instance and shares the DI container so guards and middleware reuse the same context.
+    </div>
+    <CodeBlock code={httpProxy} title="better-auth-proxy.module.ts" />
+  </section>
+
+  <section className="space-y-4" id="api-surface">
+    <h2 className="text-2xl font-semibold">REST-side API surface</h2>
+    <div className="text-muted-foreground">
+      Key building blocks you&apos;ll use when integrating REST:
+    </div>
+    <Card className="border-border/70">
+      <CardHeader>
+        <CardTitle>Modules, guards, decorators</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2 text-sm text-muted-foreground">
+        <ul className="list-disc space-y-2 pl-5">
+          <li><strong>BetterAuthProxyModule.forRoot(options)</strong> — required. Common options: <code>upstreamUrl</code> (required), <code>cookieDomain</code>, optional path prefix.</li>
+          <li><strong>BetterAuthGuard</strong> — protects controllers/handlers; reads BetterAuth cookies.</li>
+          <li><strong>@CurrentSession()</strong> — injects the resolved <code>BetterAuthSession</code> or <code>null</code>.</li>
+          <li><strong>BetterAuthSessionStore</strong> — shared cache of sessions; use app.get(...) to reuse.</li>
+          <li><strong>BetterAuthMultiTenantFactory</strong> — resolve tenants + secrets when multi-tenant.</li>
+        </ul>
+      </CardContent>
+    </Card>
+  </section>
+
+  <section className="space-y-4" id="multi-tenant">
+    <h2 className="text-2xl font-semibold">Multi-tenant secrets</h2>
+    <div className="text-muted-foreground">
+      Resolve tenants from the incoming host and load per-tenant secrets/cookie names. Map tenants to individual
+      BetterAuth projects in the dashboard.
+    </div>
+    <CodeBlock code={multiTenantBootstrap} title="tenant bootstrap" />
+  </section>
+
+  <section className="space-y-4" id="tips">
+    <h2 className="text-2xl font-semibold">Session propagation tips</h2>
+    <Card className="border-border/70">
+      <CardHeader>
+        <CardTitle>Guidance</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2 text-sm text-muted-foreground">
+        <ul className="list-disc space-y-2 pl-5">
+          <li>Proxy BetterAuth before registering custom routes to avoid middleware ordering bugs.</li>
+          <li>Share the <code>BetterAuthSessionStore</code> across HTTP and GraphQL to prevent duplicate lookups.</li>
+          <li>Expose a <code>GET /session</code> endpoint for SPA hydration and refresh handling.</li>
+          <li>Use <code>Secure</code> + <code>SameSite</code> cookies in production; rotate secrets when privileges change.</li>
+        </ul>
+      </CardContent>
+    </Card>
+    <CodeBlock code={sessionEndpoint} title="Session helper endpoint" />
+  </section>
+
+  <section className="space-y-4" id="enrich">
+    <h2 className="text-2xl font-semibold">Extend AuthUser / profile stitching</h2>
+    <div className="text-muted-foreground">
+      Keep BetterAuth sessions lean, then enrich them per request with your own user profile/roles. Expose a typed
+      <code>AuthUserProfile</code> shape so controllers/clients can rely on the same contract.
+    </div>
+    <CodeBlock code={enrichUser} title="Enrich session with profile data" />
+    <div className="text-sm text-muted-foreground">
+      Pattern: resolve BetterAuth session → load domain profile (e.g., from <code>user-profiles</code> module) →
+      return merged shape. Avoid storing large profile data in the session store; fetch fresh or cache per tenant.
+    </div>
+    <div className="text-sm text-muted-foreground">
+      How it reacts in Nael: <code>BetterAuthGuard</code> reads from <code>BetterAuthSessionStore</code> on every request,
+      so updates in the hosted BetterAuth project propagate automatically once the cookie is refreshed. Your enriched
+      <code>AuthUserProfile</code> stays consistent because it&apos;s built at request-time from the latest session +
+      your source of truth (profiles/roles service). Keep your profile service request-scoped if it depends on tenant
+      metadata or trace IDs.
+    </div>
+  </section>
+</article>

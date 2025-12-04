@@ -1,0 +1,121 @@
+---
+title: 'Directives · GraphQL'
+description: 'Create and apply custom GraphQL directives in Nael for auth, formatting, and schema hints.'
+---
+
+import { Badge } from '@/components/ui/badge';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+import Link from 'next/link';
+
+export const directiveSDL = `directive @upper on FIELD_DEFINITION`;
+
+export const appModule = `import { Module } from '@nl-framework/core';
+import { GraphQLModule } from '@nl-framework/graphql';
+import { makeExecutableSchema } from '@graphql-tools/schema';
+import { upperDirectiveTransformer } from './upper.directive';
+
+// Optional: use code-first + schema transform, or SDL-based schemas
+@Module({
+  imports: [
+    GraphQLModule.forRoot({
+      autoSchemaFile: 'schema.gql',
+      schemaTransforms: [upperDirectiveTransformer],
+      buildSchemaOptions: {
+        directives: [directiveSDL], // include SDL if using code-first
+      },
+    }),
+  ],
+})
+export class AppModule {}`;
+
+export const upperDirective = `import { mapSchema, getDirective, MapperKind } from '@graphql-tools/utils';
+
+export function upperDirectiveTransformer(schema) {
+  return mapSchema(schema, {
+    [MapperKind.OBJECT_FIELD]: (fieldConfig) => {
+      const directive = getDirective(schema, fieldConfig, 'upper')?.[0];
+      if (directive) {
+        const { resolve = (source) => source[fieldConfig.name] } = fieldConfig;
+        fieldConfig.resolve = async (source, args, context, info) => {
+          const value = await resolve(source, args, context, info);
+          return typeof value === 'string' ? value.toUpperCase() : value;
+        };
+        return fieldConfig;
+      }
+    },
+  });
+}`;
+
+export const usage = `import { Resolver, Query, Field, ObjectType } from '@nl-framework/graphql';
+
+@ObjectType()
+class Message {
+  @Field({ directives: [{ name: 'upper' }] })
+  text!: string;
+}
+
+@Resolver(() => Message)
+export class MessageResolver {
+  @Query(() => Message)
+  message() {
+    return { text: 'hello world' };
+  }
+}`;
+
+<article className="space-y-8">
+  <div className="space-y-3">
+    <Badge className="bg-sky-100 text-sky-900 dark:bg-sky-900/30 dark:text-sky-50">GraphQL</Badge>
+    <h1 className="text-4xl font-semibold tracking-tight">Directives</h1>
+    <div className="text-lg text-muted-foreground max-w-3xl">
+      Add custom directives to transform field behavior or annotate your schema. Use schema transforms to apply logic in
+      code-first setups, or include directive SDL if you work with raw schema files.
+    </div>
+  </div>
+
+  <section className="space-y-4" id="define">
+    <h2 className="text-2xl font-semibold">Define a directive</h2>
+    <div className="text-muted-foreground">
+      Declare directive SDL and register schema transforms. Here, <code>@upper</code> converts string results to
+      uppercase.
+    </div>
+    <CodeBlock code={directiveSDL} title="upper.directive.graphql" />
+  </section>
+
+  <section className="space-y-4" id="module">
+    <h2 className="text-2xl font-semibold">Wire into GraphQLModule</h2>
+    <div className="text-muted-foreground">
+      Use <code>schemaTransforms</code> to modify the executable schema. If you&apos;re code-first, also pass
+      <code>directives</code> in <code>buildSchemaOptions</code> to register the directive in SDL.
+    </div>
+    <CodeBlock code={appModule} title="app.module.ts" />
+  </section>
+
+  <section className="space-y-4" id="implement">
+    <h2 className="text-2xl font-semibold">Implement transformer</h2>
+    <div className="text-muted-foreground">
+      Use <code>@graphql-tools/utils</code> to scan fields and wrap resolvers. You can add auth, formatting, or logging
+      behavior here.
+    </div>
+    <CodeBlock code={upperDirective} title="upper.directive.ts" />
+  </section>
+
+  <section className="space-y-4" id="use">
+    <h2 className="text-2xl font-semibold">Use the directive</h2>
+    <div className="text-muted-foreground">
+      Apply the directive to fields in code-first classes via <code>directives</code> option. For SDL schemas, annotate
+      fields directly.
+    </div>
+    <CodeBlock code={usage} title="message.resolver.ts" />
+  </section>
+
+  <section className="space-y-4" id="next">
+    <h2 className="text-2xl font-semibold">Next steps</h2>
+    <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+      <li>Create an <code>@auth</code> directive that delegates to <code>BetterAuthGuard</code>.</li>
+      <li>Add <code>@deprecated</code> annotations with reasons for API evolution.</li>
+      <li>Use <code>@external</code>/<code>@key</code> directives when enabling federation.</li>
+      <li>See <Link className="text-primary underline" href="/docs/graphql/resolvers">Resolvers</Link> and{" "}
+        <Link className="text-primary underline" href="/docs/graphql/mutations">Mutations</Link> for more patterns.</li>
+    </ul>
+  </section>
+</article>
