@@ -4,6 +4,7 @@ import type { NormalizedBetterAuthHttpOptions } from './options';
 import type { BetterAuthService } from '../service';
 import type { BetterAuthMultiTenantService } from '../multi-tenant.service';
 import type { BetterAuthTenantResolution } from '../interfaces/multi-tenant-options';
+import type { BetterAuthApi } from '../types';
 import { resolveTrustedHost, sanitizeForwardedHost, sanitizeForwardedProtocol } from './forwarded-headers';
 
 const SUPPORTED_METHODS: HttpMethod[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'];
@@ -17,7 +18,7 @@ type BetterAuthApiEntry = {
 
 type BetterAuthApiRegistry = Record<string, BetterAuthApiEntry> | BetterAuthApiEntry[];
 
-type BetterAuthApi = {
+type BetterAuthRouteContainer = {
   api?: BetterAuthApiRegistry;
 };
 
@@ -178,7 +179,7 @@ export const createBetterAuthRouteRegistrar = (
   service: BetterAuthService,
   options: NormalizedBetterAuthHttpOptions,
 ): HttpRouteRegistrar => {
-  const betterAuth = service.instance as BetterAuthApi;
+  const betterAuth = service.instance as BetterAuthRouteContainer;
 
   return async ({ registerRoute, logger }) => {
     const registry = Array.isArray(betterAuth.api)
@@ -282,7 +283,7 @@ export const createBetterAuthMultiTenantRouteRegistrar = (
 
   return async ({ registerRoute, logger }) => {
     const instance = await service.getInstanceForTenant(bootstrapTenant);
-    const betterAuth = instance as BetterAuthApi;
+    const betterAuth = instance as BetterAuthRouteContainer;
     const registry = Array.isArray(betterAuth.api)
       ? betterAuth.api
       : Object.values(betterAuth.api ?? {});

@@ -50,7 +50,9 @@ export function CommandSearch() {
       })
       .then((data: SearchDoc[]) => {
         if (!cancelled && Array.isArray(data)) {
-          console.log("Search index loaded:", data.length, "entries");
+          if (process.env.NODE_ENV === "development") {
+            console.log("Search index loaded:", data.length, "entries");
+          }
           setDocs(data);
         }
       })
@@ -168,7 +170,9 @@ export function CommandSearch() {
   }, []);
 
   const results = React.useMemo(() => {
-    console.log("Computing results - debouncedQuery:", debouncedQuery, "docs count:", docs.length);
+    if (process.env.NODE_ENV === "development") {
+      console.log("Computing results - debouncedQuery:", debouncedQuery, "docs count:", docs.length);
+    }
     
     if (!debouncedQuery.trim()) {
       const grouped = docs.reduce((acc, doc) => {
@@ -181,13 +185,17 @@ export function CommandSearch() {
         .flatMap(([_, items]) => items.slice(0, 3))
         .slice(0, 15);
       
-      console.log("Default results:", defaultResults.length);
+      if (process.env.NODE_ENV === "development") {
+        console.log("Default results:", defaultResults.length);
+      }
       return defaultResults;
     }
 
     // Debounce search for performance
     const searchResults = fuse.search(debouncedQuery).slice(0, MAX_SEARCH_RESULTS).map((r) => r.item);
-    console.log("Search results for", debouncedQuery, ":", searchResults.length);
+    if (process.env.NODE_ENV === "development") {
+      console.log("Search results for", debouncedQuery, ":", searchResults.length);
+    }
     return searchResults;
   }, [debouncedQuery, fuse, docs]);
 
@@ -199,7 +207,9 @@ export function CommandSearch() {
       }
       groups[doc.section].push(doc);
     });
-    console.log("Grouped results:", Object.keys(groups), "Total items:", results.length);
+    if (process.env.NODE_ENV === "development") {
+      console.log("Grouped results:", Object.keys(groups), "Total items:", results.length);
+    }
     return groups;
   }, [results]);
 

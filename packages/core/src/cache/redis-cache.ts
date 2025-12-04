@@ -45,11 +45,24 @@ export class RedisCacheStore implements CacheStore {
 
   async reset(): Promise<void> {
     if (this.options.prefix) {
-      const keys = await this.client.keys(`${this.options.prefix}:*`);
-      if (keys.length) {
-        await this.client.del(...keys);
-      }
-      return;
+      const pattern = `${this.options.prefix}:*`;
+      const stream = this.client.scanStream({ match: pattern, count: 100 });
+
+      return new Promise((resolve, reject) => {
+        stream.on('data', async (keys: string[]) => {
+          if (keys.length > 0) {
+            stream.pause();
+            try {
+              await this.client.unlink(...keys);
+              stream.resume();
+            } catch (e) {
+              reject(e);
+            }
+          }
+        });
+        stream.on('end', () => resolve());
+        stream.on('error', (e) => reject(e));
+      });
     }
 
     await this.client.flushdb();
