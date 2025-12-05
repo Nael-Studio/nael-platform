@@ -340,25 +340,21 @@ export class Router {
       );
     }
 
+    // Log stack trace and detailed error info server-side only
     this.logger?.error('Unhandled exception in HTTP handler', {
       error: exception,
+      stack: exception.stack,
+      cause: exception.cause,
       path: context.request.url,
       method: context.request.method,
     });
 
-    const isProduction = process.env.NODE_ENV === 'production';
     const payload: Record<string, unknown> = {
       statusCode: 500,
       message: 'Internal Server Error',
     };
 
-    if (!isProduction) {
-      payload.error = exception.message;
-      payload.stack = exception.stack;
-      if (exception.cause) {
-        payload.cause = exception.cause;
-      }
-    }
+    // Do NOT expose error details, stack, or cause in HTTP response
 
     return new Response(JSON.stringify(payload), {
       status: 500,
