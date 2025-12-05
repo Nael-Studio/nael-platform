@@ -1,4 +1,5 @@
 import type { ClassType } from '@nl-framework/core';
+import type { Logger } from '@nl-framework/logger';
 import type {
   ControllerDefinition,
   RouteDefinition,
@@ -52,12 +53,20 @@ interface HandlerEntry {
 export class Router {
   private readonly handlers = new Map<string, HandlerEntry[]>();
   private readonly middleware: MiddlewareHandler[] = [];
+  private logger?: Logger;
 
   constructor(
     private readonly options: {
       versioning?: HttpVersioningOptions;
+      logger?: Logger;
     } = {},
-  ) { }
+  ) {
+    this.logger = options.logger;
+  }
+
+  setLogger(logger: Logger): void {
+    this.logger = logger;
+  }
 
   registerController(definition: ControllerDefinition, instance: unknown): void {
     const basePath = definition.prefix ?? '';
@@ -331,16 +340,30 @@ export class Router {
       );
     }
 
-    return new Response(
-      JSON.stringify({
-        statusCode: 500,
-        message: 'Internal Server Error',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      },
-    );
+    this.logger?.error('Unhandled exception in HTTP handler', {
+      error: exception,
+      path: context.request.url,
+      method: context.request.method,
+    });
+
+    const isProduction = process.env.NODE_ENV === 'production';
+    const payload: Record<string, unknown> = {
+      statusCode: 500,
+      message: 'Internal Server Error',
+    };
+
+    if (!isProduction) {
+      payload.error = exception.message;
+      payload.stack = exception.stack;
+      if (exception.cause) {
+        payload.cause = exception.cause;
+      }
+    }
+
+    return new Response(JSON.stringify(payload), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   private async collectExceptionFilters(
