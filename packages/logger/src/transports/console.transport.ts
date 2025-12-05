@@ -86,7 +86,15 @@ const defaultFormat = (entry: LogMessage): string => {
   if (entry.error instanceof Error) {
     errorLine = red(entry.error.stack ?? entry.error.message);
   } else if (entry.error !== undefined) {
-    errorLine = red(String(entry.error));
+    if (typeof entry.error === 'object' && entry.error !== null) {
+      try {
+        errorLine = red(JSON.stringify(entry.error, null, 2));
+      } catch {
+        errorLine = red(String(entry.error));
+      }
+    } else {
+      errorLine = red(String(entry.error));
+    }
   }
 
   return [baseLine, metaLine, errorLine].filter(Boolean).join('\n');

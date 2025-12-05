@@ -341,10 +341,7 @@ export class Router {
     }
 
     // Log stack trace and detailed error info server-side only
-    this.logger?.error('Unhandled exception in HTTP handler', {
-      error: exception,
-      stack: exception.stack,
-      cause: exception.cause,
+    this.logger?.error('Unhandled exception in HTTP handler', exception, {
       path: context.request.url,
       method: context.request.method,
     });
