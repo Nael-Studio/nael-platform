@@ -1,6 +1,6 @@
 {
   "name": "@nl-framework/storage",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Pluggable storage adapters for Nael apps (S3 and Azure Blob).",
   "type": "module",
   "main": "dist/index.js",
@@ -14,13 +14,13 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@nl-framework/core": "^0.3.1",
+    "@nl-framework/core": "^0.3.2",
     "@aws-sdk/client-s3": "^3.626.0",
     "@aws-sdk/s3-request-presigner": "^3.626.0",
     "@azure/storage-blob": "^12.17.0"
   },
   "peerDependencies": {
-    "@nl-framework/logger": "^0.3.1"
+    "@nl-framework/logger": "^0.3.2"
   },
   "license": "Apache-2.0"
 }
