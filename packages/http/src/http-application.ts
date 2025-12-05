@@ -47,13 +47,15 @@ export class HttpApplication {
     private readonly options: HttpServerOptions,
     private readonly ownsContext: boolean,
   ) {
-    this.router = new Router({ versioning: options.versioning });
     const baseLogger = this.context.getLogger().child('HttpApplication');
     this.logger = baseLogger;
+    this.router = new Router({ versioning: options.versioning, logger: this.logger });
+
     void this.context
       .get<LoggerFactory>(LoggerFactory)
       .then((loggerFactory) => {
         this.logger = loggerFactory.create({ context: 'HttpApplication' });
+        this.router.setLogger(this.logger);
       })
       .catch(() => {
         this.logger = baseLogger;
