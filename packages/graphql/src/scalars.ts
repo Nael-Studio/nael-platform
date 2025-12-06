@@ -73,21 +73,33 @@ export const GraphQLDateTime = new GraphQLScalarType({
       return value.toISOString();
     }
     if (typeof value === 'string' || typeof value === 'number') {
-      return new Date(value).toISOString();
+      const date = new Date(value);
+      if (isNaN(date.getTime())) {
+        throw new GraphQLError(`DateTime cannot represent an invalid date-time-string ${value}.`);
+      }
+      return date.toISOString();
     }
     throw new GraphQLError(`DateTime cannot represent an invalid date-time-string ${value}.`);
   },
   parseValue(value: unknown) {
     if (typeof value === 'string' || typeof value === 'number') {
-      return new Date(value);
+      const date = new Date(value);
+      if (isNaN(date.getTime())) {
+        throw new GraphQLError(`DateTime cannot represent an invalid date-time-string ${value}.`);
+      }
+      return date;
     }
     throw new GraphQLError(`DateTime cannot represent an invalid date-time-string ${value}.`);
   },
   parseLiteral(ast: ValueNode) {
     if (ast.kind === Kind.STRING || ast.kind === Kind.INT) {
-      return new Date(ast.value);
+      const date = new Date(ast.value);
+      if (isNaN(date.getTime())) {
+        throw new GraphQLError(`DateTime cannot represent an invalid date-time-string ${ast.value}.`);
+      }
+      return date;
     }
-    return null;
+    throw new GraphQLError(`DateTime cannot represent non-string or non-integer value.`);
   },
 });
 
