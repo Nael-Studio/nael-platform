@@ -39,6 +39,7 @@ export type GraphqlContextFactory = (
 export class GraphqlApplication {
   private apolloServer?: ApolloServer<GraphqlContext>;
   private apolloServerStarted = false;
+  private startPromise?: Promise<void>;
   private logger: Logger;
   private readonly unsubscribeModuleListener: () => void;
 
@@ -112,6 +113,10 @@ export class GraphqlApplication {
   }
 
   async close(): Promise<void> {
+    if (this.startPromise) {
+      await this.startPromise;
+    }
+
     if (this.apolloServer) {
       await this.apolloServer.stop();
     }
@@ -125,6 +130,7 @@ export class GraphqlApplication {
 
     this.apolloServerStarted = false;
     this.apolloServer = undefined;
+    this.startPromise = undefined;
   }
 
   private async ensureApolloServer({ start }: { start: boolean }): Promise<ApolloServer<GraphqlContext>> {
@@ -152,8 +158,13 @@ export class GraphqlApplication {
     }
 
     if (start && !this.apolloServerStarted) {
-      await this.apolloServer.start();
-      this.apolloServerStarted = true;
+      if (!this.startPromise) {
+        this.startPromise = this.apolloServer.start().then(() => {
+          this.apolloServerStarted = true;
+          this.startPromise = undefined;
+        });
+      }
+      await this.startPromise;
     }
 
     return this.apolloServer;
@@ -164,12 +175,17 @@ export class GraphqlApplication {
       return;
     }
 
+    if (this.startPromise) {
+      await this.startPromise;
+    }
+
     if (this.apolloServerStarted) {
       await this.apolloServer.stop();
     }
 
     this.apolloServer = undefined;
     this.apolloServerStarted = false;
+    this.startPromise = undefined;
     this.logger.info('GraphQL schema invalidated after module load', { module: moduleName });
   }
 
