@@ -64,7 +64,47 @@ export const GraphQLJSON = new GraphQLScalarType({
     parseJsonLiteral(ast, variables, 0),
 });
 
+export const GraphQLDateTime = new GraphQLScalarType({
+  name: 'DateTime',
+  description:
+    'A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `date-time` format outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representation of dates and times using the Gregorian calendar.',
+  serialize(value: unknown) {
+    if (value instanceof Date) {
+      return value.toISOString();
+    }
+    if (typeof value === 'string' || typeof value === 'number') {
+      const date = new Date(value);
+      if (isNaN(date.getTime())) {
+        throw new GraphQLError(`DateTime cannot represent an invalid date-time-string ${value}.`);
+      }
+      return date.toISOString();
+    }
+    throw new GraphQLError(`DateTime cannot represent an invalid date-time-string ${value}.`);
+  },
+  parseValue(value: unknown) {
+    if (typeof value === 'string' || typeof value === 'number') {
+      const date = new Date(value);
+      if (isNaN(date.getTime())) {
+        throw new GraphQLError(`DateTime cannot represent an invalid date-time-string ${value}.`);
+      }
+      return date;
+    }
+    throw new GraphQLError(`DateTime cannot represent an invalid date-time-string ${value}.`);
+  },
+  parseLiteral(ast: ValueNode) {
+    if (ast.kind === Kind.STRING || ast.kind === Kind.INT) {
+      const date = new Date(ast.value);
+      if (isNaN(date.getTime())) {
+        throw new GraphQLError(`DateTime cannot represent an invalid date-time-string ${ast.value}.`);
+      }
+      return date;
+    }
+    throw new GraphQLError(`DateTime cannot represent non-string or non-integer value.`);
+  },
+});
+
 registerScalarType(GraphQLJSON, { overwrite: true });
+registerScalarType(GraphQLDateTime, { overwrite: true });
 
 export const JSONScalar = new ScalarToken('JSON');
 
