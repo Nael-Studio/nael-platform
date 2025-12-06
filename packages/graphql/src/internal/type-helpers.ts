@@ -65,7 +65,7 @@ const resolveClassName = (value: ClassType): string => {
   }
 
   if (value === Date) {
-    return 'String';
+    return 'DateTime';
   }
 
   const objectType = storage.getObjectTypeDefinition(value);
