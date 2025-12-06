@@ -52,7 +52,7 @@ export type {
   GraphqlParamDecoratorContext,
   GraphqlParamFactory,
 } from './internal/metadata';
-export { ID, Int, Float, BooleanScalar, StringScalar, DateTime, JSONScalar, GraphQLJSON } from './scalars';
+export { ID, Int, Float, BooleanScalar, StringScalar, DateTime, JSONScalar, GraphQLJSON, GraphQLDateTime } from './scalars';
 export {
   registerScalarType,
   type RegisterScalarTypeOptions,
