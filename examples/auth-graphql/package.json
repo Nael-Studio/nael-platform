@@ -18,6 +18,6 @@
     "@nl-framework/platform": "workspace:*",
     "@nl-framework/logger": "workspace:*",
     "@nl-framework/orm": "workspace:*",
-    "mongodb": "^6.8.0"
+    "mongodb": "^7.0.0"
   }
 }
