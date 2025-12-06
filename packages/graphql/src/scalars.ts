@@ -73,7 +73,11 @@ export const GraphQLDateTime = new GraphQLScalarType({
       return value.toISOString();
     }
     if (typeof value === 'string' || typeof value === 'number') {
-      return new Date(value).toISOString();
+      const date = new Date(value);
+      if (isNaN(date.getTime())) {
+        throw new GraphQLError(`DateTime cannot represent an invalid date-time-string ${value}.`);
+      }
+      return date.toISOString();
     }
     throw new GraphQLError(`DateTime cannot represent an invalid date-time-string ${value}.`);
   },
