@@ -83,7 +83,11 @@ export const GraphQLDateTime = new GraphQLScalarType({
   },
   parseValue(value: unknown) {
     if (typeof value === 'string' || typeof value === 'number') {
-      return new Date(value);
+      const date = new Date(value);
+      if (isNaN(date.getTime())) {
+        throw new GraphQLError(`DateTime cannot represent an invalid date-time-string ${value}.`);
+      }
+      return date;
     }
     throw new GraphQLError(`DateTime cannot represent an invalid date-time-string ${value}.`);
   },
