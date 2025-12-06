@@ -130,7 +130,11 @@ const normalize = (raw: unknown): TypeResolution => {
   }
 
   if (raw === DateTime) {
-    return { typeName: 'String', isList: false };
+    return { typeName: 'DateTime', isList: false };
+  }
+
+  if (raw === Date) {
+    return { typeName: 'DateTime', isList: false };
   }
 
   // If reflect metadata reports the bare Object constructor, treat it as the JSON scalar.
