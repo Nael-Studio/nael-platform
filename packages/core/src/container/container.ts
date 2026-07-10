@@ -129,6 +129,36 @@ export class Container {
     return this.moduleRegistry.get(moduleClass);
   }
 
+  getProviderTokens(): Token[] {
+    return Array.from(this.providerDefinitions.keys());
+  }
+
+  getProviderModule(token: Token): ClassType | undefined {
+    return this.providerToModule.get(token);
+  }
+
+  /**
+   * The class behind a token, when one can be determined: the class itself for
+   * class/useClass providers, the instance's constructor for value providers.
+   * Factory providers have no statically known class and return undefined.
+   */
+  getProviderMetatype(token: Token): ClassType | undefined {
+    const definition = this.providerDefinitions.get(token);
+    if (!definition) {
+      return undefined;
+    }
+    if (definition.type === 'class') {
+      return definition.useClass;
+    }
+    if (definition.type === 'value' && typeof definition.useValue === 'object' && definition.useValue !== null) {
+      const ctor = (definition.useValue as object).constructor;
+      if (typeof ctor === 'function' && ctor !== Object) {
+        return ctor as ClassType;
+      }
+    }
+    return undefined;
+  }
+
   registerProvider<T>(provider: Provider<T>, moduleClass?: ClassType): void {
     if (typeof provider === 'function') {
       const scope = this.getClassScope(provider);

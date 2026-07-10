@@ -14,6 +14,7 @@ export const getSeedRegistryToken = (name?: string): symbol => Symbol.for(buildK
 export const getSeedRunnerToken = (name?: string): symbol => Symbol.for(buildKey('seed-runner', name));
 export const getSeedHistoryToken = (name?: string): symbol => Symbol.for(buildKey('seed-history', name));
 export const getDriverToken = (name?: string): symbol => Symbol.for(buildKey('driver', name));
+export const getWriteNotifierToken = (name?: string): symbol => Symbol.for(buildKey('write-notifier', name));
 
 export const getRepositoryToken = <T extends object>(
   document: DocumentClass<T>,

@@ -1,0 +1,36 @@
+{
+  "name": "@nl-framework/devtools",
+  "version": "0.3.5",
+  "description": "Non-production devtools dashboard for NL Framework: live API performance, module/service dependency graph, and data-model explorer. Mounts as a plugin module and refuses to arm in production.",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "bunx tsc --build tsconfig.build.json",
+    "test": "bun test"
+  },
+  "keywords": [
+    "devtools",
+    "dashboard",
+    "observability",
+    "bun",
+    "nl-framework"
+  ],
+  "peerDependencies": {
+    "@nl-framework/core": "^0.3.5",
+    "@nl-framework/http": "^0.3.5",
+    "@nl-framework/graphql": "^0.3.5",
+    "@nl-framework/logger": "^0.3.5",
+    "@nl-framework/orm": "^0.3.5"
+  }
+}

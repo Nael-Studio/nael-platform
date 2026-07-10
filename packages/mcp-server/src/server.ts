@@ -84,12 +84,15 @@ function toCallToolResult(result: ToolResult): CallToolResult {
     content,
   };
 
-  if (typeof result.structuredContent !== 'undefined') {
+  // `!= null` excludes both undefined and null; the SDK's structuredContent
+  // type does not allow null, and `unknown` narrowed by a typeof-undefined
+  // check alone still admits null.
+  if (result.structuredContent != null) {
     // Use a zod schema to validate structuredContent at runtime
     // Assuming structuredContent is an object or array; adjust schema as needed
     const structuredContentSchema = z.any(); // Replace with a more specific schema if available
     if (structuredContentSchema.safeParse(result.structuredContent).success) {
-      callResult.structuredContent = result.structuredContent;
+      callResult.structuredContent = result.structuredContent as CallToolResult['structuredContent'];
     } else {
       // Optionally, handle invalid structuredContent (e.g., log or throw)
     }

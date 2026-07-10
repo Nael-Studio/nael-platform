@@ -30,13 +30,14 @@ export abstract class OrmRepository<
     options?: TFindOneOptions,
   ): Promise<TDocument | null>;
   abstract count(filter?: TFilter, options?: TFindManyOptions): Promise<number>;
-  abstract insertOne(doc: TInsert): Promise<TDocument>;
-  abstract insertMany(docs: TInsert[]): Promise<Array<TDocument>>;
-  abstract save(entity: Partial<TEntity> & { id?: string; _id?: unknown }): Promise<TDocument>;
-  abstract updateMany(filter: TFilter, update: TUpdate): Promise<number>;
-  abstract softDelete(filter: TFilter): Promise<number>;
-  abstract restore(filter: TFilter): Promise<number>;
-  abstract deleteHard(filter: TFilter): Promise<number>;
+  abstract insertOne(doc: TInsert, options?: unknown): Promise<TDocument>;
+  abstract insertMany(docs: TInsert[], options?: unknown): Promise<Array<TDocument>>;
+  abstract save(entity: Partial<TEntity> & { id?: string; _id?: unknown }, options?: unknown): Promise<TDocument>;
+  abstract updateMany(filter: TFilter, update: TUpdate, options?: unknown): Promise<number>;
+  abstract softDelete(filter: TFilter, options?: unknown): Promise<number>;
+  abstract restore(filter: TFilter, options?: unknown): Promise<number>;
+  abstract deleteHard(filter: TFilter, options?: unknown): Promise<number>;
+  abstract deleteMany(filter: TFilter, options?: unknown): Promise<number>;
 }
 
 export type OrmRepositoryContract<T extends object> = OrmRepository<T>;

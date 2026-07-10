@@ -11,6 +11,8 @@ export interface MongoDriverOptions {
   dbName?: string;
   clientOptions?: MongoClientOptions;
   seedHistory?: MongoSeedHistoryStoreOptions;
+  /** Create all declared `@Index` indexes right after connecting (fail-loud). */
+  autoIndex?: boolean;
 }
 
 const createConnectionOptions = (
@@ -33,7 +35,7 @@ export const createMongoDriver = (options: MongoDriverOptions): OrmDriver => ({
     mongoConnection.registerEntity(entity);
     const metadata = getDocumentMetadata(entity);
     const collection = await mongoConnection.getCollection<T>(entity);
-    return new MongoRepository<T>(collection, metadata);
+    return new MongoRepository<T>(collection, metadata, mongoConnection.getWriteNotifier());
   },
   createSeedHistory: async (
     connection: OrmConnection,
