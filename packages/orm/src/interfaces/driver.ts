@@ -3,12 +3,14 @@ import type { LoggerFactory } from '@nl-framework/logger';
 import type { DocumentClass, DocumentMetadata } from './document';
 import type { OrmRepository } from './repository';
 import type { SeedHistoryStore } from './seeding';
+import type { WriteNotifier } from '../events/write-notifier';
 
 export interface OrmConnection extends OnModuleInit, OnModuleDestroy {
   registerEntity(entity: DocumentClass): void;
   getRegisteredEntities(): DocumentMetadata[];
   ensureConnection(): Promise<void>;
   getDatabase(): unknown;
+  getWriteNotifier(): WriteNotifier;
 }
 
 export interface SeedHistoryFactoryOptions {

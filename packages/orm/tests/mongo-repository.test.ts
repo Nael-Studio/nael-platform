@@ -148,6 +148,7 @@ describe('MongoRepository', () => {
       collection: 'test',
       timestamps: true,
       softDelete: true,
+      indexes: [],
     };
 
     const now = new Date();
@@ -185,6 +186,7 @@ describe('MongoRepository', () => {
       collection: 'test',
       timestamps: true,
       softDelete: false,
+      indexes: [],
     };
 
     const objectId = new ObjectId();
@@ -217,6 +219,7 @@ describe('MongoRepository', () => {
       collection: 'test',
       timestamps: false,
       softDelete: false,
+      indexes: [],
     };
 
     const objectId = new ObjectId();
@@ -240,5 +243,102 @@ describe('MongoRepository', () => {
     expect(entity?.id).toBe(objectId.toHexString());
     expect(entity?._id instanceof ObjectId).toBe(true);
     expect(entity?.name).toBe('Stored');
+  });
+
+  it('deleteMany hard-deletes matching documents regardless of soft-delete settings', async () => {
+    const metadata: DocumentMetadata = {
+      target: TestDoc,
+      collection: 'test',
+      timestamps: true,
+      softDelete: true,
+      indexes: [],
+    };
+
+    const received: { filter?: unknown; options?: unknown } = {};
+    const collection = {
+      deleteMany: async (filter: unknown, options: unknown) => {
+        received.filter = filter;
+        received.options = options;
+        return { deletedCount: 3 };
+      },
+    } as unknown as Collection<TestEntity & BaseDocument>;
+
+    const repository = new MongoRepository<TestEntity>(collection, metadata);
+    const session = { fake: true };
+    const deleted = await repository.deleteMany(
+      { name: 'gone' },
+      { session: session as never },
+    );
+
+    expect(deleted).toBe(3);
+    expect(received.filter).toEqual({ name: 'gone' });
+    expect((received.options as { session?: unknown }).session).toBe(session);
+  });
+
+  it('bulkUpsert builds keyed upserts with timestamp handling', async () => {
+    const metadata: DocumentMetadata = {
+      target: TestDoc,
+      collection: 'test',
+      timestamps: true,
+      softDelete: true,
+      indexes: [],
+    };
+
+    let receivedOps: Array<Record<string, any>> = [];
+    const collection = {
+      bulkWrite: async (operations: Array<Record<string, any>>) => {
+        receivedOps = operations;
+        return { matchedCount: 1, modifiedCount: 1, upsertedCount: 1 };
+      },
+    } as unknown as Collection<TestEntity & BaseDocument>;
+
+    const repository = new MongoRepository<TestEntity>(collection, metadata);
+    const result = await repository.bulkUpsert(
+      [
+        { name: 'alpha', nickname: 'a' },
+        { name: 'beta', nickname: 'b' },
+      ],
+      ['name'],
+    );
+
+    expect(result).toEqual({ matchedCount: 1, modifiedCount: 1, upsertedCount: 1 });
+    expect(receivedOps).toHaveLength(2);
+
+    const first = receivedOps[0]!.updateOne;
+    expect(first.filter).toEqual({ name: 'alpha' });
+    expect(first.upsert).toBe(true);
+    expect(first.update.$set.nickname).toBe('a');
+    expect(first.update.$set.updatedAt).toBeInstanceOf(Date);
+    expect(first.update.$set.createdAt).toBeUndefined();
+    expect(first.update.$setOnInsert.createdAt).toBeInstanceOf(Date);
+    expect(first.update.$setOnInsert.deletedAt).toBeNull();
+  });
+
+  it('bulkUpsert short-circuits on empty input and rejects empty keys', async () => {
+    const metadata: DocumentMetadata = {
+      target: TestDoc,
+      collection: 'test',
+      timestamps: true,
+      softDelete: true,
+      indexes: [],
+    };
+
+    let called = false;
+    const collection = {
+      bulkWrite: async () => {
+        called = true;
+        return { matchedCount: 0, modifiedCount: 0, upsertedCount: 0 };
+      },
+    } as unknown as Collection<TestEntity & BaseDocument>;
+
+    const repository = new MongoRepository<TestEntity>(collection, metadata);
+
+    const empty = await repository.bulkUpsert([], ['name']);
+    expect(empty).toEqual({ matchedCount: 0, modifiedCount: 0, upsertedCount: 0 });
+    expect(called).toBe(false);
+
+    expect(repository.bulkUpsert([{ name: 'x' }], [])).rejects.toThrow(
+      'bulkUpsert requires at least one key field',
+    );
   });
 });

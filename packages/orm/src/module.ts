@@ -19,6 +19,7 @@ import {
   getSeedHistoryToken,
   normalizeConnectionName,
   getDriverToken,
+  getWriteNotifierToken,
 } from './constants';
 import { SeedRunner, type SeedRegistry } from './seeding/seed-runner';
 import { getRegisteredSeeds } from './decorators/seed';
@@ -137,6 +138,11 @@ const createRootProviders = (connectionName: string, optionsProvider: Provider):
       await connection.ensureConnection();
       return connection.getDatabase();
     },
+    inject: [getConnectionToken(connectionName)],
+  },
+  {
+    provide: getWriteNotifierToken(connectionName),
+    useFactory: (connection: OrmConnection) => connection.getWriteNotifier(),
     inject: [getConnectionToken(connectionName)],
   },
   {
