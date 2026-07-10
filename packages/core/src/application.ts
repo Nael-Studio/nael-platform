@@ -9,6 +9,7 @@ import { Logger } from '@nl-framework/logger';
 import { createContextId, type ContextId } from './scope';
 import { ModuleManager, type ModuleLoadListener, type ModuleLoadResult } from './module-manager';
 import { LazyModuleLoader } from './lazy-module-loader';
+import { DiscoveryService } from './discovery/discovery-service';
 
 export interface ApplicationOptions {
   config?: ConfigLoadOptions;
@@ -83,6 +84,11 @@ export class Application {
     });
 
     this.container.registerProvider(LazyModuleLoader);
+
+    this.container.registerProvider({
+      provide: DiscoveryService,
+      useValue: new DiscoveryService(this.container, this.moduleManager),
+    });
   }
 
   async bootstrap(rootModule: ClassType, options: ApplicationOptions = {}): Promise<ApplicationContext> {

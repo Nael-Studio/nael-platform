@@ -55,6 +55,13 @@ export { ModuleRef } from './module-ref';
 export type { ModuleRefResolveOptions } from './module-ref';
 export { LazyModuleLoader } from './lazy-module-loader';
 export type { ModuleLoadResult, ModuleLoadListener } from './module-manager';
+export {
+  DiscoveryService,
+  type DiscoveredProvider,
+  type DiscoveredMethod,
+  type DiscoveredMethodWithMeta,
+  type DiscoveredClassWithMeta,
+} from './discovery/discovery-service';
 export { ConfigLoader } from './config/config-loader';
 export { ConfigService } from './config/config.service';
 export type { ConfigLoadOptions } from './config/config-loader';

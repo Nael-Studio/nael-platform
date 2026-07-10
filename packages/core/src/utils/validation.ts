@@ -44,10 +44,13 @@ const flattenValidationErrors = (
   const issues: ValidationIssue[] = [];
 
   for (const error of errors) {
-    const property = error.property ? (parentPath ? `${parentPath}.${error.property}` : error.property) : parentPath;
+    const fallbackProperty = error.target?.constructor?.name ?? '<root>';
+    const property = error.property
+      ? (parentPath ? `${parentPath}.${error.property}` : error.property)
+      : (parentPath || fallbackProperty);
     const constraints = error.constraints ? (Object.values(error.constraints) as string[]) : [];
 
-    if (constraints.length && property) {
+    if (constraints.length) {
       issues.push({ property, constraints });
     }
 
@@ -88,7 +91,20 @@ export const transformAndValidate = async <T>(options: TransformValidationOption
 
   const errors = await validate(instance as object, combinedValidatorOptions);
   if (errors.length) {
-    throw new ValidationException(flattenValidationErrors(errors));
+    let issues = flattenValidationErrors(errors);
+    if (!issues.length) {
+      issues = [
+        {
+          property: metatype.name,
+          constraints: [
+            `${metatype.name} was rejected as an unknown value: it carries no class-validator metadata. ` +
+              'Add at least one validation decorator (e.g. @IsOptional(), @IsString()) to the class, ' +
+              'or pass validatorOptions: { forbidUnknownValues: false }.',
+          ],
+        },
+      ];
+    }
+    throw new ValidationException(issues);
   }
 
   return instance;

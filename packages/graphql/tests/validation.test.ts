@@ -111,4 +111,46 @@ describe('GraphQL argument validation', () => {
       );
     }
   });
+
+  it('reports a descriptive error for @InputType classes without validation decorators', async () => {
+    @InputType()
+    class BareInput {
+      @Field()
+      note!: string;
+    }
+
+    @ObjectType()
+    class BareResult {
+      @Field()
+      note!: string;
+    }
+
+    @Resolver()
+    class BareResolver {
+      @Mutation(() => BareResult)
+      send(@Arg('input', () => BareInput) input: BareInput): BareResult {
+        return { note: input.note } satisfies BareResult;
+      }
+    }
+
+    const resolverInstance = new BareResolver();
+    const builder = new GraphqlSchemaBuilder();
+    const artifacts = builder.build([resolverInstance]);
+    const mutation = artifacts.resolvers.Mutation.send;
+
+    try {
+      await mutation({}, { input: { note: 'hello' } }, {}, {});
+      throw new Error('Expected mutation to throw');
+    } catch (error) {
+      expect(error).toBeInstanceOf(GraphQLError);
+      const graphQLError = error as GraphQLError;
+      expect(graphQLError.extensions?.code).toBe('BAD_USER_INPUT');
+      const validation = graphQLError.extensions?.validation as Array<{
+        property: string;
+        constraints: string[];
+      }>;
+      expect(validation.length).toBeGreaterThan(0);
+      expect(JSON.stringify(validation)).toContain('BareInput');
+    }
+  });
 });
