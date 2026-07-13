@@ -303,7 +303,7 @@ export class GraphqlApplication {
       close() {},
     };
 
-    this.wsServer = Bun.serve<GraphqlWsData, undefined>({
+    this.wsServer = Bun.serve<GraphqlWsData, {}>({
       port,
       hostname: host,
       async fetch(request, server) {
