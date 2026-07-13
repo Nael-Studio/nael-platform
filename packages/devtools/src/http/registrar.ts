@@ -218,7 +218,9 @@ const mountRoutes = async (api: HttpRouteRegistrationApi): Promise<void> => {
       await scheduler.service.triggerTask(decodeURIComponent(job));
       return jsonResponse({ triggered: job });
     } catch (error) {
-      api.logger.warn(`[devtools] failed to trigger scheduler job "${job}"`, error);
+      api.logger.warn(
+        `[devtools] failed to trigger scheduler job "${job}": ${error instanceof Error ? error.message : String(error)}`,
+      );
       return new Response(
         JSON.stringify({ message: 'Failed to trigger job' }),
         { status: 400, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } },
