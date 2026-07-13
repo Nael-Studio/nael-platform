@@ -1,20 +1,22 @@
 ---
 title: 'Guards · Microservices'
-description: 'Protect message handlers with shared UseGuards metadata and registry helpers.'
+description: 'Protect message handlers with UseGuards and the microservice execution context.'
 ---
 
 import { Badge } from '@/components/ui/badge';
 import { CodeBlock } from '@/components/shared/simple-code-block';
 
 export const guardExample = `import { Injectable } from '@nl-framework/core';
-import type { GuardDecision, CanActivate } from '@nl-framework/http';
+import type {
+  MicroserviceCanActivate,
+  MicroserviceExecutionContext,
+} from '@nl-framework/microservices';
 
 @Injectable()
-export class TenantGuard implements CanActivate {
-  async canActivate(): GuardDecision {
-    // Use request-scoped state, DI, or metadata here. Microservice-specific
-    // execution context is coming soon, so keep logic side-effect free.
-    return { allow: true };
+export class TenantGuard implements MicroserviceCanActivate {
+  canActivate(context: MicroserviceExecutionContext): boolean {
+    const { tenantId } = context.getPayload<{ tenantId?: string }>() ?? {};
+    return Boolean(tenantId);
   }
 }`;
 
@@ -37,33 +39,36 @@ export class BillingConsumer {
   }
 }`;
 
+export const globalSample = `import { registerMicroserviceGuard } from '@nl-framework/microservices';
+
+// Runs before every handler's own guards.
+registerMicroserviceGuard(AuthGuard);`;
+
 <article className="space-y-8">
   <div className="space-y-3">
     <Badge className="bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-50">Microservices</Badge>
     <h1 className="text-4xl font-semibold tracking-tight">Guards</h1>
     <div className="text-lg text-muted-foreground max-w-3xl">
       Microservice controllers use the shared <code>@UseGuards()</code> decorator from <code>@nl-framework/core</code>
-      just like HTTP and GraphQL. This page captures the current status of guard metadata within the microservice
-      dispatcher and shows how to prepare guards for when runtime enforcement lands.
+      just like HTTP and GraphQL. The dispatcher executes guards before any interceptor, pipe, or the handler runs.
     </div>
   </div>
 
   <section className="space-y-4" id="status">
-    <h2 className="text-2xl font-semibold">Current status</h2>
+    <h2 className="text-2xl font-semibold">How it runs</h2>
     <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
-      <li><code>@UseGuards()</code> is defined in core and attaches metadata to controllers/handlers.</li>
-      <li><code>listMessageHandlers()</code> captures guard tokens for microservice handlers, so DI metadata is ready.</li>
-      <li>The microservice dispatcher does not yet execute guard tokens—filters are wired up first, guards are next.</li>
-      <li>A microservice-specific execution context plus global guard registry is on the roadmap.</li>
+      <li>The dispatcher runs guards first, in order: global (<code>registerMicroserviceGuard</code>) → controller-level → method-level.</li>
+      <li>Each guard receives a <code>MicroserviceExecutionContext</code> exposing <code>getPattern()</code>, <code>getPayload()</code>, <code>getMetadata()</code>, <code>getHandler()</code>, and <code>getClass()</code>.</li>
+      <li>Returning <code>false</code> denies the message: the framework throws <code>ApplicationException.forbidden()</code>, which your exception filters can handle.</li>
+      <li>For a <code>@EventPattern</code>, a denied message returns Dapr's <code>{`{ status: 'DROP' }`}</code> so the broker does not retry it.</li>
     </ul>
   </section>
 
   <section className="space-y-4" id="guardian">
     <h2 className="text-2xl font-semibold">Create a guard</h2>
     <div className="text-muted-foreground">
-      Guards implement <code>CanActivate</code> (exported from <code>@nl-framework/http</code> today). The example below
-      simply returns <code>{`{ allow: true }`}</code>, but you can inject services and read state once the execution
-      context is available.
+      Guards implement <code>MicroserviceCanActivate</code> (or are a plain function of the context). The context's
+      distinct <code>get*</code> methods let a guard shared with HTTP branch on which transport invoked it.
     </div>
     <CodeBlock code={guardExample} title="guards/tenant.guard.ts" />
   </section>
@@ -71,22 +76,19 @@ export class BillingConsumer {
   <section className="space-y-4" id="apply">
     <h2 className="text-2xl font-semibold">Attach with @UseGuards()</h2>
     <div className="text-muted-foreground">
-      Apply guards at the controller or method level. Method-level guards execute before class-level ones, and metadata is
-      inherited exactly like other transports. Even though the dispatcher does not call guards yet, decorating controllers
-      today ensures your metadata is ready once enforcement is added.
+      Apply guards at the controller or method level; metadata is inherited exactly like other transports. Register
+      cross-cutting guards globally to run them ahead of every handler.
     </div>
     <CodeBlock code={controllerSample} title="billing.consumer.ts" />
+    <CodeBlock code={globalSample} title="main.ts" />
   </section>
 
   <section className="space-y-4" id="behavior">
     <h2 className="text-2xl font-semibold">Behavior</h2>
     <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
-      <li>Metadata order mirrors HTTP/GraphQL: method-level guards precede controller-level guards. When global guards
-        arrive they will run last.</li>
-      <li>Return <code>{`{ allow: false }`}</code> (or <code>false</code>) to reject the message. Provide a <code>reason</code>
-        to make logs actionable.</li>
-      <li>While the guard execution context is under construction, keep guards side-effect free so they are easy to adapt
-        once <code>switchToRpc()</code> APIs become available.</li>
+      <li>Guards run sequentially; the first to return <code>false</code> stops the pipeline before the handler.</li>
+      <li>Global guards run first, then controller-level, then method-level.</li>
+      <li>A denied request/response message surfaces as a forbidden error; a denied event is dropped so it is not redelivered.</li>
     </ul>
   </section>
 </article>

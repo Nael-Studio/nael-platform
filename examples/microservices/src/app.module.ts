@@ -10,6 +10,8 @@ import { OrdersHttpController } from './orders-http.controller';
     ConfigModule.forRoot(),
     createMicroservicesModule({
       controllers: [OrdersController],
+      // Must match the Dapr pub/sub component name (dapr/redis-pubsub.yaml).
+      pubsubName: 'redis-pubsub',
     }),
   ],
   controllers: [OrdersHttpController],

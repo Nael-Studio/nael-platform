@@ -1,0 +1,288 @@
+---
+title: 'Testing · Nael Framework'
+description: 'Unit and integration test Nael applications with @nl-framework/testing: an overridable testing module plus in-process HTTP, GraphQL, and microservice harnesses — no ports, no Mongo, no Dapr.'
+---
+
+import Link from 'next/link';
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const installTesting = `bun add -d @nl-framework/testing`;
+
+export const createModule = `import { Test } from '@nl-framework/testing';
+
+const moduleRef = await Test.createTestingModule({
+  imports: [AppModule],
+  providers: [/* extra providers */],
+}).compile();
+
+const service = await moduleRef.get(UserService);
+// ...assertions...
+
+await moduleRef.close(); // runs onModuleDestroy for every instantiated provider`;
+
+export const overrides = `const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
+  .overrideProvider(UserService).useValue(mockUserService)
+  .overrideProvider(CONFIG_TOKEN).useFactory({ factory: () => testConfig })
+  .overrideGuard(AuthGuard).useValue({ canActivate: () => true })
+  .overrideInterceptor(CacheInterceptor).useValue(passthroughInterceptor)
+  .overrideFilter(HttpExceptionFilter).useClass(TestFilter)
+  .compile();`;
+
+export const overrideDownstream = `@Injectable()
+class GreetingService {
+  greet(name: string) {
+    return \`Hello \${name}\`;
+  }
+}
+
+@Injectable()
+class GreetingConsumer {
+  constructor(private readonly service: GreetingService) {}
+  run() {
+    return this.service.greet('world');
+  }
+}
+
+const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
+  .overrideProvider(GreetingService)
+  .useValue({ greet: (name: string) => \`Mocked \${name}\` })
+  .compile();
+
+const consumer = await moduleRef.get(GreetingConsumer);
+// The consumer was constructed with the mock, not the real service.
+expect(consumer.run()).toBe('Mocked world');`;
+
+export const httpClient = `const app = await moduleRef.createHttpApplication();
+
+// Raw Response
+const res = await app.request('/users/42', {
+  headers: { 'x-token': 'secret' },
+});
+expect(res.status).toBe(200);
+
+// Parsed JSON helper (serializes the body, defaults content-type)
+const { status, body } = await app.requestJson('/users', {
+  method: 'POST',
+  json: { name: 'Grace' },
+});
+expect(status).toBe(200);
+expect(body).toEqual({ id: 'mock', name: 'Grace' });`;
+
+export const graphqlClient = `const gql = await moduleRef.createGraphqlApplication();
+
+const { data, errors } = await gql.execute<{ report: { message: string; score: number } }>({
+  query: /* GraphQL */ \`
+    query Report($score: Int!) {
+      report(score: $score) {
+        message
+        score
+      }
+    }
+  \`,
+  variables: { score: 7 },
+});
+
+expect(errors).toBeUndefined();
+expect(data?.report).toEqual({ message: 'live', score: 7 });`;
+
+export const graphqlReset = `import {
+  GraphqlMetadataStorage,
+  clearGraphqlGuards,
+  clearGraphqlInterceptors,
+} from '@nl-framework/graphql';
+
+beforeEach(() => {
+  GraphqlMetadataStorage.get().clear();
+  clearGraphqlGuards();
+  clearGraphqlInterceptors();
+});`;
+
+export const microserviceClient = `const harness = await moduleRef.createMicroserviceHarness();
+// Defaults to the module's discovered controllers.
+// Pass { controllers: [OrdersController] } to scope it explicitly.
+
+// Request/response
+const total = await harness.send<number>('math.double', { value: 21 });
+expect(total).toBe(42);
+
+// Fire-and-forget event
+await harness.emit('math.logged', { value: 5 });`;
+
+export const inMemoryTransport = `import { InMemoryTransport, MicroserviceHarness } from '@nl-framework/testing';
+import { createMicroservicesModule } from '@nl-framework/microservices';
+
+const harness = await moduleRef.createMicroserviceHarness();
+
+// Reuse the same in-memory transport inside a module wiring.
+const module = createMicroservicesModule({ transport: harness.getTransport() });`;
+
+export const repositoryFake = `import { InMemoryRepository, createInMemoryRepository } from '@nl-framework/testing';
+import { getRepositoryToken } from '@nl-framework/orm';
+
+// Defaults timestamps + softDelete to true, matching @Document.
+const repo = new InMemoryRepository(User, {
+  seed: [{ name: 'Ada', age: 36 }],
+});
+
+const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
+  .overrideProvider(getRepositoryToken(User))
+  .useValue(repo)
+  .compile();
+
+const service = await moduleRef.get(UserService);
+expect(await service.adults()).toHaveLength(1);
+
+// Read timestamps/softDelete/collection from the entity's @Document instead:
+const repo2 = await createInMemoryRepository(User, { seed: [/* ... */] });`;
+
+export const fullExample = `import { describe, expect, it } from 'bun:test';
+import { Test } from '@nl-framework/testing';
+import { AppModule } from '../src/app.module';
+import { PaymentGateway } from '../src/payments/payment.gateway';
+
+describe('POST /orders', () => {
+  it('creates an order without a real payment provider', async () => {
+    const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
+      .overrideProvider(PaymentGateway)
+      .useValue({ charge: async () => ({ id: 'ch_test', ok: true }) })
+      .compile();
+
+    const app = await moduleRef.createHttpApplication();
+
+    const { status, body } = await app.requestJson('/orders', {
+      method: 'POST',
+      json: { sku: 'BOOK-1', quantity: 2 },
+    });
+
+    expect(status).toBe(200);
+    expect(body).toMatchObject({ status: 'paid', chargeId: 'ch_test' });
+
+    await moduleRef.close();
+  });
+});`;
+
+<div className="space-y-10">
+      <div className="space-y-3">
+        <div className="text-sm uppercase tracking-wide text-muted-foreground">Fundamentals</div>
+        <h1 className="text-4xl font-semibold">Testing</h1>
+        <div className="max-w-2xl text-muted-foreground">
+          <code>@nl-framework/testing</code> mirrors <code>@nestjs/testing</code>: build an application
+          context with overridable providers, then exercise your HTTP, GraphQL, and microservice handlers
+          entirely in-process. No port is ever bound, and the suite runs with no Mongo, no Dapr, and no network.
+        </div>
+      </div>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Installation</h2>
+        <div className="text-muted-foreground">
+          Add the package as a dev dependency. <code>@nl-framework/core</code> is a required peer;
+          <code>@nl-framework/http</code>, <code>@nl-framework/graphql</code>, and
+          <code>@nl-framework/microservices</code> are optional peers, loaded lazily — you only need the
+          transports you actually test.
+        </div>
+        <CodeBlock code={installTesting} title="Install" />
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">The testing module</h2>
+        <div className="text-muted-foreground">
+          <code>Test.createTestingModule()</code> collects your module definition, then
+          <code>compile()</code> bootstraps a real <code>ApplicationContext</code>. Resolve providers with
+          <code>get()</code>, and tear everything down — running the shutdown lifecycle — with
+          <code>close()</code>.
+        </div>
+        <CodeBlock code={createModule} title="Create and tear down a module" />
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Overrides</h2>
+        <div className="text-muted-foreground">
+          Substitute any provider, guard, interceptor, filter, or pipe. Each override terminal accepts
+          <code>.useValue()</code>, <code>.useClass()</code>, or <code>.useFactory(&#123; factory, inject &#125;)</code>.
+          Because guards, interceptors, filters, and pipes all resolve through the container at runtime, overriding
+          them is the same token swap as overriding a provider.
+        </div>
+        <CodeBlock code={overrides} title="Fluent override chain" />
+        <div className="text-sm text-muted-foreground">
+          Overrides are registered <strong>before any provider is instantiated</strong>, so dependents receive the
+          mock — not the original — when they are constructed.
+        </div>
+        <CodeBlock code={overrideDownstream} title="Downstream injectors receive the mock" />
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">HTTP integration testing</h2>
+        <div className="text-muted-foreground">
+          <code>createHttpApplication()</code> returns a client that dispatches requests straight through the routing
+          pipeline (middleware → guards → interceptors → pipes → handler → filters) via
+          <code>HttpApplication.handle</code>. No port is bound.
+        </div>
+        <CodeBlock code={httpClient} title="Driving routes in-process" />
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">GraphQL execution</h2>
+        <div className="text-muted-foreground">
+          <code>createGraphqlApplication()</code> executes operations via Apollo&apos;s <code>executeOperation</code>,
+          with the framework&apos;s scoped container resolver attached so guards, interceptors, and field resolvers run
+          exactly as they would over HTTP.
+        </div>
+        <CodeBlock code={graphqlClient} title="Executing a query" />
+        <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-4">
+          <div className="text-sm text-amber-700 dark:text-amber-400">
+            <strong>Global schema metadata:</strong> the GraphQL type registry is a process-wide singleton shared by
+            every test file. If you declare types at module scope, reset it between cases so your suite is independent
+            of run order.
+          </div>
+        </div>
+        <CodeBlock code={graphqlReset} title="Resetting global GraphQL state" />
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Microservice handlers</h2>
+        <div className="text-muted-foreground">
+          <code>createMicroserviceHarness()</code> drives <code>MessageDispatcher</code> through an in-memory transport
+          — no Dapr sidecar. Use <code>send()</code> for request/response patterns and <code>emit()</code> for events.
+        </div>
+        <CodeBlock code={microserviceClient} title="Dispatching messages" />
+        <div className="text-sm text-muted-foreground">
+          The underlying <code>InMemoryTransport</code> is exported too, so you can wire it into a real module.
+        </div>
+        <CodeBlock code={inMemoryTransport} title="Reusing the in-memory transport" />
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">Repositories</h2>
+        <div className="text-muted-foreground">
+          <code>InMemoryRepository&lt;T&gt;</code> is a dependency-free implementation of the full
+          <code>OrmRepository</code> contract — <code>find</code>, <code>findOne</code>, <code>findById</code>,
+          <code>count</code>, <code>insertOne</code>/<code>insertMany</code>, <code>save</code>, <code>updateMany</code>,
+          <code>softDelete</code>/<code>restore</code>, and <code>deleteHard</code>/<code>deleteMany</code>. It mirrors
+          <code>MongoRepository</code>&apos;s <code>id</code>, timestamp, and soft-delete semantics with a Mongo-style
+          filter matcher — no real MongoDB and no <code>mongodb-memory-server</code>. Substitute it for a real
+          repository on its injection token.
+        </div>
+        <CodeBlock code={repositoryFake} title="Substituting a repository" />
+        <div className="text-sm text-muted-foreground">
+          Extra conveniences: <code>repo.snapshot()</code>, <code>repo.size</code>, and <code>repo.clear()</code>. The
+          fake does not emit write-notifier events, and <code>@nl-framework/orm</code> stays an optional peer.
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold">A complete example</h2>
+        <div className="text-muted-foreground">
+          Putting it together — an HTTP endpoint test that mocks an external payment provider and binds no port.
+        </div>
+        <CodeBlock code={fullExample} title="orders.e2e.test.ts" />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-2xl font-semibold">What&apos;s next?</h2>
+        <div className="text-muted-foreground">
+          Review <Link className="text-primary" href="/docs/fundamentals/lifecycle-events">Lifecycle events</Link> to
+          understand what <code>close()</code> triggers, or revisit <Link className="text-primary" href="/docs/guards">Guards</Link> and
+          <Link className="text-primary" href="/docs/interceptors"> Interceptors</Link> to see what your overrides replace.
+        </div>
+      </section>
+    </div>

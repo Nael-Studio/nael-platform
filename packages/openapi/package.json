@@ -1,0 +1,35 @@
+{
+  "name": "@nl-framework/openapi",
+  "version": "0.3.6",
+  "description": "OpenAPI 3.1 document generation for nl-framework: derives schemas from class-validator DTOs, enumerates routes, serves the JSON document plus a self-contained viewer. No CDN or network at runtime.",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "bunx tsc --build tsconfig.build.json",
+    "test": "bun test"
+  },
+  "keywords": [
+    "openapi",
+    "swagger",
+    "documentation",
+    "bun",
+    "nl-framework"
+  ],
+  "peerDependencies": {
+    "@nl-framework/core": "^0.3.6",
+    "@nl-framework/http": "^0.3.6",
+    "class-validator": "^0.14.0",
+    "class-transformer": "^0.5.1"
+  }
+}

@@ -17,7 +17,7 @@ export {
   Head,
   getRouteDefinitions,
 } from './decorators/routes';
-export { Version } from './versioning/metadata';
+export { Version, getDeclaredVersions } from './versioning/metadata';
 export {
   Body,
   Param,
@@ -26,8 +26,30 @@ export {
   Req,
   Context,
   createHttpParamDecorator,
+  getRouteArgsMetadata,
 } from './decorators/params';
-export type { RouteParamFactory } from './decorators/params';
+export type { RouteParamFactory, RouteArgMetadata } from './decorators/params';
+export {
+  UploadedFile,
+  UploadedFiles,
+  type UploadValidationOptions,
+} from './decorators/uploads';
+export {
+  UploadedFileHandle,
+  isUploadedFile,
+  type StorageAdapterLike,
+} from './uploads/uploaded-file';
+export {
+  SseResponse,
+  type SseMessage,
+  type SseSource,
+  type SseSubscribe,
+  type SseResponseOptions,
+} from './sse/sse-response';
+export {
+  createStaticFileServer,
+  type ServeStaticOptions,
+} from './static/serve-static';
 export {
   HttpApplication,
   createHttpApplication,
@@ -35,6 +57,21 @@ export {
   type HttpApplicationOptions,
   type HttpServerOptions,
 } from './http-application';
+export {
+  type CorsOptions,
+  normalizeCorsOptions,
+  applyCorsHeaders,
+  buildPreflightResponse,
+  isPreflight,
+  resolveAllowedOrigin,
+} from './middleware/cors';
+export {
+  type SecurityOptions,
+  type HstsOptions,
+  normalizeSecurityOptions,
+  securityHeaders,
+  applySecurityHeaders,
+} from './middleware/security';
 export {
   registerHttpRouteRegistrar,
   listHttpRouteRegistrars,
@@ -118,7 +155,12 @@ export {
   type VersioningStrategy,
 } from './versioning/options';
 export { PUBLIC_ROUTE_METADATA_KEY } from './constants';
-export { HttpException, getHttpStatusFromException } from './exceptions/http-exception';
+export {
+  HttpException,
+  getHttpStatusFromException,
+  PayloadTooLargeException,
+  UnsupportedMediaTypeException,
+} from './exceptions/http-exception';
 export { ApplicationException } from '@nl-framework/core';
 export { type ExceptionFilter } from './filters/exception-filter.interface';
 export {
@@ -148,3 +190,15 @@ export {
   DefaultValuePipe,
 } from './pipes/built-in.pipes';
 export { ValidationPipe, type ValidationPipeOptions } from './pipes/validation.pipe';
+export {
+  Throttle,
+  SkipThrottle,
+  resolveThrottleConfig,
+  isThrottleSkipped,
+  type ThrottleConfig,
+} from './throttle/metadata';
+export {
+  ThrottleGuard,
+  createThrottleGuard,
+  type ThrottleGuardOptions,
+} from './throttle/throttle.guard';

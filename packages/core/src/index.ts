@@ -1,6 +1,11 @@
 import 'reflect-metadata';
 
-export { Application, ApplicationContext, type ApplicationOptions } from './application';
+export {
+  Application,
+  ApplicationContext,
+  type ApplicationOptions,
+  type BootstrapHooks,
+} from './application';
 export { Container } from './container/container';
 export { Injectable, isInjectable, getInjectableMetadata } from './decorators/injectable';
 export type { InjectableOptions, InjectableMetadata } from './decorators/injectable';
@@ -62,6 +67,15 @@ export {
   type DiscoveredMethodWithMeta,
   type DiscoveredClassWithMeta,
 } from './discovery/discovery-service';
+export {
+  RequestContext,
+  createRequestContextData,
+} from './context/request-context';
+export type {
+  RequestContextData,
+  RequestContextKind,
+  CreateRequestContextOptions,
+} from './context/request-context';
 export { ConfigLoader } from './config/config-loader';
 export { ConfigService } from './config/config.service';
 export type { ConfigLoadOptions } from './config/config-loader';
@@ -83,8 +97,27 @@ export {
   type CacheSetOptions,
   type InMemoryCacheOptions,
   type RedisCacheOptions,
+  registerCacheObserver,
+  clearCacheObservers,
+  hasCacheObservers,
+  notifyCacheObservers,
+  registerCacheStore,
+  getCacheStores,
+  clearCacheStores,
+  type CacheObserver,
+  type CacheObservation,
+  type RegisteredCacheStore,
 } from './cache';
 export type { CacheKeyPart } from './cache';
+export {
+  enableBootRecording,
+  isBootRecording,
+  getBootReport,
+  resetBootRecorderForTests,
+  type BootReport,
+  type ModuleInitRecord,
+  type ProviderInitRecord,
+} from './diagnostics/boot-recorder';
 export { ApplicationException } from './exceptions/application-exception';
 export { getHttpStatusFromException, createHttpException } from './exceptions/http-utils';
 export { getGraphQLCodeFromException, toGraphQLError, createGraphQLException } from './exceptions/graphql-utils';

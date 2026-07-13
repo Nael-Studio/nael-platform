@@ -13,6 +13,7 @@
     "@nl-framework/core": "workspace:*",
     "@nl-framework/config": "workspace:*",
     "@nl-framework/http": "workspace:*",
+    "@nl-framework/openapi": "workspace:*",
     "@nl-framework/platform": "workspace:*",
     "@nl-framework/logger": "workspace:*"
   }

@@ -62,4 +62,32 @@ export {
 	registerMultiTenantAuthGuard,
 	resetMultiTenantAuthGuard,
 } from './http/guard';
+export {
+	Roles,
+	Permissions,
+	RolesGuard,
+	registerRolesGuard,
+	resetRolesGuard,
+	createAuthorizationProviders,
+	readAccessRequirement,
+	normalizeAuthorizationOptions,
+	defaultRolesResolver,
+	defaultPermissionsResolver,
+	defaultTenantResolver,
+	defaultMicroservicePrincipalResolver,
+	ROLES_METADATA_KEY,
+	PERMISSIONS_METADATA_KEY,
+	AUTHORIZATION_OPTIONS,
+} from './authorization';
+export type {
+	AuthorizationOptions,
+	AuthorizationPrincipal,
+	NormalizedAuthorizationOptions,
+	RolesResolver,
+	PermissionsResolver,
+	TenantResolver,
+	MicroservicePrincipalResolver,
+	MicroservicePrincipalSource,
+	AccessRequirement,
+} from './authorization';
 export * from './orm';

@@ -1,0 +1,143 @@
+---
+title: 'Authorization (RBAC) · Auth'
+description: 'First-party @Roles / @Permissions decorators and RolesGuard across HTTP, GraphQL, and microservices.'
+---
+
+import { CodeBlock } from '@/components/shared/simple-code-block';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+export const decorators = `import { Controller } from '@nl-framework/core';
+import { Get } from '@nl-framework/http';
+import { Roles, Permissions } from '@nl-framework/auth';
+
+@Controller('admin')
+@Roles('admin', 'editor')          // ANY-of: holds admin OR editor
+export class AdminController {
+  @Get()
+  dashboard() { /* inherits @Roles('admin', 'editor') */ }
+
+  @Permissions('billing:write')    // ALL-of: must hold every permission
+  @Get('billing')
+  billing() { /* ... */ }
+
+  @Roles('superadmin')             // method-level REPLACES controller-level
+  @Get('danger')
+  danger() { /* only superadmin, not admin/editor */ }
+}`;
+
+export const register = `import { registerHttpGuards } from '@nl-framework/http';
+import { AuthGuard, RolesGuard } from '@nl-framework/auth';
+
+// Order matters: AuthGuard authenticates + attaches the principal,
+// then RolesGuard enforces @Roles / @Permissions against it.
+registerHttpGuards(AuthGuard, RolesGuard);`;
+
+export const graphqlUsage = `import { Resolver, Query } from '@nl-framework/graphql';
+import { UseGuards } from '@nl-framework/http';
+import { AuthGuard, RolesGuard, Roles } from '@nl-framework/auth';
+
+@Resolver()
+@UseGuards(AuthGuard, RolesGuard)
+export class AdminResolver {
+  @Roles('admin')
+  @Query(() => String)
+  adminGreeting() {
+    return 'Welcome, administrator.';
+  }
+}`;
+
+export const microUsage = `import { registerMicroserviceGuard } from '@nl-framework/microservices';
+import { RolesGuard } from '@nl-framework/auth';
+
+// RolesGuard is transport-agnostic — register it for message handlers too.
+registerMicroserviceGuard(RolesGuard);`;
+
+export const resolvers = `BetterAuthModule.forRoot({
+  betterAuth: { /* ... */ },
+  database,
+  authorization: {
+    // Return the ANY-of roles this principal holds.
+    rolesResolver: (session, user, tenantId) => {
+      const roles = Array.isArray(user.role) ? user.role : [user.role].filter(Boolean);
+      return roles;
+    },
+    // Return the ALL-of permissions this principal holds.
+    permissionsResolver: (session, user, tenantId) => user.permissions ?? [],
+  },
+});`;
+
+<article className="space-y-8">
+  <div className="space-y-3">
+    <h1 className="text-4xl font-semibold tracking-tight">Authorization (RBAC)</h1>
+    <div className="text-lg text-muted-foreground max-w-3xl">
+      Declarative role- and permission-based access control that works uniformly across HTTP, GraphQL,
+      and microservice message handlers — no hand-rolled <code>if (user.role !== 'admin')</code> checks.
+    </div>
+  </div>
+
+  <section className="space-y-4" id="decorators">
+    <h2 className="text-2xl font-semibold">@Roles and @Permissions</h2>
+    <div className="text-muted-foreground">
+      <code>@Roles</code> is <strong>ANY-of</strong> (holds at least one listed role); <code>@Permissions</code>
+      is <strong>ALL-of</strong> (holds every listed permission). Both apply at the class or method level, and a
+      method-level decorator <strong>replaces</strong> its controller-level counterpart (no union).
+    </div>
+    <CodeBlock code={decorators} title="admin.controller.ts" />
+  </section>
+
+  <section className="space-y-4" id="ordering">
+    <h2 className="text-2xl font-semibold">RolesGuard runs after AuthGuard</h2>
+    <div className="text-muted-foreground">
+      <code>RolesGuard</code> reads the authenticated principal that <code>AuthGuard</code> (or
+      <code>MultiTenantAuthGuard</code>) placed on the request. Global guards run in registration order, so
+      register the auth guard first. If <code>RolesGuard</code> reaches a constrained handler with no principal,
+      it throws a configuration error — a signal that it ran too early.
+    </div>
+    <CodeBlock code={register} title="main.ts" />
+  </section>
+
+  <section className="space-y-4" id="behavior">
+    <h2 className="text-2xl font-semibold">Failure behavior</h2>
+    <Card className="border-border/70">
+      <CardHeader>
+        <CardTitle>Status codes</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2 text-sm text-muted-foreground">
+        <ul className="list-disc space-y-2 pl-5">
+          <li><strong>Unauthenticated</strong> → <code>401</code> (handled by <code>AuthGuard</code>, unchanged).</li>
+          <li><strong>Authenticated but lacking the role/permission</strong> → <code>403 Forbidden</code> (HTTP) or a <code>FORBIDDEN</code> GraphQL error.</li>
+          <li><strong>@Public()</strong> routes bypass both guards.</li>
+          <li><strong>Unconstrained</strong> handlers (no <code>@Roles</code>/<code>@Permissions</code>) are always allowed.</li>
+        </ul>
+      </CardContent>
+    </Card>
+  </section>
+
+  <section className="space-y-4" id="graphql">
+    <h2 className="text-2xl font-semibold">GraphQL and microservices</h2>
+    <div className="text-muted-foreground">
+      The same <code>RolesGuard</code> serves all three transports. For a resolver, list the guards in order:
+    </div>
+    <CodeBlock code={graphqlUsage} title="admin.resolver.ts" />
+    <div className="text-muted-foreground">
+      For message handlers, register it with the microservices registry:
+    </div>
+    <CodeBlock code={microUsage} title="bootstrap.ts" />
+  </section>
+
+  <section className="space-y-4" id="resolvers">
+    <h2 className="text-2xl font-semibold">Pluggable role sources</h2>
+    <div className="text-muted-foreground">
+      By default roles come from Better Auth&apos;s <code>user.role</code> (string or <code>string[]</code>) and, when the
+      organization plugin is active, the active-org member role; permissions come from <code>user.permissions</code>.
+      Override either resolver to read from wherever your app stores them.
+    </div>
+    <CodeBlock code={resolvers} title="app.module.ts" />
+    <div className="text-muted-foreground">
+      Under <a href="/docs/auth/multi-tenant">multi-tenant auth</a>, the active <code>tenantId</code> is passed to the
+      resolvers so roles resolve <strong>per tenant</strong> — the same user can be <code>admin</code> in one tenant and
+      <code>viewer</code> in another. Not using <code>BetterAuthModule</code>? Spread
+      <code>createAuthorizationProviders(options?)</code> into your module&apos;s <code>providers</code>.
+    </div>
+  </section>
+</article>

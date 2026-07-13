@@ -75,7 +75,7 @@ export interface ScalarTypeDefinition {
   scalar: GraphQLScalarType;
 }
 
-export type ResolverKind = 'query' | 'mutation' | 'field';
+export type ResolverKind = 'query' | 'mutation' | 'field' | 'subscription';
 
 export interface ResolverMethodOptions {
   name?: string;
@@ -83,6 +83,20 @@ export interface ResolverMethodOptions {
   nullable?: boolean;
   deprecationReason?: string;
   list?: boolean;
+}
+
+/** Topic(s) a subscription listens on. May be dynamic per request. */
+export type SubscriptionTopic =
+  | string
+  | string[]
+  | ((args: Record<string, unknown>, context: any) => string | string[]);
+
+export interface SubscriptionConfig {
+  topics: SubscriptionTopic;
+  /** Return false to skip a payload for this subscriber. */
+  filter?: (payload: any, args: Record<string, unknown>, context: any, info: GraphQLResolveInfo) => boolean | Promise<boolean>;
+  /** Map the published payload to the resolved field value. Defaults to identity. */
+  resolve?: (payload: any, args: Record<string, unknown>, context: any, info: GraphQLResolveInfo) => unknown;
 }
 
 export interface ResolverMethodDefinition {
@@ -93,6 +107,8 @@ export interface ResolverMethodDefinition {
   typeThunk?: TypeThunk;
   designReturnType?: unknown;
   options: ResolverMethodOptions;
+  /** Present only for `kind === 'subscription'`. */
+  subscription?: SubscriptionConfig;
 }
 
 export type ResolverParamKind = 'arg' | 'args' | 'context' | 'info' | 'parent' | 'custom';
@@ -136,6 +152,7 @@ export interface ResolverClassDefinition {
   queries: ResolverMethodDefinition[];
   mutations: ResolverMethodDefinition[];
   fields: ResolverMethodDefinition[];
+  subscriptions: ResolverMethodDefinition[];
   resolveReference?: ResolverMethodDefinition;
 }
 
@@ -209,6 +226,7 @@ export class GraphqlMetadataStorage {
         queries: [],
         mutations: [],
         fields: [],
+        subscriptions: [],
       };
       this.resolverClasses.set(target, resolver);
       return resolver;
@@ -232,6 +250,9 @@ export class GraphqlMetadataStorage {
         break;
       case 'field':
         resolver.fields.push(definition);
+        break;
+      case 'subscription':
+        resolver.subscriptions.push(definition);
         break;
       default:
         throw new Error(`Unsupported resolver kind: ${definition.kind}`);
@@ -346,6 +367,7 @@ export class GraphqlMetadataStorage {
       queries: [...resolver.queries],
       mutations: [...resolver.mutations],
       fields: [...resolver.fields],
+      subscriptions: [...resolver.subscriptions],
       resolveReference: resolver.resolveReference,
     }));
   }

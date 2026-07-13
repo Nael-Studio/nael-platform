@@ -88,8 +88,8 @@ export class OrdersService {
     // Fire-and-forget event
     await this.client.emit('order.created', { orderId: 123, ...data });
 
-    // Request/response (coming soon)
-    // const result = await this.client.send('process.order', data);
+    // Request/response over Dapr service invocation
+    const result = await this.client.send('process.order', data, { appId: 'orders' });
   }
 }
 ```
@@ -130,12 +130,17 @@ Publishes a fire-and-forget event.
 await client.emit('order.created', { orderId: 123 });
 ```
 
-#### `send(pattern, data)`
+#### `send(pattern, data, options?)`
 
-Sends a request and awaits a response (coming soon).
+Invokes a service over Dapr service invocation and awaits the typed response.
+Options: `timeout` (default 30s), `appId` (target app), `signal`. A non-2xx
+response throws `MicroserviceInvocationException` (carrying status + body).
 
 ```typescript
-const result = await client.send('process.payment', { amount: 100 });
+const result = await client.send('process.payment', { amount: 100 }, {
+  appId: 'payments',
+  timeout: 5000,
+});
 ```
 
 ## Exception Filters
@@ -254,11 +259,12 @@ export class CustomTransport implements Transport {
 
 ## Roadmap
 
-- [ ] Request/response pattern via Dapr service invocation
-- [ ] Subscription endpoint handlers for Dapr pub/sub
+- [x] Guards, interceptors, and pipes execute in the dispatcher pipeline
+- [x] Request/response pattern via Dapr service invocation (`send()`)
+- [x] Automatic subscription endpoint (`GET /dapr/subscribe`) for Dapr pub/sub
+- [x] Sidecar health check on `connect()`
 - [ ] Message serialization/deserialization strategies
 - [ ] Retry policies and dead-letter queues
-- [ ] Integration with `@nl-framework/http` for hybrid services
 - [ ] Additional transport implementations (NATS, RabbitMQ, etc.)
 
 ## License

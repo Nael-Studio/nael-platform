@@ -14,6 +14,7 @@
     { "path": "../logger/tsconfig.build.json" },
     { "path": "../http/tsconfig.build.json" },
     { "path": "../orm/tsconfig.build.json" },
-    { "path": "../graphql/tsconfig.build.json" }
+    { "path": "../graphql/tsconfig.build.json" },
+    { "path": "../scheduler/tsconfig.build.json" }
   ]
 }

@@ -68,6 +68,7 @@ export const docsNav: DocsNavSection[] = [
       { title: "Overview", href: "/docs/auth" },
       { title: "REST", href: "/docs/auth/rest" },
       { title: "GraphQL", href: "/docs/auth/graphql" },
+      { title: "Authorization", href: "/docs/auth/authorization" },
       { title: "Multi-tenant", href: "/docs/auth/multi-tenant" },
     ],
   },
@@ -108,6 +109,18 @@ export const docsNav: DocsNavSection[] = [
       { title: "Pipes", href: "/docs/microservices/pipes" },
       { title: "Guards", href: "/docs/microservices/guards" },
       { title: "Interceptors", href: "/docs/microservices/interceptors" },
+    ],
+  },
+  {
+    title: "OpenAPI",
+    items: [
+      { title: "Overview", href: "/docs/openapi" },
+    ],
+  },
+  {
+    title: "Health",
+    items: [
+      { title: "Overview", href: "/docs/health" },
     ],
   },
   {

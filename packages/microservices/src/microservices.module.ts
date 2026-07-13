@@ -1,14 +1,17 @@
 import { Injectable, Module } from '@nl-framework/core';
 import type { ClassType } from '@nl-framework/core';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
+import { registerHttpRouteRegistrar } from '@nl-framework/http';
 import { MicroserviceClient } from './client/microservice-client';
 import type { Transport } from './interfaces/transport';
 import { DaprTransport } from './transport/dapr-transport';
-import { listMessageHandlers } from './decorators/patterns';
+import { createMicroserviceRouteRegistrar } from './http/route-registrar';
 
 export interface MicroservicesModuleOptions {
   transport?: Transport;
   controllers?: ClassType[];
+  /** Pub/sub component name advertised at `GET /dapr/subscribe`. Defaults to `pubsub`. */
+  pubsubName?: string;
 }
 
 const MICROSERVICE_CLIENT = Symbol.for('nl:microservices:client');
@@ -16,7 +19,7 @@ const MICROSERVICE_CLIENT = Symbol.for('nl:microservices:client');
 @Injectable()
 export class MicroservicesModule {
   private client?: MicroserviceClient;
-  private logger: Logger;
+  private readonly logger: Logger;
 
   constructor(
     private readonly loggerFactory: LoggerFactory,
@@ -26,16 +29,26 @@ export class MicroservicesModule {
   }
 
   async onModuleInit(): Promise<void> {
-    const transport = this.options.transport ?? new DaprTransport({ logger: this.logger });
+    const transport =
+      this.options.transport ??
+      new DaprTransport({ logger: this.logger, pubsubName: this.options.pubsubName });
     this.client = new MicroserviceClient(transport);
 
     await this.client.connect();
-    this.logger.info('Microservices module initialized');
 
-    // Register message handlers from controllers
-    if (this.options.controllers) {
-      this.registerMessageHandlers(this.options.controllers);
+    // Expose the handlers to Dapr: a `/dapr/subscribe` document plus one HTTP
+    // route per pattern, all driven through the dispatcher pipeline.
+    if (this.options.controllers?.length) {
+      registerHttpRouteRegistrar(
+        createMicroserviceRouteRegistrar({
+          controllers: this.options.controllers,
+          pubsubName: this.options.pubsubName ?? 'pubsub',
+          logger: this.logger,
+        }),
+      );
     }
+
+    this.logger.info('Microservices module initialized');
   }
 
   async onModuleDestroy(): Promise<void> {
@@ -50,27 +63,6 @@ export class MicroservicesModule {
       throw new Error('Microservices module not initialized');
     }
     return this.client;
-  }
-
-  private registerMessageHandlers(controllers: ClassType[]): void {
-    for (const controller of controllers) {
-      const handlers = listMessageHandlers(controller);
-      
-      if (handlers.length > 0) {
-        this.logger.info('Registered message handlers', {
-          controller: controller.name,
-          handlers: handlers.map(h => ({
-            method: h.propertyKey,
-            pattern: h.metadata.pattern,
-            isEvent: h.metadata.isEvent,
-            guards: h.guards.length,
-            interceptors: h.interceptors.length,
-            pipes: h.pipes.length,
-            filters: h.filters.length,
-          })),
-        });
-      }
-    }
   }
 }
 

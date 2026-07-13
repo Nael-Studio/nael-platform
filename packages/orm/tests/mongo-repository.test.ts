@@ -26,6 +26,10 @@ type FakeCollection = {
     filter: Filter<TestEntity & BaseDocument>,
     update: UpdateFilter<TestEntity & BaseDocument>,
   ) => Promise<{ matchedCount: number; modifiedCount: number }>;
+  findOneAndUpdate: (
+    filter: Filter<TestEntity & BaseDocument>,
+    update: UpdateFilter<TestEntity & BaseDocument>,
+  ) => Promise<(TestEntity & BaseDocument) | null>;
 };
 
 const matchesId = (condition: unknown, value: unknown): boolean => {
@@ -138,6 +142,30 @@ const createCollection = (store: Map<string | ObjectId, StoredEntity>): FakeColl
       matchedCount: 0,
       modifiedCount: 0,
     };
+  },
+  findOneAndUpdate: async (filter, update) => {
+    for (const [key, entity] of store.entries()) {
+      if (!matchesFilter(filter as Filter<TestEntity & BaseDocument>, entity)) {
+        continue;
+      }
+
+      const next: StoredEntity = { ...entity };
+
+      if (update.$set) {
+        Object.assign(next, update.$set as MatchKeysAndValues<TestEntity & BaseDocument>);
+      }
+
+      if (update.$unset) {
+        for (const unsetKey of Object.keys(update.$unset as Record<string, unknown>)) {
+          delete (next as unknown as Record<string, unknown>)[unsetKey];
+        }
+      }
+
+      store.set(key, next);
+      return { ...next } as TestEntity & BaseDocument;
+    }
+
+    return null;
   },
 });
 

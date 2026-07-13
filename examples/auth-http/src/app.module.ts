@@ -10,6 +10,7 @@ import type { ExampleConfig } from './types';
 import { RootController } from './root.controller';
 import { AuthController } from './auth.controller';
 import { ProfileController } from './profile.controller';
+import { AdminController } from './admin.controller';
 
 const DEFAULT_MONGO_URI = process.env.MONGODB_URI ?? 'mongodb://127.0.0.1:27017/nl-framework-auth-example';
 const DEFAULT_MONGO_DB = process.env.MONGODB_DB ?? 'nl-framework-auth-example';
@@ -44,6 +45,18 @@ const configDir = resolve(dirname(fileURLToPath(import.meta.url)), '../config');
           },
           adapter: createMongoAdapterFromDb(db),
           extendPlugins: [username()],
+          // RBAC: how `@Roles`/`@Permissions` read a principal's roles. The default
+          // resolver reads Better Auth's `user.role`; here we also elevate a known
+          // address to demonstrate a custom resolver.
+          authorization: {
+            rolesResolver: (_session, user) => {
+              const u = user as { role?: string; email?: string } | undefined;
+              const roles: string[] = [];
+              if (u?.role) roles.push(u.role);
+              if (u?.email === 'admin@example.com') roles.push('admin');
+              return roles;
+            },
+          },
         };
       },
     }),
@@ -57,7 +70,7 @@ const configDir = resolve(dirname(fileURLToPath(import.meta.url)), '../config');
       },
     }),
   ],
-  controllers: [RootController, AuthController, ProfileController],
+  controllers: [RootController, AuthController, ProfileController, AdminController],
   providers: [AuthGuard],
 })
 export class AppModule {}

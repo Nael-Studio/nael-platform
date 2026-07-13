@@ -1,7 +1,7 @@
 import { NaelFactory } from '@nl-framework/platform';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
 import { registerHttpGuards, type MiddlewareHandler } from '@nl-framework/http';
-import { createBetterAuthMiddleware, BetterAuthService, AuthGuard } from '@nl-framework/auth';
+import { createBetterAuthMiddleware, BetterAuthService, AuthGuard, RolesGuard } from '@nl-framework/auth';
 import { AppModule } from './app.module';
 import type { ExampleConfig } from './types';
 
@@ -18,7 +18,9 @@ const bootstrap = async () => {
     throw new Error('HTTP application was not created.');
   }
 
-  registerHttpGuards(AuthGuard);
+  // Order matters: AuthGuard authenticates and attaches the principal, then
+  // RolesGuard enforces @Roles/@Permissions against it.
+  registerHttpGuards(AuthGuard, RolesGuard);
   const authService = await httpApp.get(BetterAuthService);
 
   const requestLogMiddleware: MiddlewareHandler = async (ctx, next) => {

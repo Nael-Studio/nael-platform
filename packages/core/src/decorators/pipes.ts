@@ -54,7 +54,10 @@ export const UsePipes = (...pipes: PipeToken[]): ClassDecorator & MethodDecorato
     }
 
     defineHandlerPipes(targetOrValue as object, pipes, context as string | symbol);
-    return targetOrValue as PropertyDescriptor['value'];
+    // Legacy method/property decorator: return nothing so the original method is
+    // preserved. Returning the prototype would be misread as a descriptor and
+    // clobber the method (notably for handlers named `get`/`set`).
+    return undefined;
   }) as ClassDecorator & MethodDecorator;
 
 export const setPipeMetadata = (

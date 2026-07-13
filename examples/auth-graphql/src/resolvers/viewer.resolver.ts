@@ -1,7 +1,10 @@
 import { Resolver, Query, Context } from '@nl-framework/graphql';
 import { UseGuards } from '@nl-framework/http';
-import { AuthGuard, Public } from '@nl-framework/auth';
+import { AuthGuard, RolesGuard, Roles, Public } from '@nl-framework/auth';
 import type { BetterAuthSessionPayload } from '@nl-framework/auth';
+import { Viewer } from '../models/viewer.model';
+import type { AuthenticatedGraphqlContext } from '../types';
+
 type SessionWithUser = BetterAuthSessionPayload & {
   user: {
     id: string;
@@ -12,21 +15,10 @@ type SessionWithUser = BetterAuthSessionPayload & {
   };
 };
 
-const hasUserProfile = (
-  session: BetterAuthSessionPayload | null | undefined,
-): session is SessionWithUser => {
-  if (!session || typeof session !== 'object' || session === null) {
-    return false;
-  }
-
-  const user = (session as { user?: unknown }).user;
-  return typeof user === 'object' && user !== null && typeof (user as { id?: unknown }).id === 'string';
-};
-import { Viewer } from '../models/viewer.model';
-import type { AuthenticatedGraphqlContext } from '../types';
-
+// Guard order matters: AuthGuard authenticates first and attaches the principal,
+// then RolesGuard enforces `@Roles`/`@Permissions`.
 @Resolver(() => Viewer)
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, RolesGuard)
 export class ViewerResolver {
   @Public()
   @Query(() => String, { description: 'Health check that remains publicly accessible.' })
@@ -36,10 +28,8 @@ export class ViewerResolver {
 
   @Query(() => Viewer, { description: 'Information about the authenticated user derived from the Better Auth session.' })
   viewer(@Context() context: AuthenticatedGraphqlContext): Viewer {
-    const session: BetterAuthSessionPayload | null | undefined = context.auth;
-    if (!hasUserProfile(session)) {
-      throw new Error('No Better Auth session present in context. Ensure you are signed in.');
-    }
+    // AuthGuard guarantees a principal here, so `context.auth` is always present.
+    const session = context.auth as SessionWithUser;
 
     return {
       id: session.user.id,
@@ -47,5 +37,14 @@ export class ViewerResolver {
       name: session.user.name ?? null,
       emailVerified: Boolean(session.user.emailVerified),
     } satisfies Viewer;
+  }
+
+  // Only principals resolving to the `admin` role reach this field; everyone else
+  // gets a FORBIDDEN error from RolesGuard — no in-resolver role check required.
+  @Roles('admin')
+  @Query(() => String, { description: 'Admin-only greeting, gated by @Roles("admin").' })
+  adminGreeting(@Context() context: AuthenticatedGraphqlContext): string {
+    const session = context.auth as SessionWithUser;
+    return `Welcome, administrator ${session.user.email ?? session.user.id}.`;
   }
 }

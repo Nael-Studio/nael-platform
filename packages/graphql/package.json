@@ -29,14 +29,15 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@apollo/server": "^5.0.0",
-    "@apollo/subgraph": "^2.7.4",
-    "@apollo/gateway": "^2.7.4",
+    "@apollo/gateway": "^2.14.2",
+    "@apollo/server": "^5.5.1",
+    "@apollo/subgraph": "^2.14.2",
     "@nl-framework/core": "^0.3.6",
     "@nl-framework/http": "^0.3.6",
     "@nl-framework/logger": "^0.3.6",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
-    "graphql": "^16.8.1"
+    "graphql": "^16.11.0",
+    "graphql-ws": "^5.16.0"
   }
 }

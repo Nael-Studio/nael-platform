@@ -1,4 +1,8 @@
-import type { MessagePattern, Transport } from '../interfaces/transport';
+import type {
+  MessagePattern,
+  MicroserviceSendOptions,
+  Transport,
+} from '../interfaces/transport';
 
 export class MicroserviceClient {
   constructor(private readonly transport: Transport) {}
@@ -15,7 +19,12 @@ export class MicroserviceClient {
     await this.transport.emit(pattern, data);
   }
 
-  async send<TResult = unknown>(pattern: MessagePattern, data: unknown): Promise<TResult> {
-    return this.transport.send<TResult>(pattern, data);
+  /** Fire-and-await a request/response invocation and return the typed result. */
+  async send<TResult = unknown>(
+    pattern: MessagePattern,
+    data: unknown,
+    options?: MicroserviceSendOptions,
+  ): Promise<TResult> {
+    return this.transport.send<TResult>(pattern, data, options);
   }
 }

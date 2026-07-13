@@ -15,6 +15,10 @@ import type { Lifecycle } from '../lifecycle/hooks';
 import { getMetadata } from '../utils/metadata';
 import { ContextId, DEFAULT_CONTEXT_ID, Scope } from '../scope';
 import { ModuleRef } from '../module-ref';
+import { isBootRecording, recordProviderInit } from '../diagnostics/boot-recorder';
+
+const describeToken = (token: Token): string =>
+  typeof token === 'function' ? token.name : String(token);
 
 interface NormalizedClassProvider<T = any> {
   type: 'class';
@@ -160,6 +164,13 @@ export class Container {
   }
 
   registerProvider<T>(provider: Provider<T>, moduleClass?: ClassType): void {
+    // Re-registering a token invalidates anything cached under it. This keeps
+    // overrides (e.g. from the testing utilities) correct regardless of the
+    // original provider kind — value providers eagerly cache an instance, so a
+    // later class/factory override must not read through to the stale value.
+    const registeredToken = typeof provider === 'function' ? provider : provider.provide;
+    this.clearCachedToken(registeredToken);
+
     if (typeof provider === 'function') {
       const scope = this.getClassScope(provider);
       this.providerDefinitions.set(provider, {
@@ -218,6 +229,13 @@ export class Container {
     };
     this.providerDefinitions.set(factoryProvider.provide, normalized);
     this.providerToModule.set(factoryProvider.provide, moduleClass);
+  }
+
+  private clearCachedToken(token: Token): void {
+    this.providerInstances.delete(token);
+    this.providerPromises.delete(token);
+    this.requestScopedInstances.delete(token);
+    this.requestScopedPromises.delete(token);
   }
 
   async resolve<T>(token: Token<T>, options: ResolveOptions = {}): Promise<T> {
@@ -374,7 +392,19 @@ export class Container {
         const dependencies = await Promise.all(
           definition.inject.map((t) => this.internalResolve(isForwardRef(t) ? t.forwardRef() : t, path, contextId)),
         );
+        // Time only the factory call itself, not dependency resolution.
+        const recording = isBootRecording();
+        const startPerf = recording ? performance.now() : 0;
         const instance = await definition.useFactory(...dependencies);
+        if (recording) {
+          recordProviderInit({
+            token: describeToken(definition.token),
+            module: this.getOwnerModule(definition.token)?.name,
+            type: 'factory',
+            durationMs: performance.now() - startPerf,
+            at: Date.now(),
+          });
+        }
         this.handleLifecycle(instance);
         return instance;
       }
@@ -405,7 +435,18 @@ export class Container {
       }),
     );
 
+    const recording = isBootRecording();
+    const startPerf = recording ? performance.now() : 0;
     const instance = new Cls(...dependencies);
+    if (recording) {
+      recordProviderInit({
+        token: Cls.name,
+        module: this.getOwnerModule(Cls)?.name,
+        type: 'class',
+        durationMs: performance.now() - startPerf,
+        at: Date.now(),
+      });
+    }
     await this.handleLifecycle(instance);
     return instance;
   }

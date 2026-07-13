@@ -23,10 +23,23 @@ interface PendingAck {
   reject(error: Error): void;
 }
 
+/** Human-readable schedule string for a worker task. */
+const describeSchedule = (task: WorkerTask): string => {
+  switch (task.type) {
+    case 'cron':
+      return task.cron;
+    case 'interval':
+      return `every ${task.interval}ms`;
+    case 'timeout':
+      return `after ${task.timeout}ms`;
+  }
+};
+
 @Injectable()
 export class SchedulerService implements OnModuleDestroy {
   private worker: SchedulerWorker | undefined;
   private readonly handlers = new Map<string, SchedulerHandler>();
+  private readonly tasks = new Map<string, WorkerTask>();
   private readonly pendingAcks = new Map<string, PendingAck>();
   private readonly messageHandler: WorkerMessageHandler;
   private readonly errorHandler: (event: ErrorEvent) => void;
@@ -125,6 +138,7 @@ export class SchedulerService implements OnModuleDestroy {
     });
 
     this.handlers.delete(id);
+    this.tasks.delete(id);
     this.registry.removeCronJob(id) ||
       this.registry.removeInterval(id) ||
       this.registry.removeTimeout(id);
@@ -201,13 +215,23 @@ export class SchedulerService implements OnModuleDestroy {
     }
 
     this.handlers.set(task.id, handler);
+    this.tasks.set(task.id, task);
 
     try {
       await this.sendCommand({ action: 'register', task }, task.id);
     } catch (error) {
       this.handlers.delete(task.id);
+      this.tasks.delete(task.id);
       throw error;
     }
+
+    this.registry.describeJob({
+      id: task.id,
+      type: task.type,
+      schedule: describeSchedule(task),
+      timezone: task.type === 'cron' ? task.timezone : undefined,
+      maxRuns: task.maxRuns,
+    });
 
     const handle: ScheduledHandle = {
       id: task.id,
@@ -273,6 +297,17 @@ export class SchedulerService implements OnModuleDestroy {
     worker.postMessage(message);
   }
 
+  /**
+   * Run a job's handler on demand, out of band from its schedule — used by the
+   * devtools "Run now" action. Records the run in the registry like any other.
+   */
+  async triggerTask(id: string): Promise<void> {
+    if (!this.handlers.has(id)) {
+      throw new Error(`Task with id "${id}" is not registered.`);
+    }
+    await this.executeTask(id);
+  }
+
   private async executeTask(id: string): Promise<void> {
     const handler = this.handlers.get(id);
     if (!handler) {
@@ -280,11 +315,27 @@ export class SchedulerService implements OnModuleDestroy {
       return;
     }
 
+    const startedAt = Date.now();
+    this.registry.recordRunStart(id, startedAt);
+    let errorMessage: string | undefined;
     try {
       await handler();
     } catch (error) {
+      errorMessage = error instanceof Error ? error.message : String(error);
       this.logger.error('Scheduled task execution failed', error, { id });
+    } finally {
+      const durationMs = Date.now() - startedAt;
+      this.registry.recordRunEnd(id, durationMs, errorMessage, this.computeNextRun(id, startedAt));
     }
+  }
+
+  /** Best-effort next fire time for interval jobs; undefined otherwise. */
+  private computeNextRun(id: string, lastRunAt: number): number | undefined {
+    const task = this.tasks.get(id);
+    if (task?.type === 'interval') {
+      return lastRunAt + task.interval;
+    }
+    return undefined;
   }
 
   private onWorkerMessage(message: WorkerOutboundMessage): void {

@@ -43,6 +43,17 @@ const configDir = resolve(dirname(fileURLToPath(import.meta.url)), '../config');
           },
           adapter: createMongoAdapterFromDb(db),
           extendPlugins: [username()],
+          // RBAC resolver for `@Roles`. Defaults read `user.role`; here we also
+          // elevate a known address so `adminGreeting` is reachable in the demo.
+          authorization: {
+            rolesResolver: (_session, user) => {
+              const u = user as { role?: string; email?: string } | undefined;
+              const roles: string[] = [];
+              if (u?.role) roles.push(u.role);
+              if (u?.email === 'admin@example.com') roles.push('admin');
+              return roles;
+            },
+          },
         };
       },
     }),

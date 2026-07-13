@@ -14,7 +14,8 @@
   ],
   "scripts": {
     "build": "bunx tsc --build tsconfig.build.json",
-    "dev": "bun run src/bin.ts"
+    "dev": "bun run src/bin.ts",
+    "test": "bun test"
   },
   "keywords": [
     "cli",

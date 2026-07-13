@@ -17,6 +17,6 @@ export class InitialUsersSeed implements Seeder {
         name: 'Jane Doe',
         role: 'member',
       },
-    ]);
+    ] as User[]);
   }
 }

@@ -1,6 +1,11 @@
 import 'reflect-metadata';
 import type { ClassType, ApplicationOptions, Token, ApplicationContext } from '@nl-framework/core';
-import { Application, getControllerPrefix } from '@nl-framework/core';
+import {
+  Application,
+  getControllerPrefix,
+  RequestContext as AmbientRequestContext,
+  createRequestContextData,
+} from '@nl-framework/core';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
 import { Router } from './router/router';
 import type { MiddlewareHandler, HttpMethod, RequestContext } from './interfaces/http';
@@ -8,12 +13,31 @@ import type { HttpVersioningOptions } from './versioning/options';
 import { getRouteDefinitions } from './decorators/routes';
 import { listHttpRouteRegistrars } from './registry';
 import { PUBLIC_ROUTE_METADATA_KEY } from './constants';
+import {
+  type CorsOptions,
+  normalizeCorsOptions,
+  isPreflight,
+  buildPreflightResponse,
+  applyCorsHeaders,
+} from './middleware/cors';
+import {
+  type SecurityOptions,
+  normalizeSecurityOptions,
+  applySecurityHeaders,
+} from './middleware/security';
+import { type ServeStaticOptions, createStaticFileServer } from './static/serve-static';
 
 export interface HttpServerOptions {
   host?: string;
   port?: number;
   middleware?: MiddlewareHandler[];
   versioning?: HttpVersioningOptions;
+  /** Enable CORS (`true` = allow any origin) or configure it. */
+  cors?: boolean | CorsOptions;
+  /** Enable security response headers (`true` = helmet-core defaults) or configure them. */
+  security?: boolean | SecurityOptions;
+  /** Serve static files from one or more mounts before routing. */
+  serveStatic?: ServeStaticOptions | ServeStaticOptions[];
 }
 
 export interface HttpApplicationOptions extends ApplicationOptions, HttpServerOptions { }
@@ -41,12 +65,23 @@ export class HttpApplication {
   private customRouteCounter = 0;
   private readonly routeRegistrarPromise: Promise<void>;
   private readonly unsubscribeModuleListener: () => void;
+  private readonly corsOptions?: CorsOptions;
+  private readonly securityOptions?: SecurityOptions;
+  private readonly staticServers: Array<(request: Request) => Promise<Response | null>>;
 
   constructor(
     private readonly context: ApplicationContext,
     private readonly options: HttpServerOptions,
     private readonly ownsContext: boolean,
   ) {
+    this.corsOptions = normalizeCorsOptions(options.cors ?? false);
+    this.securityOptions = normalizeSecurityOptions(options.security ?? false);
+    const staticMounts = options.serveStatic
+      ? Array.isArray(options.serveStatic)
+        ? options.serveStatic
+        : [options.serveStatic]
+      : [];
+    this.staticServers = staticMounts.map((mount) => createStaticFileServer(mount));
     const baseLogger = this.context.getLogger().child('HttpApplication');
     this.logger = baseLogger;
     this.router = new Router({ versioning: options.versioning, logger: this.logger });
@@ -154,6 +189,68 @@ export class HttpApplication {
     this.logger.debug('Registered custom HTTP route handler', { method, path });
   }
 
+  /**
+   * Dispatch a single `Request` through the full routing pipeline and return the
+   * resulting `Response`, without binding a port. This is what `Bun.serve`'s
+   * `fetch` handler calls, and it lets tests (and serverless adapters) drive the
+   * application directly. Route registrars are awaited on first use.
+   */
+  async handle(request: Request): Promise<Response> {
+    await this.routeRegistrarPromise;
+
+    // Short-circuit CORS preflight before any routing/DI work.
+    if (this.corsOptions && isPreflight(request)) {
+      const preflight = buildPreflightResponse(this.corsOptions, request);
+      if (preflight) {
+        return this.finalizeResponse(request, preflight);
+      }
+    }
+
+    // Static file mounts are checked before routing.
+    for (const serve of this.staticServers) {
+      const staticResponse = await serve(request);
+      if (staticResponse) {
+        return this.finalizeResponse(request, staticResponse);
+      }
+    }
+
+    const contextId = this.context.createContextId('http');
+    const url = new URL(request.url);
+    const requestContext = createRequestContextData({
+      kind: 'http',
+      name: `${request.method} ${url.pathname}`,
+      requestId: request.headers.get('x-request-id') ?? undefined,
+    });
+    try {
+      const response = await AmbientRequestContext.run(requestContext, () =>
+        this.router.handle(request, {
+          resolve: <T>(token: Token<T>) => this.context.get(token, { contextId }),
+        }),
+      );
+      // Echo the correlation id so clients (and downstream services) can trace it.
+      try {
+        response.headers.set('x-request-id', requestContext.requestId);
+      } catch {
+        // Some responses (e.g. redirects) carry immutable headers — echo is best effort.
+      }
+      return this.finalizeResponse(request, response);
+    } finally {
+      this.context.releaseContext(contextId);
+    }
+  }
+
+  /** Apply CORS + security response headers to an outgoing response. */
+  private finalizeResponse(request: Request, response: Response): Response {
+    let result = response;
+    if (this.corsOptions) {
+      result = applyCorsHeaders(this.corsOptions, request, result);
+    }
+    if (this.securityOptions) {
+      result = applySecurityHeaders(this.securityOptions, result);
+    }
+    return result;
+  }
+
   async listen(port?: number): Promise<ReturnType<typeof Bun.serve>> {
     await this.routeRegistrarPromise;
     const listenPort = port ?? this.options.port ?? 3000;
@@ -162,16 +259,7 @@ export class HttpApplication {
     this.server = Bun.serve({
       port: listenPort,
       hostname,
-      fetch: async (request) => {
-        const contextId = this.context.createContextId('http');
-        try {
-          return await this.router.handle(request, {
-            resolve: <T>(token: Token<T>) => this.context.get(token, { contextId }),
-          });
-        } finally {
-          this.context.releaseContext(contextId);
-        }
-      },
+      fetch: (request) => this.handle(request),
     });
 
     const actualHost = this.server.hostname ?? hostname;

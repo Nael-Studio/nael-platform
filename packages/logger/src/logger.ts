@@ -1,12 +1,14 @@
 import { LogLevel, type LogLevelKey, LogLevelOrder } from './log-level';
 import type { LoggerOptions, LoggerTransport, LogMessage } from './types';
 import { ConsoleTransport } from './transports/console.transport';
+import { resolveLoggerContext } from './context';
 
 const DEFAULT_LEVEL: LogLevelKey = 'INFO';
 
 export class Logger {
   private readonly transports: LoggerTransport[];
   private readonly timestampFn: () => Date;
+  private readonly includeRequestContext: boolean;
   private context?: string;
   private level: LogLevelKey;
 
@@ -15,6 +17,7 @@ export class Logger {
     this.context = options.context;
     this.transports = options.transports?.length ? options.transports : [new ConsoleTransport()];
     this.timestampFn = options.timestampFn ?? (() => new Date());
+    this.includeRequestContext = options.includeRequestContext ?? true;
   }
 
   setContext(context?: string): void {
@@ -64,6 +67,7 @@ export class Logger {
       level: overrides.level ?? this.level,
       transports: overrides.transports ?? this.transports,
       timestampFn: overrides.timestampFn ?? this.timestampFn,
+      includeRequestContext: overrides.includeRequestContext ?? this.includeRequestContext,
     });
   }
 
@@ -81,12 +85,16 @@ export class Logger {
       return;
     }
 
+    const ambient = this.includeRequestContext ? resolveLoggerContext() : undefined;
+    const mergedMeta =
+      ambient && Object.keys(ambient).length > 0 ? { ...ambient, ...meta } : meta;
+
     const entry: LogMessage = {
       level,
       message,
       context: this.context,
       timestamp: this.timestampFn(),
-      meta,
+      meta: mergedMeta,
       error,
     };
 

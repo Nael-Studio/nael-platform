@@ -13,6 +13,10 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./graphql": {
+      "import": "./dist/graphql/entity-loader.js",
+      "types": "./dist/graphql/entity-loader.d.ts"
     }
   },
   "scripts": {
@@ -26,6 +30,7 @@
     "nl-framework"
   ],
   "dependencies": {
+    "class-transformer": "^0.5.1",
     "mongodb": "^6.9.0"
   },
   "peerDependencies": {

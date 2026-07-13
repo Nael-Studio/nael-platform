@@ -3,20 +3,24 @@ import { normalizeConnectionName } from '@nl-framework/orm';
 import { mergePluginCollections } from './plugins';
 import type { BetterAuthModuleOptions } from '../interfaces/module-options';
 import type { BetterAuthAdapter, BetterAuthAdapterFactory } from '../types';
+import { normalizeAuthorizationOptions } from '../authorization/resolvers';
+import type { NormalizedAuthorizationOptions } from '../authorization/types';
 
 const resolveLegacyAdapter = (
   adapter: BetterAuthAdapter | BetterAuthAdapterFactory | undefined,
-  options: BetterAuthOptions,
 ): BetterAuthOptions['database'] | undefined => {
   if (!adapter) {
     return undefined;
   }
 
+  // Legacy `adapter` maps straight onto Better Auth's `database` option. A
+  // function adapter is already the factory Better Auth expects, so pass it
+  // through untouched; wrap a plain adapter instance so `database` stays callable.
   if (typeof adapter === 'function') {
-    return (adapter as BetterAuthAdapterFactory)(options);
+    return adapter as BetterAuthOptions['database'];
   }
 
-  return adapter as BetterAuthOptions['database'];
+  return (() => adapter) as unknown as BetterAuthOptions['database'];
 };
 
 export interface NormalizedBetterAuthModuleOptions {
@@ -27,6 +31,7 @@ export interface NormalizedBetterAuthModuleOptions {
   adapter?: BetterAuthAdapter | BetterAuthAdapterFactory;
   database?: BetterAuthOptions['database'];
   autoRunMigrations: boolean;
+  authorization: NormalizedAuthorizationOptions;
 }
 
 const ensureSecret = (options: BetterAuthOptions): BetterAuthOptions => {
@@ -61,7 +66,7 @@ export const normalizeModuleOptions = (
   const betterAuth = ensureSecret(copied);
 
   const legacyAdapter = options.adapter;
-  const providedDatabase = options.database ?? resolveLegacyAdapter(legacyAdapter, betterAuth);
+  const providedDatabase = options.database ?? resolveLegacyAdapter(legacyAdapter);
 
   if (!providedDatabase) {
     throw new Error(
@@ -77,6 +82,7 @@ export const normalizeModuleOptions = (
     adapter: options.adapter,
     database: providedDatabase,
     autoRunMigrations: options.autoRunMigrations ?? true,
+    authorization: normalizeAuthorizationOptions(options.authorization),
   } satisfies NormalizedBetterAuthModuleOptions;
 };
 

@@ -1,0 +1,193 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`buildOpenApiDocument matches the representative-controller snapshot 1`] = `
+{
+  "components": {
+    "schemas": {
+      "AddressDto": {
+        "properties": {
+          "street": {
+            "type": "string",
+          },
+          "zip": {
+            "type": "string",
+          },
+        },
+        "required": [
+          "street",
+        ],
+        "type": "object",
+      },
+      "CreateUserDto": {
+        "properties": {
+          "address": {
+            "$ref": "#/components/schemas/AddressDto",
+          },
+          "age": {
+            "maximum": 120,
+            "minimum": 0,
+            "type": "integer",
+          },
+          "email": {
+            "format": "email",
+            "type": "string",
+          },
+          "name": {
+            "maxLength": 50,
+            "minLength": 2,
+            "type": "string",
+          },
+          "role": {
+            "enum": [
+              "admin",
+              "user",
+            ],
+            "type": "string",
+          },
+          "tags": {
+            "items": {
+              "type": "string",
+            },
+            "type": "array",
+          },
+        },
+        "required": [
+          "name",
+          "email",
+          "role",
+          "address",
+        ],
+        "type": "object",
+      },
+      "UserDto": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string",
+          },
+          "name": {
+            "type": "string",
+          },
+        },
+        "required": [
+          "id",
+          "name",
+        ],
+        "type": "object",
+      },
+    },
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "type": "http",
+      },
+    },
+  },
+  "info": {
+    "title": "Sample API",
+    "version": "1.0.0",
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/users": {
+      "post": {
+        "operationId": "UsersController_create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserDto",
+              },
+            },
+          },
+          "required": true,
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto",
+                },
+              },
+            },
+            "description": "Successful response",
+          },
+          "400": {
+            "description": "Validation failed",
+          },
+        },
+        "summary": "Create a user",
+        "tags": [
+          "users",
+        ],
+      },
+    },
+    "/users/{id}": {
+      "get": {
+        "operationId": "UsersController_findOne",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+            },
+          },
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto",
+                },
+              },
+            },
+            "description": "Successful response",
+          },
+        },
+        "tags": [
+          "users",
+        ],
+      },
+    },
+    "/v2/users": {
+      "get": {
+        "operationId": "UsersController_list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "number",
+            },
+          },
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto",
+                },
+              },
+            },
+            "description": "Successful response",
+          },
+        },
+        "tags": [
+          "users",
+        ],
+      },
+    },
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+    },
+  ],
+}
+`;

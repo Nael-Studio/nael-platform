@@ -13,6 +13,7 @@ export const getDatabaseToken = (name?: string): symbol => Symbol.for(buildKey('
 export const getSeedRegistryToken = (name?: string): symbol => Symbol.for(buildKey('seeds', name));
 export const getSeedRunnerToken = (name?: string): symbol => Symbol.for(buildKey('seed-runner', name));
 export const getSeedHistoryToken = (name?: string): symbol => Symbol.for(buildKey('seed-history', name));
+export const getMigrationRunnerToken = (name?: string): symbol => Symbol.for(buildKey('migration-runner', name));
 export const getDriverToken = (name?: string): symbol => Symbol.for(buildKey('driver', name));
 export const getWriteNotifierToken = (name?: string): symbol => Symbol.for(buildKey('write-notifier', name));
 

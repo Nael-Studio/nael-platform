@@ -3,9 +3,9 @@ import { Container, type ResolveOptions } from './container/container';
 import { ConfigLoader, type ConfigLoadOptions } from './config/config-loader';
 import { ConfigService } from './config/config.service';
 import { GLOBAL_PROVIDERS } from './constants';
-import { LoggerFactory } from '@nl-framework/logger';
+import { LoggerFactory, Logger, setLoggerContextProvider } from '@nl-framework/logger';
 import type { LoggerOptions } from '@nl-framework/logger';
-import { Logger } from '@nl-framework/logger';
+import { RequestContext } from './context/request-context';
 import { createContextId, type ContextId } from './scope';
 import { ModuleManager, type ModuleLoadListener, type ModuleLoadResult } from './module-manager';
 import { LazyModuleLoader } from './lazy-module-loader';
@@ -14,6 +14,16 @@ import { DiscoveryService } from './discovery/discovery-service';
 export interface ApplicationOptions {
   config?: ConfigLoadOptions;
   logger?: LoggerOptions;
+}
+
+export interface BootstrapHooks {
+  /**
+   * Invoked after every module (and its providers) has been registered in the
+   * container, but before any provider is instantiated. This is the seam the
+   * testing utilities use to substitute overridden providers so that every
+   * dependent receives the mock rather than the original implementation.
+   */
+  beforeHydrate?: (container: Container) => void | Promise<void>;
 }
 
 export class ApplicationContext {
@@ -91,7 +101,11 @@ export class Application {
     });
   }
 
-  async bootstrap(rootModule: ClassType, options: ApplicationOptions = {}): Promise<ApplicationContext> {
+  async bootstrap(
+    rootModule: ClassType,
+    options: ApplicationOptions = {},
+    hooks: BootstrapHooks = {},
+  ): Promise<ApplicationContext> {
     this.container.registerProvider({
       provide: GLOBAL_PROVIDERS.config,
       useFactory: async () => new ConfigService(await ConfigLoader.load(options.config)),
@@ -111,6 +125,13 @@ export class Application {
     const loggerFactory = new LoggerFactory(options.logger);
     const rootLogger = loggerFactory.create({ context: rootModule.name });
 
+    // Auto-append the ambient request id to structured logs when a RequestContext
+    // is active. Opt out per-logger via `includeRequestContext: false`.
+    setLoggerContextProvider(() => {
+      const ctx = RequestContext.current();
+      return ctx?.requestId ? { requestId: ctx.requestId } : undefined;
+    });
+
     this.container.registerProvider({
       provide: LoggerFactory,
       useValue: loggerFactory,
@@ -127,6 +148,7 @@ export class Application {
     });
 
     await this.container.registerModule(rootModule);
+    await hooks.beforeHydrate?.(this.container);
     await this.moduleManager.hydrateRegisteredModules();
 
     const configService = await this.container.resolve(ConfigService);

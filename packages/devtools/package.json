@@ -31,6 +31,12 @@
     "@nl-framework/http": "^0.3.6",
     "@nl-framework/graphql": "^0.3.6",
     "@nl-framework/logger": "^0.3.6",
-    "@nl-framework/orm": "^0.3.6"
+    "@nl-framework/orm": "^0.3.6",
+    "@nl-framework/scheduler": "^0.3.6"
+  },
+  "peerDependenciesMeta": {
+    "@nl-framework/scheduler": {
+      "optional": true
+    }
   }
 }

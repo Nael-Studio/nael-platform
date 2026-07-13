@@ -1,0 +1,115 @@
+---
+title: 'OpenAPI · Techniques'
+description: 'Generate an OpenAPI 3.1 document from existing route and DTO metadata, and serve it with a self-contained viewer.'
+---
+
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const installExample = `bun add @nl-framework/openapi`;
+
+export const moduleExample = `import { Module } from '@nl-framework/core';
+import { OpenApiModule } from '@nl-framework/openapi';
+
+@Module({
+  imports: [
+    OpenApiModule.forRoot({
+      title: 'My API',
+      version: '1.0.0',
+      // path: '/openapi.json',   // JSON document (default)
+      // ui: '/docs',             // built-in viewer (pass false to disable)
+      servers: [{ url: 'https://api.example.com' }],
+      securitySchemes: {
+        bearer: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      },
+    }),
+  ],
+})
+export class AppModule {}`;
+
+export const dtoExample = `import { IsString, IsEmail, IsInt, Min, IsOptional } from 'class-validator';
+
+export class CreateUserDto {
+  @IsString()
+  name!: string;
+
+  @IsEmail()
+  email!: string;
+
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  age?: number;
+}`;
+
+export const enrichExample = `import { Controller } from '@nl-framework/core';
+import { Post, Body } from '@nl-framework/http';
+import { ApiTags, ApiOperation, ApiResponse, ApiSecurity } from '@nl-framework/openapi';
+import { CreateUserDto } from './create-user.dto';
+import { UserDto } from './user.dto';
+
+@ApiTags('users')
+@Controller('users')
+export class UsersController {
+  @Post()
+  @ApiOperation({ summary: 'Create a user' })
+  @ApiResponse(201, { type: UserDto, description: 'The created user' })
+  @ApiSecurity('bearer')
+  create(@Body() dto: CreateUserDto): UserDto {
+    return { id: '1', name: dto.name };
+  }
+}`;
+
+# OpenAPI
+
+`@nl-framework/openapi` emits an **OpenAPI 3.1** document from the metadata the
+framework already captures — routes, param sources, and `class-validator` DTOs —
+and serves it alongside a self-contained viewer. There is no runtime dependency
+on any Swagger library and **no CDN or network access at runtime**.
+
+## Installation
+
+<CodeBlock language="bash" code={installExample} />
+
+## Registration
+
+Import `OpenApiModule.forRoot` anywhere in your module graph. The document is
+built **once at boot** and cached. The JSON is served at `/openapi.json` and the
+viewer at `/docs` by default.
+
+<CodeBlock language="typescript" code={moduleExample} />
+
+Existing apps gain documentation with **zero decorator changes** — path params
+are discovered from the route template even when a handler reads them off the
+request context.
+
+## Schemas from DTOs
+
+Schemas are derived from `class-validator` decorators plus reflected design
+types. `@IsString`, `@IsInt`, `@IsEmail`, `@IsEnum`, `@Min`/`@Max`,
+`@Length`, `@Matches`, and friends map to types, formats, and constraints;
+`@IsOptional` drops a field from `required`; `@ValidateNested` produces a
+`$ref` into `components.schemas` (cycle-safe).
+
+<CodeBlock language="typescript" code={dtoExample} />
+
+A validated `@Body()` DTO becomes the operation `requestBody` and implies a
+`400` response. A handler whose return type is a class becomes the `200`
+response schema.
+
+## Enrichment decorators
+
+Optional decorators override or extend the derived document. All are
+metadata-only:
+
+- `@ApiTags(...tags)` — group operations (controller- or method-level)
+- `@ApiOperation({ summary, description, deprecated })`
+- `@ApiResponse(status, { type?, description? })`
+- `@ApiSecurity(name)` — require a named security scheme
+- `@ApiExcludeEndpoint()` — hide an operation
+
+<CodeBlock language="typescript" code={enrichExample} />
+
+## Versioning
+
+Routes declaring `@Version()` are emitted under a version-prefixed path
+(`/v2/users` by default; configure with `versionPrefix`).

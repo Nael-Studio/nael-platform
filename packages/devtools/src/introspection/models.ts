@@ -1,4 +1,5 @@
 import { getRegisteredDocuments } from '@nl-framework/orm';
+import type { DocumentClass, MongoConnection } from '@nl-framework/orm';
 
 export interface ModelIndexDescriptor {
   keys: unknown;
@@ -137,4 +138,123 @@ export const buildModelCatalog = (): ModelCatalog => {
       relations: models.reduce((total, model) => total + model.relations.length, 0),
     },
   };
+};
+
+export type SampledFieldType =
+  | 'string'
+  | 'number'
+  | 'boolean'
+  | 'date'
+  | 'objectId'
+  | 'array'
+  | 'object'
+  | 'null'
+  | 'unknown';
+
+export interface SampledField {
+  name: string;
+  type: SampledFieldType;
+}
+
+export interface SampledSchema {
+  model: string;
+  collection: string;
+  /** True once a real document was read; false when the collection is empty. */
+  sampled: boolean;
+  fields: SampledField[];
+}
+
+export interface ModelStats {
+  model: string;
+  collection: string;
+  /** Fast, index-based estimate — not an exact `countDocuments`. */
+  estimatedCount: number;
+  indexes: Array<{ name: string; sizeBytes?: number }>;
+}
+
+const isObjectIdLike = (value: object): boolean => {
+  const tag = (value as { _bsontype?: string })._bsontype;
+  return tag === 'ObjectID' || tag === 'ObjectId' || value.constructor?.name === 'ObjectId';
+};
+
+const inferFieldType = (value: unknown): SampledFieldType => {
+  if (value === null || value === undefined) return 'null';
+  if (Array.isArray(value)) return 'array';
+  if (value instanceof Date) return 'date';
+  const t = typeof value;
+  if (t === 'string' || t === 'number' || t === 'boolean') return t;
+  if (t === 'object' && isObjectIdLike(value as object)) return 'objectId';
+  if (t === 'object') return 'object';
+  return 'unknown';
+};
+
+/**
+ * Infer top-level field names and coarse types from a single sampled document.
+ * Pure — no DB access — so it is unit-testable and value-agnostic (only shapes,
+ * never the values themselves, reach the client).
+ */
+export const inferSchemaFromDocument = (doc: Record<string, unknown> | null | undefined): SampledField[] => {
+  if (!doc || typeof doc !== 'object') {
+    return [];
+  }
+  return Object.keys(doc)
+    .map((name) => ({ name, type: inferFieldType(doc[name]) }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+};
+
+/**
+ * Read ONE document from a model's collection and infer its schema. Opt-in and
+ * read-only. Errors bubble to the caller, which renders them as an empty state.
+ */
+export const sampleModelSchema = async (
+  connection: MongoConnection,
+  documentClass: DocumentClass,
+  collection: string,
+): Promise<SampledSchema> => {
+  const col = await connection.getCollection(documentClass);
+  const doc = (await col.findOne({})) as Record<string, unknown> | null;
+  return {
+    model: documentClass.name,
+    collection,
+    sampled: doc !== null,
+    fields: inferSchemaFromDocument(doc),
+  };
+};
+
+/** Live collection stats: estimated count + per-index storage sizes (best effort). */
+export const readModelStats = async (
+  connection: MongoConnection,
+  documentClass: DocumentClass,
+  collection: string,
+): Promise<ModelStats> => {
+  const col = await connection.getCollection(documentClass);
+  const estimatedCount = await col.estimatedDocumentCount();
+  const indexList = (await col.indexes()) as Array<{ name?: string }>;
+
+  let indexSizes: Record<string, number> = {};
+  try {
+    const [storage] = (await col
+      .aggregate([{ $collStats: { storageStats: {} } }])
+      .toArray()) as Array<{ storageStats?: { indexSizes?: Record<string, number> } }>;
+    indexSizes = storage?.storageStats?.indexSizes ?? {};
+  } catch {
+    // $collStats unavailable (e.g. permissions / older server) — sizes omitted.
+  }
+
+  return {
+    model: documentClass.name,
+    collection,
+    estimatedCount,
+    indexes: indexList
+      .filter((index): index is { name: string } => typeof index.name === 'string')
+      .map((index) => ({ name: index.name, sizeBytes: indexSizes[index.name] })),
+  };
+};
+
+/** Look up registered document metadata by model class name. */
+export const findModelByName = (
+  name: string,
+): { target: DocumentClass; collection: string } | undefined => {
+  const metadata = getRegisteredDocuments().find((doc) => doc.target.name === name);
+  return metadata ? { target: metadata.target as DocumentClass, collection: metadata.collection } : undefined;
 };
