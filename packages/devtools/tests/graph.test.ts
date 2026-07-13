@@ -80,7 +80,7 @@ describe('graph dashboard UX', () => {
   it('renders the toolbar, zoom/pan, focus, and hull machinery', async () => {
     const { renderDashboardHtml } = await import('../src/http/dashboard-html');
     const html = renderDashboardHtml({ basePath: '/__nael', title: 'x' });
-    const script = /<script>([\s\S]*?)<\/script>/.exec(html)![1];
+    const script = /<script\b[^>]*>([\s\S]*?)<\/script\b[^>]*>/i.exec(html)![1];
     // the inline graph script is syntactically valid
     expect(() => new Function(script)).not.toThrow();
     for (const feature of [

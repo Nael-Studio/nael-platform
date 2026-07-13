@@ -1,6 +1,6 @@
 import { ConfigService, DiscoveryService, getBootReport, registerCacheObserver } from '@nl-framework/core';
 import { registerHttpRouteRegistrar, type HttpRouteRegistrationApi } from '@nl-framework/http';
-import { LoggerFactory } from '@nl-framework/logger';
+import { Logger, LoggerFactory } from '@nl-framework/logger';
 import { registerQueryObserver } from '@nl-framework/orm';
 import { DEVTOOLS_OPTIONS } from '../constants';
 import type { NormalizedDevtoolsOptions } from '../interfaces/options';
@@ -27,6 +27,8 @@ import { mountInstrumentationRoutes } from './api-routes';
 import { renderDashboardHtml } from './dashboard-html';
 
 let registered = false;
+
+const logger = new Logger({ context: 'devtools:http:registrar' });
 
 const jsonResponse = (payload: unknown): Response =>
   new Response(JSON.stringify(payload), {
@@ -65,7 +67,8 @@ const withModel = async (
   try {
     return jsonResponse({ enabled: true, ...(await fn(connection, model) as object) });
   } catch (error) {
-    return errorResponse(error instanceof Error ? error.message : String(error), 500);
+    logger.error('Failed to resolve model devtools request', error);
+    return errorResponse('Internal server error', 500);
   }
 };
 
@@ -215,8 +218,9 @@ const mountRoutes = async (api: HttpRouteRegistrationApi): Promise<void> => {
       await scheduler.service.triggerTask(decodeURIComponent(job));
       return jsonResponse({ triggered: job });
     } catch (error) {
+      api.logger.warn(`[devtools] failed to trigger scheduler job "${job}"`, error);
       return new Response(
-        JSON.stringify({ message: error instanceof Error ? error.message : String(error) }),
+        JSON.stringify({ message: 'Failed to trigger job' }),
         { status: 400, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } },
       );
     }
