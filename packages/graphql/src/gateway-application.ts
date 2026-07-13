@@ -4,6 +4,43 @@ import { Logger, LoggerFactory } from '@nl-framework/logger';
 import { ApolloServer, HeaderMap } from '@apollo/server';
 import type { HTTPGraphQLRequest } from '@apollo/server';
 import { ApolloGateway, IntrospectAndCompose } from '@apollo/gateway';
+import { parse, Kind, type OperationDefinitionNode } from 'graphql';
+
+/**
+ * Detect whether the requested operation is a subscription. Apollo Federation
+ * does not federate subscriptions through the gateway, so these are rejected
+ * with a clear error rather than silently failing.
+ */
+export const isSubscriptionOperation = (rawBody: unknown): boolean => {
+  let body = rawBody;
+  if (typeof body === 'string') {
+    try {
+      body = JSON.parse(body);
+    } catch {
+      return false;
+    }
+  }
+  if (!body || typeof body !== 'object') {
+    return false;
+  }
+  const { query, operationName } = body as { query?: unknown; operationName?: unknown };
+  if (typeof query !== 'string') {
+    return false;
+  }
+  try {
+    const document = parse(query);
+    const operations = document.definitions.filter(
+      (def): def is OperationDefinitionNode => def.kind === Kind.OPERATION_DEFINITION,
+    );
+    const selected =
+      typeof operationName === 'string'
+        ? operations.find((op) => op.name?.value === operationName)
+        : operations[0];
+    return selected?.operation === 'subscription';
+  } catch {
+    return false;
+  }
+};
 
 export interface FederationSubgraphDefinition {
   name: string;
@@ -172,6 +209,21 @@ export class FederationGatewayApplication {
 
     if (!this.apolloServer) {
       throw new Error('Apollo Server instance was not initialized.');
+    }
+
+    if (isSubscriptionOperation(request.body)) {
+      return new Response(
+        JSON.stringify({
+          errors: [
+            {
+              message:
+                'Subscriptions are not supported through the federation gateway. Connect to the owning subgraph over graphql-ws instead.',
+              extensions: { code: 'SUBSCRIPTIONS_NOT_FEDERATED' },
+            },
+          ],
+        }),
+        { status: 400, headers: { 'content-type': 'application/json' } },
+      );
     }
 
     const headers = new HeaderMap();

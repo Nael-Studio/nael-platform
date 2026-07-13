@@ -13,6 +13,12 @@ export interface S3AdapterOptions {
   endpoint?: string;
   forcePathStyle?: boolean;
   urlPrefix?: string;
+  /**
+   * A preconstructed `S3Client`. When provided it is used verbatim and the
+   * `region`/`endpoint`/`credentials` options are ignored — primarily a seam for
+   * tests that inject a mocked client, but also usable to share a tuned client.
+   */
+  client?: S3Client;
 }
 
 export class S3StorageAdapter implements StorageAdapter {
@@ -23,12 +29,14 @@ export class S3StorageAdapter implements StorageAdapter {
   constructor(options: S3AdapterOptions) {
     this.bucket = options.bucket;
     this.urlPrefix = options.urlPrefix;
-    this.client = new S3Client({
-      region: options.region,
-      endpoint: options.endpoint,
-      forcePathStyle: options.forcePathStyle,
-      credentials: options.credentials,
-    });
+    this.client =
+      options.client ??
+      new S3Client({
+        region: options.region,
+        endpoint: options.endpoint,
+        forcePathStyle: options.forcePathStyle,
+        credentials: options.credentials,
+      });
   }
 
   async uploadObject(key: string, data: ArrayBuffer | Uint8Array | Buffer, options?: UploadOptions): Promise<UploadResult> {

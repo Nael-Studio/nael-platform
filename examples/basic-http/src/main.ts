@@ -55,6 +55,8 @@ const bootstrap = async () => {
     root: `http://${displayHost}:${port}/`,
     hello: `http://${displayHost}:${port}/hello`,
     personalGreeting: `http://${displayHost}:${port}/hello/:name`,
+    openapi: `http://${displayHost}:${port}/openapi.json`,
+    docs: `http://${displayHost}:${port}/docs`,
   });
 
   const shutdown = async (signal: string) => {

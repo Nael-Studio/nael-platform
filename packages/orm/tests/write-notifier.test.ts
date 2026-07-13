@@ -60,11 +60,10 @@ describe('WriteNotifier', () => {
     const stringId = '507f1f77bcf86cd799439011';
     const stored: Record<string, unknown> = { _id: stringId, id: stringId, name: 'before' };
     const collection = {
-      updateOne: async (_filter: unknown, update: { $set?: Record<string, unknown> }) => {
+      findOneAndUpdate: async (_filter: unknown, update: { $set?: Record<string, unknown> }) => {
         Object.assign(stored, update.$set ?? {});
-        return { matchedCount: 1, modifiedCount: 1 };
+        return { ...stored };
       },
-      findOne: async () => ({ ...stored }),
     } as unknown as Collection<TestEntity & BaseDocument>;
 
     const notifier = new WriteNotifier('default');

@@ -1,0 +1,108 @@
+---
+title: 'Health · Techniques'
+description: 'Kubernetes-style liveness and readiness endpoints with pluggable indicators.'
+---
+
+import { CodeBlock } from '@/components/shared/simple-code-block';
+
+export const installExample = `bun add @nl-framework/health`;
+
+export const moduleExample = `import { Module } from '@nl-framework/core';
+import {
+  HealthModule,
+  mongoIndicator,
+  redisIndicator,
+  daprIndicator,
+  memoryIndicator,
+  diskIndicator,
+} from '@nl-framework/health';
+
+@Module({
+  imports: [
+    HealthModule.forRoot({
+      path: '/healthz',          // liveness (process is up)
+      readinessPath: '/readyz',  // readiness (indicators)
+      indicators: [
+        mongoIndicator(),
+        redisIndicator({ token: REDIS_CLIENT }),
+        daprIndicator({ appId: 'orders' }),
+        memoryIndicator({ maxRssBytes: 512 * 1024 * 1024 }),
+        diskIndicator({ path: '/', minFreeBytes: 1e9 }),
+      ],
+      timeoutMs: 3_000,          // per indicator
+    }),
+  ],
+})
+export class AppModule {}`;
+
+export const responseExample = `{
+  "status": "ok",
+  "checks": {
+    "mongo": { "status": "up", "details": { "latencyMs": 2 } },
+    "memory": { "status": "up", "details": { "rssBytes": 84213760 } }
+  }
+}`;
+
+export const customExample = `import { Injectable } from '@nl-framework/core';
+import { HealthIndicator, type HealthResult } from '@nl-framework/health';
+
+@HealthIndicator()
+export class QueueIndicator implements HealthIndicator {
+  readonly name = 'queue';
+
+  async check(): Promise<HealthResult> {
+    return { status: 'up', details: { depth: 0 } };
+  }
+}`;
+
+# Health
+
+`@nl-framework/health` adds Kubernetes-style **liveness** and **readiness**
+probes with pluggable indicators — a Terminus-equivalent. The probe routes mount
+on the existing HTTP router.
+
+## Installation
+
+<CodeBlock language="bash" code={installExample} />
+
+## Registration
+
+<CodeBlock language="typescript" code={moduleExample} />
+
+- **Liveness** (`/healthz`) returns `200` while the process is up and flips to
+  `503` once shutdown begins, so rolling deploys drain correctly.
+- **Readiness** (`/readyz`) runs every indicator in parallel with a per-indicator
+  timeout and returns `200` only when all are up, `503` otherwise.
+
+## Response shape
+
+<CodeBlock language="json" code={responseExample} />
+
+## Built-in indicators
+
+| Indicator | Checks |
+| --- | --- |
+| `mongoIndicator()` | Pings the ORM connection (`{ ping: 1 }`) |
+| `redisIndicator({ token })` | `PING`s a Redis client or cache store |
+| `daprIndicator({ appId })` | `GET`s the sidecar `/v1.0/healthz` |
+| `memoryIndicator({ maxRssBytes })` | Process RSS ceiling |
+| `diskIndicator({ path, minFreeBytes })` | Free space on a filesystem |
+
+Indicators run in parallel with an individual timeout — a hung dependency
+reports `down` with `reason: "timeout"` rather than blocking the endpoint.
+Built-ins degrade cleanly when their dependency isn't configured;
+`mongoIndicator()` fails fast at **boot** when the ORM or a connection is missing.
+
+## Custom indicators
+
+Implement the interface and add it to `indicators`, or annotate a provider with
+`@HealthIndicator()` to have it discovered automatically through core's
+`DiscoveryService`:
+
+<CodeBlock language="typescript" code={customExample} />
+
+## Security
+
+Probe routes are mounted on an internal controller marked `@Public()`, so a
+global `AuthGuard` exempts them. Keep `/healthz` and `/readyz` off public ingress
+in production.

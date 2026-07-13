@@ -1,7 +1,12 @@
 import 'reflect-metadata';
 
 export { Cron, Interval, Timeout } from './decorators';
-export { SchedulerRegistry } from './scheduler.registry';
+export {
+  SchedulerRegistry,
+  type JobDescription,
+  type JobRunState,
+  type SchedulerJobSnapshot,
+} from './scheduler.registry';
 export { SchedulerService } from './scheduler.service';
 export { SchedulerModule } from './module';
 export { SCHEDULER_METADATA_KEY, SCHEDULER_WORKER_FACTORY } from './constants';

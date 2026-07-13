@@ -1,6 +1,5 @@
 import { Injectable } from '@nl-framework/core';
 import { Logger } from '@nl-framework/logger';
-import type { MessageContext } from '@nl-framework/microservices';
 import { MessagePattern, EventPattern } from '@nl-framework/microservices';
 
 export interface Order {
@@ -9,73 +8,63 @@ export interface Order {
   items: Array<{ productId: string; quantity: number }>;
   total: number;
   status: 'pending' | 'processing' | 'completed' | 'failed';
-  createdAt: Date;
+  createdAt: string;
+}
+
+interface NewOrderEvent {
+  customerId: string;
+  items: Array<{ productId: string; quantity: number }>;
+  total: number;
+}
+
+interface StatusUpdateEvent {
+  orderId: string;
+  status: Order['status'];
 }
 
 @Injectable()
 export class OrdersController {
-  private orders = new Map<string, Order>();
+  private readonly orders = new Map<string, Order>();
 
   constructor(private readonly logger: Logger) {}
 
-  @MessagePattern('order.create')
-  async createOrder(context: MessageContext) {
-    const data = context.data as Omit<Order, 'id' | 'status' | 'createdAt'>;
-    
+  /**
+   * Pub/sub event — auto-subscribed via `GET /dapr/subscribe`. The deserialized
+   * payload is passed straight in; guards, interceptors, pipes and filters run
+   * around this method just like an HTTP handler.
+   */
+  @EventPattern('order.created')
+  async onOrderCreated(payload: NewOrderEvent) {
     const order: Order = {
-      ...data,
-      id: `order-${Date.now()}`,
+      ...payload,
+      id: `order-${this.orders.size + 1}`,
       status: 'pending',
-      createdAt: new Date(),
+      createdAt: new Date().toISOString(),
     };
-
     this.orders.set(order.id, order);
-    
     this.logger.info('Order created', { orderId: order.id, customerId: order.customerId });
-
-    return {
-      success: true,
-      order,
-    };
   }
 
   @EventPattern('order.status.updated')
-  async handleStatusUpdate(context: MessageContext) {
-    const { orderId, status } = context.data as { orderId: string; status: Order['status'] };
-    
-    const order = this.orders.get(orderId);
+  async onStatusUpdated(payload: StatusUpdateEvent) {
+    const order = this.orders.get(payload.orderId);
     if (!order) {
-      this.logger.warn('Order not found for status update', { orderId });
+      this.logger.warn('Order not found for status update', { orderId: payload.orderId });
       return;
     }
-
-    order.status = status;
-    this.logger.info('Order status updated', { orderId, status });
+    order.status = payload.status;
+    this.logger.info('Order status updated', { orderId: payload.orderId, status: payload.status });
   }
 
-  @MessagePattern('order.get')
-  async getOrder(context: MessageContext) {
-    const { orderId } = context.data as { orderId: string };
-    
-    const order = this.orders.get(orderId);
-    if (!order) {
-      return {
-        success: false,
-        error: 'Order not found',
-      };
-    }
-
-    return {
-      success: true,
-      order,
-    };
+  /** Request/response — invocable with `client.send('orders.get', ...)`. */
+  @MessagePattern('orders.get')
+  async getOrder(payload: { orderId: string }) {
+    const order = this.orders.get(payload.orderId);
+    return order ? { success: true, order } : { success: false, error: 'Order not found' };
   }
 
   @MessagePattern('orders.list')
   async listOrders() {
-    return {
-      success: true,
-      orders: Array.from(this.orders.values()),
-    };
+    return { success: true, orders: Array.from(this.orders.values()) };
   }
 }

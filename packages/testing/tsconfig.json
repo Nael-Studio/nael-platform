@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": ".",
+    "composite": true,
+    "declarationDir": "dist/types"
+  },
+  "include": ["src/**/*", "tests/**/*"],
+  "exclude": ["dist"],
+  "references": [
+    { "path": "../core" },
+    { "path": "../logger" },
+    { "path": "../http" },
+    { "path": "../graphql" },
+    { "path": "../microservices" },
+    { "path": "../orm" }
+  ]
+}

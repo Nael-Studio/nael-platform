@@ -3,13 +3,30 @@ import { Application } from '@nl-framework/core';
 import { Logger, LoggerFactory } from '@nl-framework/logger';
 import { ApolloServer, HeaderMap } from '@apollo/server';
 import type { HTTPGraphQLRequest, HTTPGraphQLResponse } from '@apollo/server';
+import type { GraphQLFormattedError, GraphQLSchema } from 'graphql';
 import { buildSubgraphSchema } from '@apollo/subgraph';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { RequestContext } from '@nl-framework/http';
 import { GraphqlSchemaBuilder, type GraphqlBuildOptions } from './schema-builder';
-import { GRAPHQL_CONTAINER_RESOLVER } from './constants';
+import { GRAPHQL_CONTAINER_RESOLVER, GRAPHQL_PUBSUB } from './constants';
+import type { WebSocketHandler } from 'bun';
+import { InMemoryPubSub, type PubSub } from './subscriptions/pubsub';
+import { createGraphqlWsHandlers, type GraphqlWsData } from './subscriptions/ws-transport';
 // Ensure built-in scalars (e.g., JSON) are registered even when this module is deep-imported.
 import './scalars';
+
+export interface GraphqlSubscriptionsOptions {
+  /** WebSocket upgrade path. Defaults to the GraphQL HTTP path. */
+  path?: string;
+  /**
+   * Runs on `connection_init`. Return `false` to reject the socket, or an object
+   * merged into the connection context (do Better Auth session lookup here).
+   */
+  onConnect?: (ctx: {
+    connectionParams?: Record<string, unknown>;
+    request: Request;
+  }) => boolean | Record<string, unknown> | Promise<boolean | Record<string, unknown>>;
+}
 
 export interface GraphqlServerOptions {
   host?: string;
@@ -17,6 +34,10 @@ export interface GraphqlServerOptions {
   path?: string;
   federation?: GraphqlBuildOptions['federation'];
   context?: GraphqlContextFactory;
+  /** Pub/sub backing `@Subscription()`. Falls back to the `GRAPHQL_PUBSUB` provider, then in-memory. */
+  pubsub?: PubSub;
+  /** Enable `graphql-ws` subscriptions on `listen()` (`true` or config). */
+  subscriptions?: boolean | GraphqlSubscriptionsOptions;
 }
 
 export interface GraphqlApplicationOptions extends ApplicationOptions, GraphqlServerOptions { }
@@ -36,12 +57,31 @@ export type GraphqlContextFactory = (
   params: GraphqlContextBase,
 ) => Promise<Record<string, unknown>> | Record<string, unknown>;
 
+export interface GraphqlExecuteParams {
+  query: string;
+  variables?: Record<string, unknown>;
+  operationName?: string;
+  /** Extra values merged onto the GraphQL context (after any configured context factory). */
+  contextValue?: Record<string, unknown>;
+  /** Header map exposed to the node-like request stub for context factories. */
+  headers?: Record<string, string | string[]>;
+}
+
+export interface GraphqlExecuteResult<TData = Record<string, unknown>> {
+  data: TData | null;
+  errors?: GraphQLFormattedError[];
+  extensions?: Record<string, unknown>;
+}
+
 export class GraphqlApplication {
   private apolloServer?: ApolloServer<GraphqlContext>;
   private apolloServerStarted = false;
   private startPromise?: Promise<void>;
   private logger: Logger;
   private readonly unsubscribeModuleListener: () => void;
+  private pubsub?: PubSub;
+  private executableSchema?: GraphQLSchema;
+  private wsServer?: ReturnType<typeof Bun.serve>;
 
   constructor(
     private readonly context: ApplicationContext,
@@ -104,6 +144,70 @@ export class GraphqlApplication {
     };
   }
 
+  /**
+   * Execute a GraphQL operation in-process via Apollo's `executeOperation`, with
+   * no HTTP server or port. The framework's scoped container resolver is attached
+   * to the context so guards, interceptors, and field resolvers run exactly as
+   * they would over HTTP. Intended for `@nl-framework/testing`.
+   */
+  async execute<TData = Record<string, unknown>>(
+    params: GraphqlExecuteParams,
+  ): Promise<GraphqlExecuteResult<TData>> {
+    const server = await this.ensureApolloServer({ start: true });
+
+    const nodeLikeRequest = {
+      headers: params.headers ?? {},
+      method: 'POST',
+      url: this.normalizePath(this.options.path ?? '/graphql'),
+    } as unknown as IncomingMessage;
+
+    const baseContext: GraphqlContext = {
+      req: nodeLikeRequest,
+      res: this.createServerResponseStub(),
+    };
+
+    if (this.options.context) {
+      const extra = await this.options.context({ req: nodeLikeRequest, res: baseContext.res });
+      if (extra && typeof extra === 'object') {
+        Object.assign(baseContext, extra);
+      }
+    }
+
+    if (params.contextValue && typeof params.contextValue === 'object') {
+      Object.assign(baseContext, params.contextValue);
+    }
+
+    Reflect.set(baseContext as object, GRAPHQL_CONTAINER_RESOLVER, <T>(token: Token<T>) =>
+      this.context.get(token),
+    );
+
+    const response = await server.executeOperation(
+      {
+        query: params.query,
+        variables: params.variables,
+        operationName: params.operationName,
+      },
+      { contextValue: baseContext },
+    );
+
+    if (response.body.kind === 'single') {
+      const result = response.body.singleResult;
+      return {
+        data: (result.data ?? null) as TData | null,
+        errors: result.errors ? [...result.errors] : undefined,
+        extensions: result.extensions,
+      };
+    }
+
+    // Incremental delivery (@defer/@stream) collapses to its initial payload here.
+    const initial = response.body.initialResult;
+    return {
+      data: (initial.data ?? null) as TData | null,
+      errors: initial.errors ? [...initial.errors] : undefined,
+      extensions: initial.extensions,
+    };
+  }
+
   async get<T>(token: Token<T>): Promise<T> {
     return this.context.get(token);
   }
@@ -112,13 +216,141 @@ export class GraphqlApplication {
     return this.context.getConfig<TConfig>();
   }
 
+  /** Resolve the pub/sub: explicit option → `GRAPHQL_PUBSUB` provider → in-memory. */
+  private async resolvePubSub(): Promise<PubSub> {
+    if (this.pubsub) {
+      return this.pubsub;
+    }
+    if (this.options.pubsub) {
+      this.pubsub = this.options.pubsub;
+      return this.pubsub;
+    }
+    try {
+      const provided = await this.context.get<PubSub>(GRAPHQL_PUBSUB as unknown as Token<PubSub>);
+      if (provided) {
+        this.pubsub = provided;
+        return provided;
+      }
+    } catch {
+      // No provider registered — fall back to in-memory.
+    }
+    this.pubsub = new InMemoryPubSub();
+    return this.pubsub;
+  }
+
+  private async buildRequestContext(request: Request): Promise<RequestContext> {
+    let body: unknown;
+    if (request.method === 'POST' || request.method === 'PUT' || request.method === 'PATCH') {
+      const contentType = request.headers.get('content-type') ?? '';
+      if (contentType.includes('application/json')) {
+        body = await request.json().catch(() => ({}));
+      } else {
+        body = await request.text();
+      }
+    }
+    return {
+      request,
+      params: {},
+      query: new URL(request.url).searchParams,
+      headers: request.headers,
+      body,
+      route: {
+        controller: GraphqlApplication as unknown as ClassType,
+        handlerName: 'graphql',
+        definition: { method: 'POST', path: this.normalizePath(this.options.path ?? '/graphql'), handlerName: 'graphql' },
+      },
+      container: { resolve: <T>(token: Token<T>) => this.context.get(token) },
+    } as unknown as RequestContext;
+  }
+
+  /**
+   * Bind a Bun server that serves GraphQL over HTTP and — when `subscriptions`
+   * is enabled — upgrades `graphql-transport-ws` WebSocket connections on the
+   * same port. Returns the public URL.
+   */
+  async listen(port = this.options.port ?? 4000): Promise<GraphqlListenResult> {
+    await this.ensureApolloServer({ start: true });
+    const httpHandler = await this.createHttpHandler();
+
+    const subsConfig = this.options.subscriptions;
+    const subsEnabled = Boolean(subsConfig);
+    const subsPath = this.normalizePath(
+      (typeof subsConfig === 'object' ? subsConfig.path : undefined) ?? this.options.path ?? '/graphql',
+    );
+    const onConnect = typeof subsConfig === 'object' ? subsConfig.onConnect : undefined;
+
+    const ws =
+      subsEnabled && this.executableSchema
+        ? createGraphqlWsHandlers({
+          schema: this.executableSchema,
+          onConnect,
+          buildContext: async (connectionContext) => {
+            const base = { ...connectionContext };
+            Reflect.set(base, GRAPHQL_CONTAINER_RESOLVER, <T>(token: Token<T>) => this.context.get(token));
+            return base;
+          },
+        })
+        : undefined;
+
+    const host = this.options.host ?? '0.0.0.0';
+    const self = this;
+
+    const websocket: WebSocketHandler<GraphqlWsData> = ws?.websocket ?? {
+      open(socket) {
+        socket.close(1011, 'GraphQL subscriptions are not enabled');
+      },
+      message() {},
+      close() {},
+    };
+
+    this.wsServer = Bun.serve<GraphqlWsData, never>({
+      port,
+      hostname: host,
+      async fetch(request, server) {
+        if (ws && (request.headers.get('upgrade') ?? '').toLowerCase() === 'websocket') {
+          const url = new URL(request.url);
+          if (self.normalizePath(url.pathname) === subsPath) {
+            // Bun auto-negotiates the WebSocket subprotocol from the request;
+            // setting `Sec-WebSocket-Protocol` here would break that handshake.
+            const upgraded = server.upgrade(request, {
+              data: ws.upgradeData(request),
+            });
+            if (upgraded) {
+              return undefined;
+            }
+            return new Response('WebSocket upgrade failed', { status: 400 });
+          }
+        }
+        return httpHandler(await self.buildRequestContext(request));
+      },
+      websocket,
+    });
+
+    const accessibleHost = host === '0.0.0.0' ? 'localhost' : host;
+    const url = `http://${accessibleHost}:${this.wsServer.port}${subsPath}`;
+    this.logger.info(
+      `GraphQL server listening at ${url}${subsEnabled ? ' (graphql-ws subscriptions enabled)' : ''}`,
+    );
+    return { url };
+  }
+
   async close(): Promise<void> {
     if (this.startPromise) {
       await this.startPromise;
     }
 
+    if (this.wsServer) {
+      // Graceful shutdown: close all sockets with 1001 (going away).
+      this.wsServer.stop();
+      this.wsServer = undefined;
+    }
+
     if (this.apolloServer) {
       await this.apolloServer.stop();
+    }
+
+    if (this.pubsub?.close) {
+      await this.pubsub.close().catch(() => undefined);
     }
 
     this.logger.info('GraphQL server stopped');
@@ -130,6 +362,7 @@ export class GraphqlApplication {
 
     this.apolloServerStarted = false;
     this.apolloServer = undefined;
+    this.executableSchema = undefined;
     this.startPromise = undefined;
   }
 
@@ -145,11 +378,19 @@ export class GraphqlApplication {
         interceptors: {
           resolve: <T>(token: Token<T>) => this.context.get(token),
         },
+        pubsub: await this.resolvePubSub(),
+      });
+
+      // The executable schema (used by the graphql-ws subscription transport) is
+      // always built from the subgraph builder so `subscribe` resolvers are wired.
+      this.executableSchema = buildSubgraphSchema({
+        typeDefs: artifacts.document,
+        resolvers: artifacts.resolvers,
       });
 
       this.apolloServer = this.options.federation?.enabled
         ? new ApolloServer<GraphqlContext>({
-          schema: buildSubgraphSchema({ typeDefs: artifacts.document, resolvers: artifacts.resolvers }),
+          schema: this.executableSchema,
         })
         : new ApolloServer<GraphqlContext>({
           typeDefs: artifacts.document,

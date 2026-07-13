@@ -191,9 +191,9 @@ microservices:
   dapr:
     httpPort: 3500    # Dapr HTTP port
     grpcPort: 50001   # Dapr gRPC port (not used in this example)
-    componentsPath: ./dapr/components
+    componentsPath: ./dapr
   pubsub:
-    name: redis-pubsub  # Must match component metadata.name
+    name: redis-pubsub  # Must match component metadata.name AND createMicroservicesModule({ pubsubName })
     type: redis
     config:
       host: localhost
@@ -204,38 +204,59 @@ microservices:
 
 ### Message Handler (OrdersController)
 
+Handlers receive the **deserialized payload directly**. Guards, interceptors,
+pipes, and exception filters run around every handler — exactly like HTTP.
+
 ```typescript
 @Injectable()
 export class OrdersController {
-  @MessagePattern('order.create')
-  async createOrder(context: MessageContext) {
-    const order = context.data;
-    // Process order and return response
-    return { success: true, order };
+  // Pub/sub event — auto-subscribed (see below). Fire-and-forget.
+  @EventPattern('order.created')
+  async onOrderCreated(payload: NewOrderEvent) {
+    // ...persist the order
   }
 
-  @EventPattern('order.status.updated')
-  async handleStatusUpdate(context: MessageContext) {
-    const { orderId, status } = context.data;
-    // Fire-and-forget event handling
-    console.log('Status updated:', orderId, status);
+  // Request/response — invocable via client.send('orders.get', ...)
+  @MessagePattern('orders.get')
+  async getOrder(payload: { orderId: string }) {
+    return { success: true, order: this.orders.get(payload.orderId) };
   }
 }
 ```
 
-### Publishing Events (OrdersService)
+### Publishing & invoking (OrdersService)
 
 ```typescript
 @Injectable()
 export class OrdersService {
   constructor(private readonly client: MicroserviceClient) {}
 
-  async publishNewOrder(data: unknown) {
-    // Fire-and-forget event
+  // Fire-and-forget pub/sub event.
+  async publishNewOrder(data: NewOrderEvent) {
     await this.client.emit('order.created', data);
+  }
+
+  // Request/response over Dapr service invocation.
+  async fetchOrder(orderId: string) {
+    return this.client.send('orders.get', { orderId }, { appId: 'orders-service', timeout: 5000 });
   }
 }
 ```
+
+### Automatic pub/sub subscriptions
+
+There is **no manual subscription step**. On startup the microservices module
+serves `GET /dapr/subscribe`, returning one entry per `@EventPattern` handler:
+
+```bash
+curl http://localhost:3000/dapr/subscribe
+# [{ "pubsubname": "redis-pubsub", "topic": "order.created", "route": "/_nl/msg/order.created" }, ...]
+```
+
+Dapr reads that document, subscribes to each topic, and delivers events to the
+generated route — which runs the handler through the full pipeline. Each
+`@MessagePattern` also gets a `POST /_nl/msg/{pattern}` route so `send()` can
+invoke it. `@EventPattern` handlers are **not** exposed for invocation.
 
 ### Module Registration
 
@@ -338,31 +359,34 @@ dapr dashboard
 # Opens at http://localhost:8080
 ```
 
-### Check Pub/Sub Subscriptions
+### Check registered subscriptions
+
+The framework advertises subscriptions to Dapr; inspect the document it serves:
 
 ```bash
-curl http://localhost:3500/v1.0/metadata
+curl http://localhost:3000/dapr/subscribe
 ```
 
 ## Advanced Patterns
 
-### Request/Response (Coming Soon)
+### Request/Response with `send()`
 
 ```typescript
-// Send request and await response
-const result = await client.send<OrderResponse>('process.payment', {
-  orderId: '123',
-  amount: 100,
-});
+// Invoke another service over Dapr and await the typed result.
+const result = await client.send<OrderResponse>(
+  'orders.get',
+  { orderId: '123' },
+  { appId: 'orders-service', timeout: 5000 },
+);
+// A non-2xx response throws MicroserviceInvocationException (carrying status + body).
 ```
 
 ### Error Handling
 
 ```typescript
 @EventPattern('order.failed')
-async handleFailure(context: MessageContext) {
-  const { orderId, error } = context.data;
-  // Implement retry logic or dead-letter queue
+async handleFailure(payload: { orderId: string; error: string }) {
+  // A throw here returns a RETRY status to Dapr; a guard deny returns DROP.
 }
 ```
 
@@ -370,8 +394,8 @@ async handleFailure(context: MessageContext) {
 
 ```typescript
 @MessagePattern({ cmd: 'order.create', version: 'v2' })
-async createOrderV2(context: MessageContext) {
-  // Handle versioned messages
+async createOrderV2(payload: CreateOrderV2) {
+  // Handle versioned/object message patterns.
 }
 ```
 

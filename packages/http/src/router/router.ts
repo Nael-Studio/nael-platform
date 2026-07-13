@@ -42,6 +42,8 @@ import {
 } from '../interceptors/utils';
 import { getDeclaredVersions } from '../versioning/metadata';
 import { DEFAULT_VERSIONING_OPTIONS, type HttpVersioningOptions } from '../versioning/options';
+import { UploadedFileHandle } from '../uploads/uploaded-file';
+import { SseResponse } from '../sse/sse-response';
 
 interface HandlerEntry {
   controllerInstance: unknown;
@@ -528,6 +530,10 @@ export class Router {
       return Object.fromEntries(formData.entries());
     }
 
+    if (contentType.includes('multipart/form-data')) {
+      return this.readMultipartBody(request);
+    }
+
     if (contentType.includes('text/')) {
       return request.text();
     }
@@ -535,7 +541,37 @@ export class Router {
     return request.arrayBuffer();
   }
 
+  /**
+   * Parse a `multipart/form-data` body while preserving `File` entries (wrapped
+   * as `UploadedFileHandle`). Repeated field names collect into arrays so both
+   * `@UploadedFiles()` and multi-value text fields work.
+   */
+  private async readMultipartBody(request: Request): Promise<Record<string, unknown>> {
+    const formData = await request.formData();
+    const result: Record<string, unknown> = {};
+
+    for (const [name, value] of formData.entries()) {
+      const wrapped = typeof value === 'string' ? value : new UploadedFileHandle(value);
+      if (name in result) {
+        const existing = result[name];
+        if (Array.isArray(existing)) {
+          existing.push(wrapped);
+        } else {
+          result[name] = [existing, wrapped];
+        }
+      } else {
+        result[name] = wrapped;
+      }
+    }
+
+    return result;
+  }
+
   private normalizeResponse(result: unknown): Response {
+    if (result instanceof SseResponse) {
+      return result.toResponse();
+    }
+
     if (result instanceof Response) {
       return result;
     }

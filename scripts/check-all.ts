@@ -16,6 +16,7 @@ const packages = [
 	'mcp-server',
 	'platform',
 	'cli',
+	'testing',
 ] as const;
 
 const examples = [

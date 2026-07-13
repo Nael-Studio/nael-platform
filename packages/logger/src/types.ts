@@ -18,4 +18,10 @@ export interface LoggerOptions {
   context?: string;
   transports?: LoggerTransport[];
   timestampFn?: () => Date;
+  /**
+   * When true (default), ambient request-context fields (e.g. `requestId`) from
+   * the registered {@link LoggerContextProvider} are merged into each entry's
+   * `meta`. Set false to opt a logger out.
+   */
+  includeRequestContext?: boolean;
 }

@@ -30,6 +30,13 @@ export abstract class OrmRepository<
     options?: TFindOneOptions,
   ): Promise<TDocument | null>;
   abstract count(filter?: TFilter, options?: TFindManyOptions): Promise<number>;
+  abstract exists(filter?: TFilter, options?: unknown): Promise<boolean>;
+  abstract findOneOrFail(filter?: TFilter, options?: TFindOneOptions): Promise<TDocument>;
+  abstract findByIdOrFail(id: unknown, options?: TFindOneOptions): Promise<TDocument>;
+  abstract updateOne(filter: TFilter, update: TUpdate, options?: unknown): Promise<TDocument | null>;
+  abstract increment(filter: TFilter, field: string, by?: number, options?: unknown): Promise<number>;
+  abstract distinct<K = unknown>(field: string, filter?: TFilter, options?: unknown): Promise<K[]>;
+  abstract findAndCount(filter?: TFilter, options?: TFindManyOptions): Promise<[Array<TDocument>, number]>;
   abstract insertOne(doc: TInsert, options?: unknown): Promise<TDocument>;
   abstract insertMany(docs: TInsert[], options?: unknown): Promise<Array<TDocument>>;
   abstract save(entity: Partial<TEntity> & { id?: string; _id?: unknown }, options?: unknown): Promise<TDocument>;

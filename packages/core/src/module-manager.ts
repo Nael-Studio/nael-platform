@@ -1,5 +1,6 @@
 import type { ClassType, Token } from './interfaces/provider';
 import type { Container } from './container/container';
+import { isBootRecording, recordModuleInit } from './diagnostics/boot-recorder';
 
 export interface ModuleLoadResult {
   module: ClassType;
@@ -101,6 +102,10 @@ export class ModuleManager {
       throw new Error(`Module ${moduleClass.name ?? 'AnonymousModule'} is not registered in the container.`);
     }
 
+    const recording = isBootRecording();
+    const startPerf = recording ? performance.now() : 0;
+    const startAt = recording ? Date.now() : 0;
+
     const controllers = await this.container.instantiateControllers(definition.controllers);
     const resolvers = await Promise.all(definition.resolvers.map((resolver) => this.container.resolve(resolver)));
     const bootstrapTokens = definition.bootstrap ?? [];
@@ -109,6 +114,16 @@ export class ModuleManager {
     for (const token of new Set<Token>(bootstrapTokens)) {
       await this.container.resolve(token);
       instantiated.push(token);
+    }
+
+    if (recording) {
+      recordModuleInit({
+        module: moduleClass.name ?? 'AnonymousModule',
+        durationMs: performance.now() - startPerf,
+        controllers: controllers.length,
+        resolvers: resolvers.length,
+        at: startAt,
+      });
     }
 
     return {

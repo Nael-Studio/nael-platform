@@ -14,6 +14,7 @@
     "@nl-framework/http": "workspace:*",
     "@nl-framework/logger": "workspace:*",
     "@nl-framework/platform": "workspace:*",
-    "@nl-framework/orm": "workspace:*"
+    "@nl-framework/orm": "workspace:*",
+    "@nl-framework/health": "workspace:*"
   }
 }

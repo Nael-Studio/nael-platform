@@ -1,0 +1,146 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://nl-framework.dev/openapi-3.1-profile.schema.json",
+  "title": "OpenAPI 3.1 structural profile",
+  "description": "Draft-07 validatable subset of the official OpenAPI 3.1 schema (vendored alongside as openapi-3.1-schema.json). Encodes the structural invariants ajv v6 can enforce: version, required info fields, path items, operations, parameters, and components.",
+  "type": "object",
+  "required": ["openapi", "info", "paths"],
+  "additionalProperties": true,
+  "properties": {
+    "openapi": {
+      "type": "string",
+      "pattern": "^3\\.1\\.\\d+(-.+)?$"
+    },
+    "info": {
+      "type": "object",
+      "required": ["title", "version"],
+      "properties": {
+        "title": { "type": "string" },
+        "version": { "type": "string" },
+        "description": { "type": "string" }
+      }
+    },
+    "servers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["url"],
+        "properties": {
+          "url": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "paths": {
+      "type": "object",
+      "patternProperties": {
+        "^/": { "$ref": "#/definitions/PathItem" }
+      },
+      "additionalProperties": false
+    },
+    "components": {
+      "type": "object",
+      "properties": {
+        "schemas": { "type": "object" },
+        "securitySchemes": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/definitions/SecurityScheme" }
+        }
+      }
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "security": {
+      "type": "array",
+      "items": { "type": "object" }
+    }
+  },
+  "definitions": {
+    "PathItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "get": { "$ref": "#/definitions/Operation" },
+        "put": { "$ref": "#/definitions/Operation" },
+        "post": { "$ref": "#/definitions/Operation" },
+        "delete": { "$ref": "#/definitions/Operation" },
+        "options": { "$ref": "#/definitions/Operation" },
+        "head": { "$ref": "#/definitions/Operation" },
+        "patch": { "$ref": "#/definitions/Operation" },
+        "trace": { "$ref": "#/definitions/Operation" }
+      }
+    },
+    "Operation": {
+      "type": "object",
+      "required": ["responses"],
+      "properties": {
+        "operationId": { "type": "string" },
+        "summary": { "type": "string" },
+        "description": { "type": "string" },
+        "deprecated": { "type": "boolean" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "parameters": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Parameter" }
+        },
+        "requestBody": { "$ref": "#/definitions/RequestBody" },
+        "responses": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": { "$ref": "#/definitions/Response" }
+        },
+        "security": {
+          "type": "array",
+          "items": { "type": "object" }
+        }
+      }
+    },
+    "Parameter": {
+      "type": "object",
+      "required": ["name", "in"],
+      "properties": {
+        "name": { "type": "string" },
+        "in": { "type": "string", "enum": ["path", "query", "header", "cookie"] },
+        "required": { "type": "boolean" },
+        "description": { "type": "string" },
+        "schema": { "type": "object" }
+      }
+    },
+    "RequestBody": {
+      "type": "object",
+      "required": ["content"],
+      "properties": {
+        "description": { "type": "string" },
+        "required": { "type": "boolean" },
+        "content": { "type": "object" }
+      }
+    },
+    "Response": {
+      "type": "object",
+      "required": ["description"],
+      "properties": {
+        "description": { "type": "string" },
+        "content": { "type": "object" }
+      }
+    },
+    "SecurityScheme": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["apiKey", "http", "oauth2", "openIdConnect", "mutualTLS"]
+        }
+      }
+    }
+  }
+}

@@ -42,12 +42,42 @@ export class HttpException extends ApplicationException {
     return new HttpException(422, message, cause);
   }
 
+  static payloadTooLarge(message = 'Payload Too Large', cause?: Error): HttpException {
+    return new PayloadTooLargeException(message, cause);
+  }
+
+  static unsupportedMediaType(message = 'Unsupported Media Type', cause?: Error): HttpException {
+    return new UnsupportedMediaTypeException(message, cause);
+  }
+
   static internalServerError(message = 'Internal Server Error', cause?: Error): HttpException {
     return new HttpException(500, message, cause);
   }
 
   static serviceUnavailable(message = 'Service Unavailable', cause?: Error): HttpException {
     return new HttpException(503, message, cause);
+  }
+}
+
+/**
+ * 413 — the request body (or an uploaded file) exceeds the allowed size.
+ */
+export class PayloadTooLargeException extends HttpException {
+  constructor(message = 'Payload Too Large', cause?: Error) {
+    super(413, message, cause);
+    this.name = 'PayloadTooLargeException';
+    Object.setPrototypeOf(this, PayloadTooLargeException.prototype);
+  }
+}
+
+/**
+ * 415 — the uploaded content type is not among the accepted MIME types.
+ */
+export class UnsupportedMediaTypeException extends HttpException {
+  constructor(message = 'Unsupported Media Type', cause?: Error) {
+    super(415, message, cause);
+    this.name = 'UnsupportedMediaTypeException';
+    Object.setPrototypeOf(this, UnsupportedMediaTypeException.prototype);
   }
 }
 

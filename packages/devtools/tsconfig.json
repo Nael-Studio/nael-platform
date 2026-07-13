@@ -11,6 +11,7 @@
     { "path": "../logger" },
     { "path": "../http" },
     { "path": "../orm" },
-    { "path": "../graphql" }
+    { "path": "../graphql" },
+    { "path": "../scheduler" }
   ]
 }

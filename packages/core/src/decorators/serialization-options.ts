@@ -92,7 +92,9 @@ export const SerializeOptions = (
     }
 
     defineOptions(targetOrValue as object, options, context as string | symbol);
-    return targetOrValue as PropertyDescriptor['value'];
+    // Legacy method/property decorator: return nothing so the original method is
+    // preserved (returning the prototype would clobber it — notably for `get`/`set`).
+    return undefined;
   }) as ClassDecorator & MethodDecorator;
 
 /**

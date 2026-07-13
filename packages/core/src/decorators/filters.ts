@@ -64,7 +64,10 @@ export const UseFilters = (...filters: FilterToken[]): ClassDecorator & MethodDe
     }
 
     appendFilterMetadata(targetOrValue as object, filters, context as string | symbol);
-    return targetOrValue as PropertyDescriptor['value'];
+    // Legacy method/property decorator: return nothing so the original method is
+    // preserved. Returning the prototype would be misread as a descriptor and
+    // clobber the method (notably for handlers named `get`/`set`).
+    return undefined;
   }) as ClassDecorator & MethodDecorator;
 
 export const getFilterMetadata = (target: object, propertyKey?: string | symbol): FilterToken[] =>
@@ -103,22 +106,24 @@ export const listAppliedFilters = <T = FilterToken>(
     }
   };
 
+  // Method-level filters run before controller-level filters; within a level,
+  // declaration order is preserved and duplicates keep their first occurrence.
   if (typeof controller === 'function') {
-    appendFromTarget(controller);
-    if ('prototype' in controller) {
-      appendFromTarget(controller.prototype);
-    }
     if (handlerName !== undefined) {
       appendFromTarget(controller, handlerName);
       if ('prototype' in controller) {
         appendFromTarget(controller.prototype, handlerName);
       }
     }
-  } else if (controller && typeof controller === 'object') {
     appendFromTarget(controller);
+    if ('prototype' in controller) {
+      appendFromTarget(controller.prototype);
+    }
+  } else if (controller && typeof controller === 'object') {
     if (handlerName !== undefined) {
       appendFromTarget(controller, handlerName);
     }
+    appendFromTarget(controller);
   }
 
   return dedupe(filters) as T[];

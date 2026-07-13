@@ -1,22 +1,26 @@
 ---
 title: 'Interceptors · Microservices'
-description: 'Share @UseInterceptors metadata across transports and prepare interceptors for the dispatcher pipeline.'
+description: 'Wrap message handlers with @UseInterceptors and the microservice execution context.'
 ---
 
 import { Badge } from '@/components/ui/badge';
 import { CodeBlock } from '@/components/shared/simple-code-block';
 
-export const interceptorExample = `import { Injectable, UseInterceptors } from '@nl-framework/core';
-import type { GenericInterceptor, CallHandler } from '@nl-framework/http';
+export const interceptorExample = `import { Injectable } from '@nl-framework/core';
+import type {
+  MicroserviceInterceptor,
+  MicroserviceExecutionContext,
+  CallHandler,
+} from '@nl-framework/microservices';
 
 @Injectable()
-export class TimingInterceptor implements GenericInterceptor<unknown> {
-  async intercept(_context: unknown, next: CallHandler) {
+export class TimingInterceptor implements MicroserviceInterceptor {
+  async intercept(context: MicroserviceExecutionContext, next: CallHandler) {
     const started = Date.now();
     try {
       return await next.handle();
     } finally {
-      console.log('handler duration', Date.now() - started);
+      console.log('handler duration', context.getPattern(), Date.now() - started);
     }
   }
 }`;
@@ -46,27 +50,24 @@ export class OrdersConsumer {
     <h1 className="text-4xl font-semibold tracking-tight">Interceptors</h1>
     <div className="text-lg text-muted-foreground max-w-3xl">
       Microservice controllers reuse the <code>@UseInterceptors()</code> decorator from <code>@nl-framework/core</code>.
-      Although the dispatcher does not execute interceptor chains yet, annotating handlers today ensures your metadata is
-      ready once the execution pipeline ships.
+      The dispatcher runs the interceptor chain around each handler, after guards and around the pipe/handler step.
     </div>
   </div>
 
   <section className="space-y-4" id="status">
-    <h2 className="text-2xl font-semibold">Current status</h2>
+    <h2 className="text-2xl font-semibold">How it runs</h2>
     <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
-      <li><code>UseInterceptors()</code> attaches metadata at both the class and handler level, identical to HTTP and
-        GraphQL.</li>
-      <li><code>listMessageHandlers()</code> captures interceptor tokens so DI can resolve them when the dispatcher learns
-        how to execute chains.</li>
-      <li>A microservice-specific interceptor context plus <code>CallHandler</code> adapter is under development.</li>
+      <li><code>UseInterceptors()</code> attaches metadata at both the class and handler level, identical to HTTP and GraphQL.</li>
+      <li>Interceptors nest global → controller → method around the handler; each may run logic before and after <code>next.handle()</code>.</li>
+      <li>Register cross-cutting interceptors globally with <code>registerMicroserviceInterceptor()</code>.</li>
     </ul>
   </section>
 
   <section className="space-y-4" id="create">
     <h2 className="text-2xl font-semibold">Author an interceptor</h2>
     <div className="text-muted-foreground">
-      You can implement the generic interceptor contracts exported by <code>@nl-framework/http</code> today.
-      <code>GenericInterceptor</code> mirrors Nest-style interceptors and lets you share logic across transports.
+      Implement <code>MicroserviceInterceptor</code> (or provide a plain function of <code>(context, next)</code>). The
+      execution context exposes the pattern, payload, and metadata so logic can stay transport-agnostic.
     </div>
     <CodeBlock code={interceptorExample} title="interceptors/timing.interceptor.ts" />
   </section>
@@ -74,21 +75,17 @@ export class OrdersConsumer {
   <section className="space-y-4" id="apply">
     <h2 className="text-2xl font-semibold">Apply with @UseInterceptors()</h2>
     <div className="text-muted-foreground">
-      Decorate the controller for global coverage or a single handler for scoped interception. Method-level interceptors
-      execute before class-level interceptors once the dispatcher pipeline lands, matching HTTP semantics.
+      Decorate the controller for broad coverage or a single handler for scoped interception, matching HTTP semantics.
     </div>
     <CodeBlock code={controllerSample} title="orders.consumer.ts" />
   </section>
 
   <section className="space-y-4" id="behavior">
-    <h2 className="text-2xl font-semibold">Behavior & roadmap</h2>
+    <h2 className="text-2xl font-semibold">Behavior</h2>
     <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
-      <li>Interceptors are executed in the order declared: method-level → controller-level → (future) global interceptors.</li>
-      <li>Return the transformed result from <code>next.handle()</code>, or throw to short-circuit the response.</li>
-      <li>Keep interceptors stateless or inject services so they are transport-agnostic; they will plug into the
-        microservice execution context without changes once available.</li>
-      <li>Runtime support is actively being built. Track the microservice changelog to know when interceptor execution is
-        wired up.</li>
+      <li>Interceptors execute global → controller → method, wrapping the handler like around-advice.</li>
+      <li>Return the value from <code>next.handle()</code>, transform it, or skip <code>next</code> entirely to short-circuit (e.g. a cache hit).</li>
+      <li>Keep interceptors stateless or inject services so they stay transport-agnostic.</li>
     </ul>
   </section>
 </article>

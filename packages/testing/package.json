@@ -1,0 +1,53 @@
+{
+  "name": "@nl-framework/testing",
+  "version": "0.4.0",
+  "description": "First-party testing utilities for nl-framework: testing module builder with provider/guard/interceptor/filter overrides, plus in-process HTTP, GraphQL, and microservice harnesses.",
+  "keywords": [
+    "bun",
+    "testing",
+    "dependency-injection",
+    "test-harness"
+  ],
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/types/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/types/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "bunx tsc --build tsconfig.build.json",
+    "test": "bun test"
+  },
+  "peerDependencies": {
+    "@nl-framework/core": "^0.4.0",
+    "@nl-framework/graphql": "^0.4.0",
+    "@nl-framework/http": "^0.4.0",
+    "@nl-framework/microservices": "^0.4.0",
+    "@nl-framework/orm": "^0.4.0"
+  },
+  "peerDependenciesMeta": {
+    "@nl-framework/graphql": {
+      "optional": true
+    },
+    "@nl-framework/http": {
+      "optional": true
+    },
+    "@nl-framework/microservices": {
+      "optional": true
+    },
+    "@nl-framework/orm": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.2"
+  }
+}

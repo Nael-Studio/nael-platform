@@ -147,4 +147,71 @@ describe('SchedulerService', () => {
     await service.cancel('custom');
     expect(worker.messages.some((m) => m.action === 'cancel' && m.id === 'custom')).toBe(true);
   });
+
+  it('describes registered jobs and records run history', async () => {
+    class Reporter {
+      count = 0;
+
+      @Interval(5000, { name: 'reporter' })
+      tick(): void {
+        this.count += 1;
+      }
+    }
+
+    await service.registerDecoratedTarget(new Reporter());
+
+    const snapshots = registry.getJobSnapshots();
+    const job = snapshots.find((s) => s.id === 'reporter')!;
+    expect(job.type).toBe('interval');
+    expect(job.schedule).toBe('every 5000ms');
+    expect(job.runCount).toBe(0);
+
+    worker.emitExecute('reporter');
+    await Promise.resolve();
+
+    const after = registry.getRunState('reporter')!;
+    expect(after.runCount).toBe(1);
+    expect(after.running).toBe(false);
+    expect(after.lastRunAt).toBeGreaterThan(0);
+    expect(after.lastError).toBeUndefined();
+    // Interval jobs get a best-effort next fire time.
+    expect(after.nextRunAt).toBe(after.lastRunAt! + 5000);
+  });
+
+  it('captures handler errors in run history without throwing', async () => {
+    class Failing {
+      @Interval(1000, { name: 'failing' })
+      boom(): void {
+        throw new Error('kaboom');
+      }
+    }
+
+    await service.registerDecoratedTarget(new Failing());
+    worker.emitExecute('failing');
+    await Promise.resolve();
+
+    const state = registry.getRunState('failing')!;
+    expect(state.runCount).toBe(1);
+    expect(state.lastError).toBe('kaboom');
+  });
+
+  it('triggers a job on demand via triggerTask', async () => {
+    class Manual {
+      count = 0;
+
+      @Interval(60_000, { name: 'manual' })
+      run(): void {
+        this.count += 1;
+      }
+    }
+
+    const instance = new Manual();
+    await service.registerDecoratedTarget(instance);
+
+    await service.triggerTask('manual');
+    expect(instance.count).toBe(1);
+    expect(registry.getRunState('manual')?.runCount).toBe(1);
+
+    await expect(service.triggerTask('nope')).rejects.toThrow('not registered');
+  });
 });

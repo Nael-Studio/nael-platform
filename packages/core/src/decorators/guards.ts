@@ -64,7 +64,11 @@ export const UseGuards = (...guards: GuardToken[]): ClassDecorator & MethodDecor
     }
 
     appendGuardMetadata(targetOrValue as object, guards, context as string | symbol);
-    return targetOrValue as PropertyDescriptor['value'];
+    // Legacy method/property decorator: return nothing so the runtime keeps the
+    // original method. Returning `targetOrValue` here (the prototype) would be
+    // misread as a property descriptor and clobber the method — catastrophically
+    // so for handlers named `get`/`set`, whose accessor keys collide.
+    return undefined;
   }) as ClassDecorator & MethodDecorator;
 
 export const getGuardMetadata = (target: object, propertyKey?: string | symbol): GuardToken[] =>

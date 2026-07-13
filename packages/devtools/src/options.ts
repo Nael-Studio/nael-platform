@@ -26,6 +26,9 @@ export const normalizeDevtoolsOptions = (
   title: options.title?.trim() || DEFAULT_DASHBOARD_TITLE,
   maxSamples: positiveInt(options.maxSamples, 2000),
   streamIntervalMs: positiveInt(options.streamIntervalMs, 2000),
+  bufferSizes: options.bufferSizes ?? {},
+  redactKeys: (options.redactKeys ?? []).filter((key) => typeof key === 'string' && key.trim().length > 0),
+  sampleDocuments: options.sampleDocuments ?? false,
 });
 
 export const isProductionEnvironment = (): boolean =>

@@ -30,7 +30,16 @@ describe('normalizeDevtoolsOptions', () => {
       title: DEFAULT_DASHBOARD_TITLE,
       maxSamples: 2000,
       streamIntervalMs: 2000,
+      bufferSizes: {},
+      redactKeys: [],
+      sampleDocuments: false,
     });
+  });
+
+  it('keeps only non-empty string redactKeys', () => {
+    expect(normalizeDevtoolsOptions({ redactKeys: ['licenseKey', '  ', ''] }).redactKeys).toEqual([
+      'licenseKey',
+    ]);
   });
 
   it('normalizes base path: adds leading slash, strips trailing slash, guards root', () => {

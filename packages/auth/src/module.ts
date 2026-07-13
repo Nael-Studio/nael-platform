@@ -20,6 +20,8 @@ import type {
 } from './interfaces/module-options';
 import { BetterAuthService } from './service';
 import type { BetterAuthAdapter, BetterAuthAdapterFactory, BetterAuthInstance } from './types';
+import { AUTHORIZATION_OPTIONS } from './authorization/constants';
+import { RolesGuard } from './authorization/guard';
 
 const createAdapterProvider = (): Provider => ({
   provide: BETTER_AUTH_ADAPTER,
@@ -87,7 +89,23 @@ const createAuthInstanceProvider = (): Provider => ({
   inject: [BETTER_AUTH_OPTIONS, BETTER_AUTH_ADAPTER, LoggerFactory],
 });
 
-const COMMON_PROVIDERS: Provider[] = [createAdapterProvider(), createAuthInstanceProvider()];
+// Derives the normalized authorization options from the normalized module options.
+// Registered so `RolesGuard` (also provided here) can inject them uniformly whether
+// the module was configured synchronously or via a factory.
+const createAuthorizationOptionsProvider = (): Provider => ({
+  provide: AUTHORIZATION_OPTIONS,
+  useFactory: (options: NormalizedBetterAuthModuleOptions) => options.authorization,
+  inject: [BETTER_AUTH_OPTIONS],
+});
+
+const COMMON_PROVIDERS: Provider[] = [
+  createAdapterProvider(),
+  createAuthInstanceProvider(),
+  createAuthorizationOptionsProvider(),
+  RolesGuard,
+];
+
+const AUTHORIZATION_EXPORTS = [AUTHORIZATION_OPTIONS, RolesGuard];
 
 const createSynchronousProviders = (
   normalized: NormalizedBetterAuthModuleOptions,
@@ -149,7 +167,13 @@ export class BetterAuthModule {
 
     @Module({
       providers: [...createSynchronousProviders(normalized), BetterAuthService],
-      exports: [BetterAuthService, BETTER_AUTH_INSTANCE, BETTER_AUTH_OPTIONS, BETTER_AUTH_ADAPTER],
+      exports: [
+        BetterAuthService,
+        BETTER_AUTH_INSTANCE,
+        BETTER_AUTH_OPTIONS,
+        BETTER_AUTH_ADAPTER,
+        ...AUTHORIZATION_EXPORTS,
+      ],
     })
     class BetterAuthRootModule { }
 
@@ -166,7 +190,13 @@ export class BetterAuthModule {
     @Module({
       imports: options.imports ?? [],
       providers: [...providers, BetterAuthService],
-      exports: [BetterAuthService, BETTER_AUTH_INSTANCE, BETTER_AUTH_OPTIONS, BETTER_AUTH_ADAPTER],
+      exports: [
+        BetterAuthService,
+        BETTER_AUTH_INSTANCE,
+        BETTER_AUTH_OPTIONS,
+        BETTER_AUTH_ADAPTER,
+        ...AUTHORIZATION_EXPORTS,
+      ],
     })
     class BetterAuthRootAsyncModule { }
 

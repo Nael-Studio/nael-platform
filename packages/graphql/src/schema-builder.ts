@@ -44,6 +44,8 @@ import type {
 } from './interceptors/types';
 import type { GraphqlContext } from './application';
 import { GRAPHQL_CONTAINER_RESOLVER } from './constants';
+import type { PubSub } from './subscriptions/pubsub';
+import { mergeAsyncIterators, filterAsyncIterator } from './subscriptions/async-iterators';
 
 export interface FederationBuildOptions {
   enabled?: boolean;
@@ -55,6 +57,8 @@ export interface GraphqlBuildOptions {
   guards?: GraphqlGuardRuntimeOptions;
   interceptors?: GraphqlInterceptorRuntimeOptions;
   filters?: GraphqlFilterRuntimeOptions;
+  /** Pub/sub backing `@Subscription()` fields. Required when any subscription is defined. */
+  pubsub?: PubSub;
 }
 
 export interface GraphqlBuildArtifacts {
@@ -785,6 +789,97 @@ const createResolverInvoker = (
   };
 };
 
+/**
+ * Run the guard chain for a subscription's `subscribe` phase. A denied guard
+ * throws a `GraphQLError` (closing the operation with a GraphQL error, not a
+ * transport error).
+ */
+const runSubscriptionGuards = async (
+  method: ResolverMethodDefinition,
+  parent: unknown,
+  args: Record<string, unknown>,
+  context: any,
+  info: any,
+  guardRuntime: GraphqlGuardRuntimeOptions,
+): Promise<void> => {
+  const guardTokens = [
+    ...listGraphqlGuards(),
+    ...listAppliedGuards(method.target, method.methodName),
+  ];
+
+  if (!guardTokens.length || isPublicResolver(method.target, method.methodName)) {
+    return;
+  }
+
+  const scopedResolve = getScopedResolver(context as GraphqlContext, guardRuntime.resolve);
+  const executionContext = createGraphqlGuardExecutionContext({
+    parent,
+    args,
+    context,
+    info,
+    resolverClass: method.target,
+    resolverHandlerName: method.methodName,
+    resolve: scopedResolve,
+  });
+
+  for (const guard of guardTokens) {
+    const decision = await invokeGraphqlGuard(guard, executionContext, { resolve: scopedResolve });
+    if (decision instanceof Response) {
+      throw await responseToGraphQLError(decision);
+    }
+    if (decision === false) {
+      throw new GraphQLError('Forbidden', { extensions: { http: { status: 403 } } });
+    }
+  }
+};
+
+/**
+ * Build a graphql-js subscription resolver (`{ subscribe, resolve }`). `subscribe`
+ * runs guards, resolves the topic(s), subscribes via the pub/sub, and applies the
+ * optional filter; `resolve` maps each payload (identity by default).
+ */
+const createSubscriptionResolver = (
+  resolver: unknown,
+  method: ResolverMethodDefinition,
+  pubsub: PubSub | undefined,
+  guardRuntime?: GraphqlGuardRuntimeOptions,
+): { subscribe: (...a: any[]) => any; resolve: (...a: any[]) => any } => {
+  const config = method.subscription!;
+
+  const subscribe = async (parent: unknown, args: any, context: any, info: any) => {
+    const argsObject = (args && typeof args === 'object' ? args : {}) as Record<string, unknown>;
+
+    if (guardRuntime) {
+      await runSubscriptionGuards(method, parent, argsObject, context, info, guardRuntime);
+    }
+
+    if (!pubsub) {
+      throw new GraphQLError(
+        `No PubSub configured for subscription "${method.schemaName}". Provide one via the GraphqlApplication pubsub option.`,
+      );
+    }
+
+    const rawTopics =
+      typeof config.topics === 'function' ? config.topics(argsObject, context) : config.topics;
+    const topicList = Array.isArray(rawTopics) ? rawTopics : [rawTopics];
+    const iterator = mergeAsyncIterators(topicList.map((topic) => pubsub.subscribe(topic)));
+
+    if (config.filter) {
+      return filterAsyncIterator(iterator, (payload) =>
+        config.filter!(payload, argsObject, context, info),
+      );
+    }
+    return iterator;
+  };
+
+  const resolve = config.resolve
+    ? (payload: any, args: any, context: any, info: any) =>
+        config.resolve!(payload, (args ?? {}) as Record<string, unknown>, context, info)
+    : (payload: any) => payload;
+
+  return { subscribe, resolve };
+};
+
 export class GraphqlSchemaBuilder {
   constructor(private readonly storage = GraphqlMetadataStorage.get()) { }
 
@@ -913,8 +1008,10 @@ export class GraphqlSchemaBuilder {
 
     const queryFields: string[] = [];
     const mutationFields: string[] = [];
+    const subscriptionFields: string[] = [];
     const rootQueryResolvers: Record<string, any> = {};
     const rootMutationResolvers: Record<string, any> = {};
+    const rootSubscriptionResolvers: Record<string, any> = {};
     const typeResolvers: Record<string, Record<string, any>> = {};
 
     for (const resolver of resolverClasses) {
@@ -959,6 +1056,21 @@ export class GraphqlSchemaBuilder {
         );
       }
 
+      for (const method of resolver.subscriptions) {
+        subscriptionFields.push(
+          this.renderOperationDefinition('  ', method, {
+            customScalars: usedCustomScalars,
+            enumTypes: usedEnumTypes,
+          }),
+        );
+        rootSubscriptionResolvers[method.schemaName] = createSubscriptionResolver(
+          instance,
+          method,
+          options.pubsub,
+          guardRuntime,
+        );
+      }
+
       if (objectTypeName) {
         const fieldResolvers = (typeResolvers[objectTypeName] ??= {});
         for (const method of resolver.fields) {
@@ -991,6 +1103,9 @@ export class GraphqlSchemaBuilder {
     }
     if (mutationFields.length) {
       typeSections.push(['type Mutation {', ...mutationFields, '}'].join('\n'));
+    }
+    if (subscriptionFields.length) {
+      typeSections.push(['type Subscription {', ...subscriptionFields, '}'].join('\n'));
     }
 
     const scalarDefinitions: string[] = [];
@@ -1062,6 +1177,9 @@ export class GraphqlSchemaBuilder {
     }
     if (mutationFields.length) {
       resolvers.Mutation = rootMutationResolvers;
+    }
+    if (subscriptionFields.length) {
+      resolvers.Subscription = rootSubscriptionResolvers;
     }
     for (const [typeName, resolver] of Object.entries(typeResolvers)) {
       resolvers[typeName] = resolver;

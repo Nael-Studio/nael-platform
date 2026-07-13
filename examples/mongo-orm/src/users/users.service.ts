@@ -46,7 +46,7 @@ export class UsersService {
       } as Partial<User> & { _id: ObjectId })) as OrmEntityDocument<User>;
     }
 
-    return (await this.users.insertOne(payload)) as OrmEntityDocument<User>;
+    return (await this.users.insertOne(payload as User)) as OrmEntityDocument<User>;
   }
 
   async softDelete(id: string): Promise<boolean> {

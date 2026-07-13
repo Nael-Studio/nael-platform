@@ -21,6 +21,32 @@ export interface NaelDevtoolsOptions {
   maxSamples?: number;
   /** SSE push interval for live metrics, in ms. Defaults to 2000. */
   streamIntervalMs?: number;
+  /**
+   * Per-type instrumentation ring-buffer capacities for the request debugger.
+   * Defaults: 500 requests / 4000 steps / 2000 queries / 500 exceptions /
+   * 5000 logs / 2000 cache events.
+   */
+  bufferSizes?: Partial<DevtoolsBufferSizes>;
+  /**
+   * Extra key substrings whose values are redacted in the Config panel (and any
+   * future body capture), on top of the built-in set (`password`, `token`,
+   * `secret`, `authorization`, …). Matched case-insensitively as substrings.
+   */
+  redactKeys?: string[];
+  /**
+   * Opt in to reading ONE document per model (and live collection stats) for the
+   * Models tab's *sampled schema* view. Off by default — it touches the database.
+   */
+  sampleDocuments?: boolean;
+}
+
+export interface DevtoolsBufferSizes {
+  requests: number;
+  steps: number;
+  queries: number;
+  exceptions: number;
+  logs: number;
+  cache: number;
 }
 
 export interface NormalizedDevtoolsOptions {
@@ -30,6 +56,9 @@ export interface NormalizedDevtoolsOptions {
   title: string;
   maxSamples: number;
   streamIntervalMs: number;
+  bufferSizes: Partial<DevtoolsBufferSizes>;
+  redactKeys: string[];
+  sampleDocuments: boolean;
 }
 
 export interface NaelDevtoolsOptionsFactory {

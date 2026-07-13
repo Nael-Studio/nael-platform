@@ -1,4 +1,5 @@
 import type { MongoClientOptions } from 'mongodb';
+import type { CacheStore } from '@nl-framework/core';
 import type { OrmConnection, OrmDriver, SeedHistoryFactoryOptions } from '../interfaces/driver';
 import type { DocumentClass } from '../interfaces/document';
 import { getDocumentMetadata } from '../decorators/document';
@@ -13,6 +14,8 @@ export interface MongoDriverOptions {
   seedHistory?: MongoSeedHistoryStoreOptions;
   /** Create all declared `@Index` indexes right after connecting (fail-loud). */
   autoIndex?: boolean;
+  /** Optional cache store backing per-call `find(..., { cache })` read-through. */
+  cache?: CacheStore;
 }
 
 const createConnectionOptions = (
@@ -35,7 +38,18 @@ export const createMongoDriver = (options: MongoDriverOptions): OrmDriver => ({
     mongoConnection.registerEntity(entity);
     const metadata = getDocumentMetadata(entity);
     const collection = await mongoConnection.getCollection<T>(entity);
-    return new MongoRepository<T>(collection, metadata, mongoConnection.getWriteNotifier());
+    // Resolver used by populate() to reach related documents' collections on this connection.
+    const resolveRelation = async (target: DocumentClass) => {
+      mongoConnection.registerEntity(target);
+      return {
+        collection: await mongoConnection.getCollection(target),
+        metadata: getDocumentMetadata(target),
+      };
+    };
+    return new MongoRepository<T>(collection, metadata, mongoConnection.getWriteNotifier(), {
+      resolveRelation,
+      cache: options.cache,
+    });
   },
   createSeedHistory: async (
     connection: OrmConnection,

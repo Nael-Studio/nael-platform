@@ -1,6 +1,6 @@
 {
   "name": "@nl-framework/cli",
-  "version": "0.3.6",
+  "version": "0.4.0",
   "description": "Command-line interface for generating Bun-native Nael Framework projects.",
   "type": "module",
   "bin": {
@@ -14,7 +14,8 @@
   ],
   "scripts": {
     "build": "bunx tsc --build tsconfig.build.json",
-    "dev": "bun run src/bin.ts"
+    "dev": "bun run src/bin.ts",
+    "test": "bun test"
   },
   "keywords": [
     "cli",
@@ -24,7 +25,7 @@
   ],
   "license": "Apache-2.0",
   "config": {
-    "frameworkVersion": "^0.3.6",
+    "frameworkVersion": "^0.4.0",
     "bunVersion": "1.1.22"
   }
 }

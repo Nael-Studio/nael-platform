@@ -6,6 +6,8 @@ import { runGenerateServiceCommand } from './commands/generate-service';
 import { runGenerateControllerCommand } from './commands/generate-controller';
 import { runGenerateResolverCommand } from './commands/generate-resolver';
 import { runGenerateModelCommand } from './commands/generate-model';
+import { runGenerateMigrationCommand } from './commands/generate-migration';
+import { runMigrateCommand, type MigrateAction } from './commands/migrate';
 import { runNewCommand } from './commands/new';
 import { CliError } from './utils/cli-error';
 
@@ -36,7 +38,9 @@ Usage:
   nl generate controller <controller-name> --module <module-name> [options]
   nl generate resolver <resolver-name> --module <module-name> [options]
   nl generate model <model-name> --module <module-name> [options]
+  nl generate migration <migration-name> [options]
   nl generate lib <lib-name> [options]
+  nl migrate up|down|status [--config <path>] [--steps <n>]
   nl g module <module-name> [options]
   nl g service <service-name> --module <module-name> [options]
   nl g controller <controller-name> --module <module-name> [options]
@@ -52,6 +56,8 @@ Commands:
   generate controller, g controller Create an HTTP controller inside an existing module
   generate resolver, g resolver Register a GraphQL resolver inside an existing module
   generate model, g model       Create a GraphQL object model inside an existing module
+  generate migration, g migration Create a timestamped ORM migration under ./src/migrations
+  migrate up|down|status        Apply, revert, or inspect ORM migrations via a config file
   generate lib, g lib           Scaffold a reusable Bun-native library under ./libs
 
 Options:
@@ -476,6 +482,36 @@ export const run = async (argv: string[] = Bun.argv): Promise<number> => {
         return 0;
       }
 
+      if (target === 'migration') {
+        const migrationName = positionals[1];
+        if (!migrationName) {
+          throw new CliError('Please provide a migration name, e.g. "nl g migration add-users-index".');
+        }
+
+        const result = await runGenerateMigrationCommand({ name: migrationName, force });
+
+        printBanner();
+        console.log(`\nMigration created at ${result.migrationFile}`);
+        if (result.createdFiles.length) {
+          console.log('\nCreated files:');
+          for (const file of result.createdFiles) {
+            console.log(`  • ${file}`);
+          }
+        }
+        if (result.overwrittenFiles.length) {
+          console.log('\nOverwritten files:');
+          for (const file of result.overwrittenFiles) {
+            console.log(`  • ${file}`);
+          }
+        }
+
+        console.log('\nNext steps:');
+        console.log('  Implement up()/down() in the generated migration');
+        console.log('  Run "nl migrate up" to apply\n');
+
+        return 0;
+      }
+
       if (target === 'lib') {
         const libName = positionals[1];
         if (!libName) {
@@ -516,7 +552,48 @@ export const run = async (argv: string[] = Bun.argv): Promise<number> => {
         return 0;
       }
 
-      throw new CliError(`Unknown generate target: ${target}. Currently supported: module, service, controller, resolver, model, lib`);
+      throw new CliError(`Unknown generate target: ${target}. Currently supported: module, service, controller, resolver, model, migration, lib`);
+    }
+
+    if (command === 'migrate') {
+      const action = positionals[0] as MigrateAction | undefined;
+      if (!action || !['up', 'down', 'status'].includes(action)) {
+        throw new CliError('Please specify a migrate action: "nl migrate up|down|status".');
+      }
+
+      const configFlag = flags.get('--config');
+      const stepsFlag = flags.get('--steps');
+      const steps = typeof stepsFlag === 'string' ? Number.parseInt(stepsFlag, 10) : undefined;
+
+      const result = await runMigrateCommand({
+        action,
+        configPath: typeof configFlag === 'string' ? configFlag : undefined,
+        steps: Number.isFinite(steps) ? steps : undefined,
+      });
+
+      printBanner();
+      if (result.action === 'up') {
+        console.log(
+          result.applied?.length
+            ? `\nApplied ${result.applied.length} migration(s):\n${result.applied.map((n) => `  • ${n}`).join('\n')}`
+            : '\nNo pending migrations.',
+        );
+      } else if (result.action === 'down') {
+        console.log(
+          result.reverted?.length
+            ? `\nReverted ${result.reverted.length} migration(s):\n${result.reverted.map((n) => `  • ${n}`).join('\n')}`
+            : '\nNo applied migrations to revert.',
+        );
+      } else {
+        console.log('\nMigration status:');
+        for (const entry of result.status ?? []) {
+          const state = entry.applied ? 'applied' : 'pending';
+          const drift = entry.checksumChanged ? ' (checksum changed!)' : '';
+          console.log(`  • ${entry.name} — ${state}${drift}`);
+        }
+      }
+      console.log('');
+      return 0;
     }
 
     console.error(`Unknown command: ${command}`);

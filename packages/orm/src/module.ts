@@ -17,11 +17,14 @@ import {
   getSeedRegistryToken,
   getSeedRunnerToken,
   getSeedHistoryToken,
+  getMigrationRunnerToken,
   normalizeConnectionName,
   getDriverToken,
   getWriteNotifierToken,
 } from './constants';
 import { SeedRunner, type SeedRegistry } from './seeding/seed-runner';
+import { MigrationRunner, type MigrationConnection } from './migrations/migration-runner';
+import { registerQueryObserver } from './observability/query-observer';
 import { getRegisteredSeeds } from './decorators/seed';
 import { getRegisteredDocuments } from './decorators/document';
 
@@ -134,11 +137,15 @@ const createRootProviders = (connectionName: string, optionsProvider: Provider):
   },
   {
     provide: getDatabaseToken(connectionName),
-    useFactory: async (connection: OrmConnection) => {
+    useFactory: async (connection: OrmConnection, options: NormalizedOrmModuleOptions) => {
+      // Register any configured read-query observers once, at connection init.
+      for (const observer of options.observers ?? []) {
+        registerQueryObserver(observer);
+      }
       await connection.ensureConnection();
       return connection.getDatabase();
     },
-    inject: [getConnectionToken(connectionName)],
+    inject: [getConnectionToken(connectionName), getOptionsToken(connectionName)],
   },
   {
     provide: getWriteNotifierToken(connectionName),
@@ -161,6 +168,21 @@ const createRootProviders = (connectionName: string, optionsProvider: Provider):
       getSeedHistoryToken(connectionName),
       LoggerFactory,
     ],
+  },
+  {
+    provide: getMigrationRunnerToken(connectionName),
+    useFactory: (
+      connection: OrmConnection,
+      options: NormalizedOrmModuleOptions,
+      loggerFactory: LoggerFactory,
+    ) =>
+      new MigrationRunner(
+        connection as unknown as MigrationConnection,
+        options.migrations ?? [],
+        loggerFactory,
+        connectionName,
+      ),
+    inject: [getConnectionToken(connectionName), getOptionsToken(connectionName), LoggerFactory],
   },
 ];
 
@@ -200,7 +222,7 @@ export class OrmModule {
       throw new Error('OrmModule.forRoot requires a driver. Provide one via the "driver" option.');
     }
 
-    const connectionName = normalizeConnectionName(options.connectionName);
+    const connectionName = normalizeConnectionName(options.connectionName ?? options.name);
     const optionsProvider = createOptionsProvider(options, connectionName);
     const providers = createRootProviders(connectionName, optionsProvider);
 
@@ -218,7 +240,7 @@ export class OrmModule {
   }
 
   static forRootAsync(options: OrmModuleAsyncOptions): ClassType {
-    const connectionName = normalizeConnectionName(options.connectionName);
+    const connectionName = normalizeConnectionName(options.connectionName ?? options.name);
     const optionsProvider = createAsyncOptionsProvider(options, connectionName);
     const providers = [
       ...createRootProviders(connectionName, optionsProvider),
@@ -239,12 +261,15 @@ export class OrmModule {
     return OrmRootAsyncModule;
   }
 
-  static forFeature(entitiesOrOptions: OrmFeatureOptions | DocumentClass[]): ClassType {
-    const { entities, connectionName } = Array.isArray(entitiesOrOptions)
-      ? { entities: entitiesOrOptions, connectionName: undefined }
-      : entitiesOrOptions;
+  static forFeature(
+    entitiesOrOptions: OrmFeatureOptions | DocumentClass[],
+    connectionName?: string,
+  ): ClassType {
+    const { entities, connectionName: resolvedConnection } = Array.isArray(entitiesOrOptions)
+      ? { entities: entitiesOrOptions, connectionName }
+      : { entities: entitiesOrOptions.entities, connectionName: entitiesOrOptions.connectionName ?? connectionName };
 
-    const normalizedConnection = normalizeConnectionName(connectionName);
+    const normalizedConnection = normalizeConnectionName(resolvedConnection);
     const providers = createFeatureProviders(entities, normalizedConnection);
 
     const exports = providers.map((provider) =>

@@ -1,4 +1,4 @@
-import { Module, type ClassType, type Provider } from '@nl-framework/core';
+import { Module, enableBootRecording, type ClassType, type Provider } from '@nl-framework/core';
 import { DEVTOOLS_OPTIONS } from './constants';
 import type {
   NaelDevtoolsAsyncOptions,
@@ -58,6 +58,9 @@ export class NaelDevtoolsModule {
       return emptyModule();
     }
 
+    // Enable boot-timing capture now, before `app.bootstrap()` runs, so the Boot
+    // report can show module init order + per-provider construction cost.
+    enableBootRecording();
     ensureDevtoolsIntegration();
 
     @Module({
@@ -75,6 +78,9 @@ export class NaelDevtoolsModule {
    * mount time, so a disabled/production result mounts zero routes.
    */
   static forRootAsync(options: NaelDevtoolsAsyncOptions): ClassType {
+    // The armed decision resolves asynchronously at mount time, so capture boot
+    // timing eagerly; it is simply unused if the guard later declines to arm.
+    enableBootRecording();
     ensureDevtoolsIntegration();
 
     const providers: Provider[] = [asyncOptionsProvider(options)];

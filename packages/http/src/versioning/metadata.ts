@@ -72,7 +72,8 @@ export const Version = (
   ((targetOrValue: unknown, context?: unknown) => {
     const normalized = normalizeVersions(versions);
     if (!normalized.length) {
-      return targetOrValue as any;
+      // Nothing to record; return nothing so no decorator target is replaced.
+      return undefined;
     }
 
     if (isStage3MethodContext(context)) {
@@ -99,7 +100,9 @@ export const Version = (
     }
 
     defineVersionMetadata(targetOrValue as object, normalized, context as string | symbol);
-    return targetOrValue as PropertyDescriptor['value'];
+    // Legacy method/property decorator: return nothing so the original method is
+    // preserved (returning the prototype would clobber it — notably for `get`/`set`).
+    return undefined;
   }) as ClassDecorator & MethodDecorator;
 
 /**
