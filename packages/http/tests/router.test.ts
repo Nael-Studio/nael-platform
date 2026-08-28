@@ -9,6 +9,7 @@ import {
   Get,
   Param,
   Post,
+  Query,
   Version,
   type HttpApplication,
 } from '../src/index';
@@ -64,6 +65,19 @@ class ReportsController {
 
 @Module({ controllers: [ReportsController] })
 class ReportsModule {}
+
+// Guards the regression where an absent optional @Query was overwritten with the
+// RequestContext, so handlers doing `value.split(',')` crashed on `?other=1`.
+@Controller('/params')
+class OptionalQueryController {
+  @Get('/echo')
+  echo(@Query('only') only?: string, @Query('refresh') refresh?: string) {
+    return { onlyType: typeof only, only: only ?? null, refresh: refresh ?? null };
+  }
+}
+
+@Module({ controllers: [OptionalQueryController] })
+class OptionalQueryModule {}
 
 describe('HTTP router', () => {
   let app: HttpApplication | undefined;
@@ -171,6 +185,22 @@ describe('HTTP router', () => {
       const res = await dispatch('/v9/reports/latest');
       expect(res.status).toBe(200);
       expect(await res.json()).toEqual({ version: 'agnostic' });
+    });
+  });
+
+  describe('optional query params', () => {
+    beforeEach(async () => {
+      app = await createHttpApplication(OptionalQueryModule, { port: 0 });
+    });
+
+    it('leaves an absent optional @Query undefined instead of injecting the context', async () => {
+      const res = await dispatch('/params/echo?refresh=1');
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({
+        onlyType: 'undefined',
+        only: null,
+        refresh: '1',
+      });
     });
   });
 });
