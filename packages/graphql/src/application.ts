@@ -264,6 +264,70 @@ export class GraphqlApplication {
   }
 
   /**
+   * Build Bun WebSocket handlers speaking `graphql-transport-ws` for this
+   * schema, for callers that already own the HTTP server — the platform HTTP
+   * integration mounts GraphQL as a route handler rather than calling
+   * {@link listen}, so it never gets that method's WebSocket upgrade. This lets
+   * such a caller upgrade subscription sockets on its existing Bun server.
+   *
+   * Returns `undefined` when subscriptions are not enabled (the `subscriptions`
+   * option is falsy) or the schema has not built. The caller upgrades requests
+   * whose path matches `path` with `server.upgrade(request, { data:
+   * upgradeData(request) })` and installs `websocket` on its Bun server.
+   *
+   * `overrides.onConnect` wins over the configured `subscriptions.onConnect`, so
+   * auth (e.g. a Better Auth session lookup) can be supplied after the container
+   * is built rather than threaded through factory options.
+   */
+  async createSubscriptionWsHandlers(overrides?: {
+    onConnect?: GraphqlSubscriptionsOptions['onConnect'];
+  }): Promise<
+    | {
+        websocket: WebSocketHandler<GraphqlWsData>;
+        upgradeData: (request: Request) => GraphqlWsData;
+        path: string;
+      }
+    | undefined
+  > {
+    const subsConfig = this.options.subscriptions;
+    if (!subsConfig) {
+      return undefined;
+    }
+
+    await this.ensureApolloServer({ start: true });
+    if (!this.executableSchema) {
+      return undefined;
+    }
+
+    const configuredOnConnect =
+      typeof subsConfig === 'object' ? subsConfig.onConnect : undefined;
+    const onConnect = overrides?.onConnect ?? configuredOnConnect;
+    const path = this.normalizePath(
+      (typeof subsConfig === 'object' ? subsConfig.path : undefined) ??
+        this.options.path ??
+        '/graphql',
+    );
+
+    const handlers = createGraphqlWsHandlers({
+      schema: this.executableSchema,
+      onConnect,
+      buildContext: async (connectionContext) => {
+        const base = { ...connectionContext };
+        Reflect.set(base, GRAPHQL_CONTAINER_RESOLVER, <T>(token: Token<T>) =>
+          this.context.get(token),
+        );
+        return base;
+      },
+    });
+
+    return {
+      websocket: handlers.websocket,
+      upgradeData: handlers.upgradeData,
+      path,
+    };
+  }
+
+  /**
    * Bind a Bun server that serves GraphQL over HTTP and — when `subscriptions`
    * is enabled — upgrades `graphql-transport-ws` WebSocket connections on the
    * same port. Returns the public URL.

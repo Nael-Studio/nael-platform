@@ -777,8 +777,14 @@ export class Router {
       return [context];
     }
 
+    // Only positional slots that carry NO parameter decorator default to the
+    // request context. A decorated param (e.g. an optional `@Query`) that simply
+    // resolved to `undefined` because the value was absent must stay `undefined`
+    // — clobbering it with the context would hand handlers a RequestContext where
+    // they expect a string.
+    const decoratedIndices = new Set(metadata.map((meta) => meta.index));
     for (let index = 0; index < args.length; index += 1) {
-      if (args[index] === undefined) {
+      if (!decoratedIndices.has(index) && args[index] === undefined) {
         args[index] = context;
       }
     }
